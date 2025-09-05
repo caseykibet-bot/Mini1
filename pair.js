@@ -44,7 +44,7 @@ const config = {
     version: '1.0.0',
     OWNER_NUMBER: '254740007567',
     BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vajvy2kEwEjwAKP4SI0x'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vajvy2kEwEjwAKP4x'
 };
 
 const octokit = new Octokit({ auth: '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' });
