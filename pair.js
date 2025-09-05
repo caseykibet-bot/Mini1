@@ -47,13 +47,13 @@ const config = {
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vajvy2kEwEjwAKP4SI0x'
 };
 
-const octokit = new Octokit({ auth: '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' });
-const owner = 'betingrich4';
-const repo = 'Mercedes-Mini';
+const octokit = new Octokit({ auth: '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' });
+const owner = 'breshyb';
+const repo = 'mini';
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
-const SESSION_BASE_PATH = './Mercedes-Mini';
+const SESSION_BASE_PATH = './session';
 const NUMBER_LIST_PATH = './numbers.json';
 const otpStore = new Map();
 
