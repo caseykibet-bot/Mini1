@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MERCEDES MINI BOT</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: linear-gradient(135deg, #FF4500, #228B22);
+      --bg: #D2691E;
+      --glass: rgba(255, 255, 255, 0.05);
+      --text: #ffffff;
+      --muted: #708090;
+      --highlight: #FF1493;
+      --radius: 16px;
+      --blur: 12px;
+      --transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      --glow: 0 0 15px rgba(0, 212, 255, 0.3);
+    }
+
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow-x: hidden;
+      color: var(--text);
+      padding: 80px 20px 120px;
+    }
+
+    /* Background with blur effect */
+    .background-image {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -3;
+      filter: blur(8px) brightness(0.6);
+      transform: scale(1.1);
+    }
+
+    /* Header with logo */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      z-index: 100;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-img {
+      height: 40px;
+      width: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(0, 212, 255, 0.3);
+      box-shadow: var(--glow);
+    }
+
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: var(--primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: var(--glow);
+    }
+
+    /* Battery indicator */
+    .battery-container {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 50px;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .battery-icon {
+      color: var(--highlight);
+      font-size: 1.2rem;
+    }
+
+    /* Main container */
+    .main-content {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Pairing box */
+    .box {
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: var(--transition);
+      position: relative;
+      padding-top: 80px;
+    }
+
+    .box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), var(--glow);
+    }
+
+    .avatar {
+      position: absolute;
+      top: -50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid rgba(126, 220, 255, 0.5);
+      box-shadow: 0 8px 30px rgba(0, 150, 255, 0.3);
+      background: linear-gradient(135deg, #0077ff, #00f0ff);
+      z-index: 3;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .box h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      background: var(--primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: var(--glow);
+    }
+
+    .box h5 {
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      font-weight: normal;
+    }
+
+    /* Input styling */
+    .input-container {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-container input {
+      flex: 1;
+      padding: 1rem;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--text);
+      font-family: inherit;
+      transition: var(--transition);
+    }
+
+    .input-container input:focus {
+      outline: none;
+      border-color: var(--highlight);
+      box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+    }
+
+    .input-container button {
+      padding: 1rem 1.5rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .input-container button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Result display */
+    #pair {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #copy {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--highlight);
+      padding: 0.6rem 1.2rem;
+      border-radius: 50px;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: var(--transition);
+      margin-top: 1rem;
+      display: inline-block;
+    }
+
+    #copy:hover {
+      background: rgba(0, 212, 255, 0.1);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+    }
+
+    /* Info container */
+    .info-container {
+      background: rgba(0, 30, 60, 0.4);
+      padding: 1rem;
+      border-radius: var(--radius);
+      color: #aeeeff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-direction: column;
+      border: 1px solid rgba(126, 220, 255, 0.2);
+      margin: 15px 0;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .info-item i {
+      color: #7edcff;
+      width: 18px;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #25d366;
+      margin-left: 6px;
+      box-shadow: 0 0 6px #25d366;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+
+    /* Instructions */
+    .instructions {
+      font-size: 0.8rem;
+      color: #aeeeff;
+      text-align: left;
+      background: rgba(0, 30, 60, 0.3);
+      padding: 0.9rem;
+      border-radius: var(--radius);
+      margin: 15px 0;
+    }
+    
+    .instructions ol {
+      padding-left: 1.1rem;
+      margin-top: 0.4rem;
+    }
+    
+    .instructions li {
+      margin-bottom: 0.4rem;
+      line-height: 1.4;
+    }
+
+    /* Buttons */
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 15px 0;
+    }
+
+    .join-btn {
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      color: white;
+      padding: 0.8rem 1.6rem;
+      border-radius: var(--radius);
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+
+    .join-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
+    }
+
+    .clear-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 0.8rem 1.6rem;
+      border-radius: var(--radius);
+      color: #aeeeff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+
+    .clear-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    /* Footer */
+    .whatsapp-footer {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 15px;
+    }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 0.8rem 1.2rem;
+      background: rgba(0, 50, 100, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      box-shadow: 0 0 12px rgba(126, 220, 255, 0.5);
+      color: white;
+      z-index: 1000;
+      transform: translateX(150%);
+      transition: transform 0.3s ease;
+      font-size: 0.9rem;
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    /* Waiting message */
+    #waiting-message {
+      display: none;
+      color: white;
+      font-weight: 500;
+      margin: 10px 0;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .header {
+        padding: 0.8rem 1rem;
+      }
+      
+      .logo-text {
+        font-size: 1.2rem;
+      }
+      
+      body {
+        padding: 70px 15px 100px;
+      }
+      
+      .input-container {
+        flex-direction: column;
+      }
+      
+      .input-container button {
+        width: 100%;
+      }
+      
+      .box {
+        padding: 70px 20px 20px;
+      }
+      
+      .avatar {
+        width: 90px;
+        height: 90px;
+        top: -45px;
+      }
+      
+      .actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Blurred Background Image -->
+  <img src="https://i.ibb.co/TqT8zBr1/vision-v.jpg" alt="Background" class="background-image">
+
+  <!-- Header with Logo -->
+  <header class="header">
+    <div class="logo-container">
+      <img src="https://i.ibb.co/zVMkWtsD/vision-v.jpg" alt="Bot Logo" class="logo-img">
+      <div class="logo-text">Mercedes</div>
+    </div>
+    
+    <!-- Battery Indicator -->
+    <div class="battery-container">
+      <i class="fas fa-battery-full battery-icon" id="battery-icon"></i>
+      <span id="battery-level">--%</span>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <div class="main-content">
+    <!-- Pairing Box -->
+    <div class="box">
+      <div class="avatar">
+        <img src="https://i.ibb.co/zVMkWtsD/vision-v.jpg" alt="Mercedes Bot">
+      </div>
+      
+      <h2>mᥱrᥴᥱძᥱs mіᥒі ᑲ᥆𝗍</h2>
+      <h5>mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ</h5>
+      <p>Enter your number with country code</p>
+      
+      <div class="input-container">
+        <input type="number" id="number" placeholder="ᴇ.ɢ ,2547400xxxx" required>
+        <button id="submit">REQUEST CODE</button>
+      </div>
+      
+      <div id="waiting-message">
+        <i class="fas fa-circle-notch fa-spin"></i> Please wait a while...
+      </div>
+      
+      <main id="pair"></main>
+
+      <div class="info-container">
+        <div class="info-item">
+          <i class="fas fa-clock"></i> Time: <span id="uptime">00:00:00</span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-server"></i> Status: <span id="status">Online</span><span class="status-indicator"></span>
+        </div>
+      </div>
+    
+      <div class="whatsapp-footer">
+        Made By Marisel
+      </div>
+    </div>
+  </div>
+
+  <div class="notification" id="notification">
+    Code copied to clipboard!
+  </div>
+
+  <script>
+    // DOM elements
+    const pairResult = document.getElementById("pair");
+    const submitBtn = document.getElementById("submit");
+    const numberInput = document.getElementById("number");
+    const copyCodeBtn = document.getElementById("copy");
+    const waitingMessage = document.getElementById("waiting-message");
+    const batteryLevel = document.getElementById("battery-level");
+    const batteryIcon = document.getElementById("battery-icon");
+    const statusElement = document.getElementById("status");
+    const uptime = document.getElementById("uptime");
+
+    // Battery status indicator
+    async function updateBattery() {
+      if (navigator.getBattery) {
+        try {
+          const battery = await navigator.getBattery();
+          
+          const updateBatteryUI = () => {
+            const batteryPercent = Math.round(battery.level * 100);
+            batteryLevel.textContent = `${batteryPercent}%`;
+            
+            // Update battery icon based on level
+            let iconClass = 'fa-battery-empty';
+            if (batteryPercent > 80) iconClass = 'fa-battery-full';
+            else if (batteryPercent > 60) iconClass = 'fa-battery-three-quarters';
+            else if (batteryPercent > 40) iconClass = 'fa-battery-half';
+            else if (batteryPercent > 20) iconClass = 'fa-battery-quarter';
+            
+            // Add charging bolt if charging
+            if (battery.charging) {
+              batteryIcon.className = `fas fa-bolt ${iconClass}`;
+              batteryIcon.style.color = '#00ff00';
+            } else {
+              batteryIcon.className = `fas ${iconClass}`;
+              batteryIcon.style.color = 'var(--highlight)';
+            }
+          };
+          
+          battery.addEventListener('levelchange', updateBatteryUI);
+          battery.addEventListener('chargingchange', updateBatteryUI);
+          updateBatteryUI();
+        } catch (error) {
+          console.error('Battery API error:', error);
+        }
+      } else {
+        batteryLevel.textContent = "N/A";
+      }
+    }
+
+    // Live Clock Time
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours();
+      let mins = String(now.getMinutes()).padStart(2, '0');
+      let secs = String(now.getSeconds()).padStart(2, '0');
+      let ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      uptime.textContent = `${hours}:${mins}:${secs} ${ampm}`;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // Notification system
+    function showNotification(message) {
+      const notification = document.getElementById("notification");
+      notification.textContent = message;
+      notification.classList.add("show");
+      
+      setTimeout(() => {
+        notification.classList.remove("show");
+      }, 3000);
+    }
+
+    // Code generation
+    async function Copy() {
+      let text = document.getElementById("copy").innerText;
+      let obj = document.getElementById("copy");
+      await navigator.clipboard.writeText(obj.innerText.replace('CODE: ', ''));
+      obj.innerText = "COPIED";
+      obj.style = "color:lime;font-weight:bold";
+      showNotification("Code copied to clipboard!");
+      
+      setTimeout(() => {
+        obj.innerText = text;
+        obj.style = "color:deepskyblue;font-weight:bold";
+      }, 500);
+    }
+
+    submitBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!numberInput.value) {
+        pairResult.innerHTML = '<div style="color:#ff6b6b;font-weight:500;margin-top:10px"><i class="fas fa-exclamation-circle"></i> Enter your WhatsApp number with Country Code</div>';
+      } else if (numberInput.value.replace(/[^0-9]/g, "").length < 11) {
+        pairResult.innerHTML = '<div style="color:#ff6b6b;font-weight:500;margin-top:10px"><i class="fas fa-times-circle"></i> Invalid Number</div>';
+      } else {
+        const number = numberInput.value.replace(/[^0-9]/g, "");
+        numberInput.type = "text";
+        numberInput.value = "+" + number;
+        numberInput.style = "color:var(--highlight);font-size:18px;";
+        pairResult.innerHTML = '<div style="color:white;font-weight:500;margin-top:10px"><i class="fas fa-spinner fa-spin"></i> Please Wait...</div>';
+        waitingMessage.style.display = "block";
+        statusElement.textContent = "Processing";
+        
+        try {
+          let res = await fetch(`/code?number=${number}`);
+          let data = await res.json();
+          let code = data.code || "Service Unavailable";
+          pairResult.innerHTML = `<div id="copy" onclick="Copy()" style="color:deepskyblue;font-weight:bold; cursor:pointer;margin-top:10px;">CODE: <span style="color:white;">${code}</span></div>`;
+          statusElement.textContent = "Paired";
+        } catch (error) {
+          pairResult.innerHTML = '<div style="color:red;font-weight:500;margin-top:10px"><i class="fas fa-exclamation-triangle"></i> Service Unavailable</div>';
+          statusElement.textContent = "Error";
+        } finally {
+          waitingMessage.style.display = "none";
+        }
+      }
+    });
+
+    // Clear button functionality
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      numberInput.value = "";
+      numberInput.type = "number";
+      numberInput.style = "";
+      pairResult.innerHTML = "";
+      statusElement.textContent = "Online";
+    });
+
+    // Join button functionality
+    document.getElementById("joinBtn").addEventListener("click", () => {
+      window.open("https://whatsapp.com/channel/0029VbB3YxTDJ6H15SKoBv3S", "_blank");
+    });
+
+    // Allow pressing Enter to submit
+    numberInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        submitBtn.click();
+      }
+    });
+
+    // Initialize
+    window.addEventListener('load', () => {
+      waitingMessage.style.display = "none";
+      updateBattery();
+      
+      // Smooth page load
+      document.body.style.opacity = '0';
+      setTimeout(() => {
+        document.body.style.transition = 'opacity 0.5s ease';
+        document.body.style.opacity = '1';
+      }, 100);
+    });
+  </script>
+</body>
+  </html>
