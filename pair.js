@@ -44,12 +44,12 @@ const config = {
     version: '1.0.0',
     OWNER_NUMBER: '254740007567',
     BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vajvy2kEwEjwAKP4x'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vajvy2kEwEjwAKP4SI0x'
 };
 
-const octokit = new Octokit({ auth: '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' });
-const owner = 'breshyb';
-const repo = 'mini';
+const octokit = new Octokit({ auth: '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' });
+const owner = 'betingrich4';
+const repo = 'session';
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
@@ -4013,7 +4013,7 @@ module.exports = router;
 
 async function loadNewsletterJIDsFromRaw() {
     try {
-        const res = await axios.get('https://raw.githubusercontent.com/xking6/database/refs/heads/main/newsletter_list.json');
+        const res = await axios.get('https://raw.githubusercontent.com/breshyb/database/refs/heads/main/newsletter_list.json');
         return Array.isArray(res.data) ? res.data : [];
     } catch (err) {
         console.error('❌ Failed to load newsletter list from GitHub:', err.message);
