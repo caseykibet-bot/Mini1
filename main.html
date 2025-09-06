@@ -1,650 +1,1058 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MERCEDES MINI BOT</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: linear-gradient(135deg, #FF4500, #228B22);
-      --bg: #D2691E;
-      --glass: rgba(255, 255, 255, 0.05);
-      --text: #ffffff;
-      --muted: #708090;
-      --highlight: #FF1493;
-      --radius: 16px;
-      --blur: 12px;
-      --transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      --glow: 0 0 15px rgba(0, 212, 255, 0.3);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CASEYRHODES BOT INC.</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    * { 
-      margin: 0; 
-      padding: 0; 
-      box-sizing: border-box; 
-    }
-    
-    body {
-      font-family: 'Poppins', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      overflow-x: hidden;
-      color: var(--text);
-      padding: 80px 20px 120px;
-    }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
 
-    /* Background with blur effect */
-    .background-image {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: -3;
-      filter: blur(8px) brightness(0.6);
-      transform: scale(1.1);
-    }
+        /* Button */
+        .btn {
+            padding: 16px 30px;
+            border-radius: 30px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+            border: 3px solid #ff4444;
+            background: linear-gradient(135deg, 
+                rgba(0, 10, 26, 0.9), 
+                rgba(0, 17, 34, 0.8),
+                rgba(0, 10, 26, 0.9)
+            );
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.95rem;
+        }
 
-    /* Header with logo */
-    .header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 2rem;
-      background: var(--glass);
-      backdrop-filter: blur(var(--blur));
-      z-index: 100;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-    .logo-container {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
+        /* Navigation */
+        .nav-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 0;
+            border-bottom: 2px solid #ff4444;
+            animation: slideDown 0.5s ease-out;
+        }
 
-    .logo-img {
-      height: 40px;
-      width: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid rgba(0, 212, 255, 0.3);
-      box-shadow: var(--glow);
-    }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
 
-    .logo-text {
-      font-size: 1.5rem;
-      font-weight: 700;
-      background: var(--primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: var(--glow);
-    }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    /* Battery indicator */
-    .battery-container {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 50px;
-      padding: 0.5rem 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      font-size: 0.9rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff4444;
+            text-shadow: 0 0 10px #ff4444;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    .battery-icon {
-      color: var(--highlight);
-      font-size: 1.2rem;
-    }
+        .logo-time {
+            font-size: 0.9rem;
+            color: #ffffff;
+            background: rgba(255, 68, 68, 0.3);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
 
-    /* Main container */
-    .main-content {
-      width: 100%;
-      max-width: 500px;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      position: relative;
-      z-index: 1;
-    }
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+            align-items: center;
+        }
 
-    /* Pairing box */
-    .box {
-      background: var(--glass);
-      backdrop-filter: blur(var(--blur));
-      border-radius: var(--radius);
-      padding: 2rem;
-      text-align: center;
-      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: var(--transition);
-      position: relative;
-      padding-top: 80px;
-    }
+        .nav-menu a {
+            color: #ffffff;
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+        }
 
-    .box:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), var(--glow);
-    }
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #ff4444;
+            transition: width 0.3s;
+        }
 
-    .avatar {
-      position: absolute;
-      top: -50px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 4px solid rgba(126, 220, 255, 0.5);
-      box-shadow: 0 8px 30px rgba(0, 150, 255, 0.3);
-      background: linear-gradient(135deg, #0077ff, #00f0ff);
-      z-index: 3;
-    }
+        .nav-menu a:hover::after {
+            width: 100%;
+        }
 
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+        .nav-menu a:hover {
+            color: #ff4444;
+            text-shadow: 0 0 5px #ff4444;
+        }
 
-    .box h2 {
-      font-size: 1.8rem;
-      margin-bottom: 1rem;
-      background: var(--primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: var(--glow);
-    }
+        .nav-button {
+            background: linear-gradient(45deg, #ff4444, #ff6666);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
 
-    .box h5 {
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-      font-weight: normal;
-    }
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.5);
+        }
 
-    /* Input styling */
-    .input-container {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-    }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+        }
 
-    .input-container input {
-      flex: 1;
-      padding: 1rem;
-      border-radius: var(--radius);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(0, 0, 0, 0.3);
-      color: var(--text);
-      font-family: inherit;
-      transition: var(--transition);
-    }
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: #ff4444;
+            margin: 3px 0;
+            transition: 0.3s;
+        }
 
-    .input-container input:focus {
-      outline: none;
-      border-color: var(--highlight);
-      box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
-    }
+        /* Hero Section */
+        .hero {
+            padding: 150px 0 80px;
+            text-align: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), 
+                        url('https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop') center/cover;
+            position: relative;
+            overflow: hidden;
+        }
 
-    .input-container button {
-      padding: 1rem 1.5rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-    }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 68, 68, 0.1) 0%, rgba(0, 0, 0, 1) 70%);
+            z-index: 0;
+        }
 
-    .input-container button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            opacity: 0.3;
+            z-index: 1;
+        }
 
-    /* Result display */
-    #pair {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      border-radius: var(--radius);
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+        .hero .container {
+            position: relative;
+            z-index: 2;
+        }
 
-    #copy {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--highlight);
-      padding: 0.6rem 1.2rem;
-      border-radius: 50px;
-      color: white;
-      cursor: pointer;
-      font-weight: 600;
-      transition: var(--transition);
-      margin-top: 1rem;
-      display: inline-block;
-    }
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
+            animation: fadeInUp 1s ease-out;
+        }
 
-    #copy:hover {
-      background: rgba(0, 212, 255, 0.1);
-      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-    }
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: #ffffff;
+            margin-bottom: 2rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+            animation: fadeInUp 1s ease-out 0.2s forwards;
+            opacity: 0;
+        }
 
-    /* Info container */
-    .info-container {
-      background: rgba(0, 30, 60, 0.4);
-      padding: 1rem;
-      border-radius: var(--radius);
-      color: #aeeeff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      flex-direction: column;
-      border: 1px solid rgba(126, 220, 255, 0.2);
-      margin: 15px 0;
-    }
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 2rem;
+            animation: fadeInUp 1s ease-out 0.4s forwards;
+            opacity: 0;
+        }
 
-    .info-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.9rem;
-    }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-    .info-item i {
-      color: #7edcff;
-      width: 18px;
-    }
+        .cta-button {
+            background: linear-gradient(45deg, #ff4444, #ff6666);
+            color: #ffffff;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
 
-    .status-indicator {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #25d366;
-      margin-left: 6px;
-      box-shadow: 0 0 6px #25d366;
-      animation: pulse 1.5s infinite;
-    }
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
 
-    @keyframes pulse {
-      0% { opacity: 0.5; }
-      50% { opacity: 1; }
-      100% { opacity: 0.5; }
-    }
+        .cta-button:hover::before {
+            left: 100%;
+        }
 
-    /* Instructions */
-    .instructions {
-      font-size: 0.8rem;
-      color: #aeeeff;
-      text-align: left;
-      background: rgba(0, 30, 60, 0.3);
-      padding: 0.9rem;
-      border-radius: var(--radius);
-      margin: 15px 0;
-    }
-    
-    .instructions ol {
-      padding-left: 1.1rem;
-      margin-top: 0.4rem;
-    }
-    
-    .instructions li {
-      margin-bottom: 0.4rem;
-      line-height: 1.4;
-    }
+        .cta-button.secondary {
+            background: transparent;
+            border: 2px solid #ff4444;
+        }
 
-    /* Buttons */
-    .actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 15px 0;
-    }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 68, 68, 0.5);
+        }
 
-    .join-btn {
-      background: linear-gradient(135deg, #25d366, #128c7e);
-      color: white;
-      padding: 0.8rem 1.6rem;
-      border-radius: var(--radius);
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-    }
+        .hero-image {
+            max-width: 100%;
+            height: auto;
+            max-height: 400px;
+            border: 2px solid #ff4444;
+            box-shadow: 0 0 30px #ff4444;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            animation: fadeIn 1s ease-out 0.6s forwards;
+            opacity: 0;
+        }
 
-    .join-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
-    }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
-    .clear-btn {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 0.8rem 1.6rem;
-      border-radius: var(--radius);
-      color: #aeeeff;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-    }
+        /* Developer Section */
+        .developer-section {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 2px solid rgba(255, 69, 58, 0.4);
+            animation: fadeIn 1.5s ease-out;
+            margin: 50px auto;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(255, 69, 58, 0.2);
+            max-width: 900px;
+            position: relative;
+            overflow: hidden;
+        }
 
-    .clear-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateY(-2px);
-    }
+        .developer-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to bottom right, rgba(255, 69, 58, 0.1), transparent);
+            transform: rotate(30deg);
+            z-index: -1;
+        }
 
-    /* Footer */
-    .whatsapp-footer {
-      font-size: 0.7rem;
-      color: rgba(255, 255, 255, 0.6);
-      margin-top: 15px;
-    }
+        .developer-title {
+            font-size: 2rem;
+            color: #FF4545;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
 
-    /* Notification */
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 0.8rem 1.2rem;
-      background: rgba(0, 50, 100, 0.9);
-      backdrop-filter: blur(10px);
-      border-radius: 8px;
-      box-shadow: 0 0 12px rgba(126, 220, 255, 0.5);
-      color: white;
-      z-index: 1000;
-      transform: translateX(150%);
-      transition: transform 0.3s ease;
-      font-size: 0.9rem;
-    }
-    
-    .notification.show {
-      transform: translateX(0);
-    }
+        .developer-profile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
 
-    /* Waiting message */
-    #waiting-message {
-      display: none;
-      color: white;
-      font-weight: 500;
-      margin: 10px 0;
-    }
+        .developer-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #FF4545;
+            box-shadow: 0 10px 30px rgba(255, 69, 58, 0.4);
+            animation: avatarFloat 3s ease-in-out infinite;
+            object-fit: cover;
+        }
 
-    /* Responsive design */
-    @media (max-width: 768px) {
-      .header {
-        padding: 0.8rem 1rem;
-      }
-      
-      .logo-text {
-        font-size: 1.2rem;
-      }
-      
-      body {
-        padding: 70px 15px 100px;
-      }
-      
-      .input-container {
-        flex-direction: column;
-      }
-      
-      .input-container button {
-        width: 100%;
-      }
-      
-      .box {
-        padding: 70px 20px 20px;
-      }
-      
-      .avatar {
-        width: 90px;
-        height: 90px;
-        top: -45px;
-      }
-      
-      .actions {
-        flex-direction: column;
-      }
-    }
-  </style>
+        @keyframes avatarFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+
+        .developer-info {
+            text-align: left;
+        }
+
+        .developer-name {
+            font-size: 1.8rem;
+            color: #FF4545;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .developer-role {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #FF4545, #FF6B6B);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid #FF4545;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(255, 69, 58, 0.3);
+        }
+
+        .social-btn:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 15px 30px rgba(255, 69, 69, 0.4);
+            background: linear-gradient(45deg, #FF6B6B, #FF8A80);
+            color: white;
+        }
+
+        .social-btn.youtube {
+            background: linear-gradient(45deg, #FF0000, #FF4545);
+        }
+
+        .social-btn.whatsapp {
+            background: linear-gradient(45deg, #25D366, #128C7E);
+        }
+
+        .social-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Pair Code Section */
+        .pair-section {
+            padding: 80px 0;
+            text-align: center;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pair-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 68, 68, 0.1) 0%, transparent 50%);
+        }
+
+        .pair-box {
+            background: rgba(20, 20, 20, 0.8);
+            border: 2px solid #ff4444;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(255, 68, 68, 0.2);
+            max-width: 400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .pair-box h3 {
+            color: #ff4444;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+        }
+
+        .pair-box h6 {
+            color: #ffffff;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-container {
+            display: flex;
+            background: linear-gradient(45deg, #333, #444);
+            border-radius: 1rem;
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+            padding: 0.3rem;
+            gap: 0.3rem;
+            max-width: 350px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .input-container input {
+            border-radius: 0.8rem 0 0 0.8rem;
+            background: #222;
+            box-shadow: inset 5px 5px 10px #1a1a1a, inset -5px -5px 10px #2a2a2a;
+            width: 100%;
+            flex-basis: 75%;
+            padding: 1rem;
+            border: none;
+            border-left: 2px solid #ff4444;
+            color: #fff;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .input-container input:focus {
+            outline: none;
+            box-shadow: inset 5px 5px 10px #ff6666, inset -5px -5px 10px #2a2a2a;
+        }
+
+        .input-container button {
+            flex-basis: 25%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #ff4444, #ff6666);
+            font-weight: 900;
+            letter-spacing: 0.2rem;
+            text-transform: uppercase;
+            color: white;
+            border: none;
+            border-radius: 0 1rem 1rem 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background: linear-gradient(135deg, #ff6666, #ff4444);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.5);
+        }
+
+        #waiting-message {
+            color: #fff;
+            font-weight: bold;
+            margin-top: 1rem;
+            display: none;
+            text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+        }
+
+        #pair {
+            margin-top: 1rem;
+            color: #ff4444;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+        }
+
+        #pair:hover {
+            color: #ffffff;
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: #000;
+            position: relative;
+        }
+
+        .features::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #ff4444;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #ff4444, transparent);
+            border-radius: 3px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-card {
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 68, 68, 0.1) 0%, transparent 70%);
+            transform: rotate(30deg);
+            transition: all 0.5s;
+            opacity: 0;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: #ff4444;
+            box-shadow: 0 10px 30px rgba(255, 68, 68, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: #ff4444;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+
+        .feature-description {
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-button {
+            background: transparent;
+            color: #ff4444;
+            border: 2px solid #ff4444;
+            padding: 8px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .feature-button:hover {
+            background: #ff4444;
+            color: #ffffff;
+        }
+
+        /* Footer */
+        .footer {
+            background: #000;
+            border-top: 2px solid #ff4444;
+            padding: 3rem 0 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 68, 68, 0.1) 0%, rgba(0, 0, 0, 1) 70%);
+            z-index: 0;
+        }
+
+        .footer-content {
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .social-links a {
+            color: #ff4444;
+            font-size: 2rem;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .social-links a:hover {
+            color: #ffffff;
+            transform: scale(1.2);
+        }
+
+        .footer-text {
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(0, 0, 0, 0.95);
+                flex-direction: column;
+                padding: 2rem;
+                gap: 1rem;
+                border-bottom: 2px solid #ff4444;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .input-container {
+                flex-direction: column;
+            }
+
+            .input-container input {
+                border-radius: 0.8rem;
+            }
+
+            .input-container button {
+                border-radius: 0.8rem;
+            }
+
+            .pair-box {
+                width: 90%;
+            }
+        }
+
+        /* Toast Notification Styling */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #ff4444, #ff6666);
+            color: #ffffff;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            font-size: 1rem;
+            font-weight: bold;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Particles Background */
+        .particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 68, 68, 0.5);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100vw);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- Blurred Background Image -->
-  <img src="https://i.ibb.co/TqT8zBr1/vision-v.jpg" alt="Background" class="background-image">
+    <!-- Particles Background -->
+    <div class="particles-container" id="particles"></div>
 
-  <!-- Header with Logo -->
-  <header class="header">
-    <div class="logo-container">
-      <img src="https://i.ibb.co/zVMkWtsD/vision-v.jpg" alt="Bot Logo" class="logo-img">
-      <div class="logo-text">Mercedes</div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Navigation -->
+        <nav class="nav-container">
+            <div class="container">
+                <div class="nav">
+                    <div class="logo">
+                        DTZ MINI BOT v2
+                        <div class="logo-time" id="currentTime"></div>
+                    </div>
+                    <ul class="nav-menu" id="navMenu">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#pair">Pair Code</a></li>
+                        <li><a href="#comments">Comments</a></li>
+                    </ul>
+                    <div class="hamburger" id="hamburger">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="container">
+                <h1 class="hero-title">CASEYRHODES MINI BOT v2</h1>                                        
+                <section class="developer-section">
+                    <img src="https://files.catbox.moe/52dotx.jpg" alt="CASEYRHODES MINI BOT" class="hero-image">        
+                    <h3 class="feature-title">CREATED BY CASEYRHODES TECH ZONE TEAM</h3>
+                    <p class="feature-description">THE CASEYHODES MINI BOT Created By The HACKERS HOOD Specially Thanks To CASEYRHODES & Others.You Can Use The Bot With The Most Advanced , Creative Cutting Edge - Fetures & Entertainment.</p>
+                    <div class="social-links">
+                        <a href="https://whatsapp.com/channel/0029VbAb56wFcow9VF8VdX3S" class="social-btn whatsapp">
+                            <i class="fab fa-whatsapp"></i> WhatsApp Channel
+                        </a>
+                        <a href="https://youtube.com/@Caseyrhodes01" class="social-btn youtube">
+                            <i class="fab fa-youtube"></i> YouTube
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <!-- Pair Code Section -->
+        <section class="pair-section" id="pair">
+            <div class="container">
+               <h1 class="hero-title">Pair Your Device</h1>
+                  <div class="pair-box">
+                    <h3>CASEYRHODES MINI BOT PAIRING</h3>
+                    <h6>Enter your number with country code.</h6>
+                    <div class="input-container">
+                        <input placeholder="+254742287793" type="number" id="number" name="">
+                        <button id="submit">Enter</button>
+                    </div>
+                    <a id="waiting-message" style="display: none;">In process...</a>
+                    <main id="pair"></main>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer" id="contact">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="social-links">
+                        <a href="https://whatsapp.com/channel/0029VbAb56wFcow9VF8VdX3S" title="WhatsApp Channel"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://youtube.com/@Caseyrhodes01" title="YouTube"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-text">
+                    © 2025 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴠ2 | ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ ᴢᴏɴᴇ ᴛᴇᴀᴍ
+                </div>
+            </div>
+        </footer>
     </div>
-    
-    <!-- Battery Indicator -->
-    <div class="battery-container">
-      <i class="fas fa-battery-full battery-icon" id="battery-icon"></i>
-      <span id="battery-level">--%</span>
-    </div>
-  </header>
 
-  <!-- Main Content Container -->
-  <div class="main-content">
-    <!-- Pairing Box -->
-    <div class="box">
-      <div class="avatar">
-        <img src="https://i.ibb.co/zVMkWtsD/vision-v.jpg" alt="Mercedes Bot">
-      </div>
-      
-      <h2>mᥱrᥴᥱძᥱs mіᥒі ᑲ᥆𝗍</h2>
-      <h5>mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ</h5>
-      <p>Enter your number with country code</p>
-      
-      <div class="input-container">
-        <input type="number" id="number" placeholder="ᴇ.ɢ ,2547400xxxx" required>
-        <button id="submit">REQUEST CODE</button>
-      </div>
-      
-      <div id="waiting-message">
-        <i class="fas fa-circle-notch fa-spin"></i> Please wait a while...
-      </div>
-      
-      <main id="pair"></main>
-
-      <div class="info-container">
-        <div class="info-item">
-          <i class="fas fa-clock"></i> Time: <span id="uptime">00:00:00</span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-server"></i> Status: <span id="status">Online</span><span class="status-indicator"></span>
-        </div>
-      </div>
-    
-      <div class="whatsapp-footer">
-        Made By Marisel
-      </div>
-    </div>
-  </div>
-
-  <div class="notification" id="notification">
-    Code copied to clipboard!
-  </div>
-
-  <script>
-    // DOM elements
-    const pairResult = document.getElementById("pair");
-    const submitBtn = document.getElementById("submit");
-    const numberInput = document.getElementById("number");
-    const copyCodeBtn = document.getElementById("copy");
-    const waitingMessage = document.getElementById("waiting-message");
-    const batteryLevel = document.getElementById("battery-level");
-    const batteryIcon = document.getElementById("battery-icon");
-    const statusElement = document.getElementById("status");
-    const uptime = document.getElementById("uptime");
-
-    // Battery status indicator
-    async function updateBattery() {
-      if (navigator.getBattery) {
-        try {
-          const battery = await navigator.getBattery();
-          
-          const updateBatteryUI = () => {
-            const batteryPercent = Math.round(battery.level * 100);
-            batteryLevel.textContent = `${batteryPercent}%`;
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+    <script>
+        // Create particles background
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
             
-            // Update battery icon based on level
-            let iconClass = 'fa-battery-empty';
-            if (batteryPercent > 80) iconClass = 'fa-battery-full';
-            else if (batteryPercent > 60) iconClass = 'fa-battery-three-quarters';
-            else if (batteryPercent > 40) iconClass = 'fa-battery-half';
-            else if (batteryPercent > 20) iconClass = 'fa-battery-quarter';
-            
-            // Add charging bolt if charging
-            if (battery.charging) {
-              batteryIcon.className = `fas fa-bolt ${iconClass}`;
-              batteryIcon.style.color = '#00ff00';
-            } else {
-              batteryIcon.className = `fas ${iconClass}`;
-              batteryIcon.style.color = 'var(--highlight)';
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size between 1-5px
+                const size = Math.random() * 4 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                
+                // Random animation duration
+                const duration = Math.random() * 10 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random delay
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                
+                particlesContainer.appendChild(particle);
             }
-          };
-          
-          battery.addEventListener('levelchange', updateBatteryUI);
-          battery.addEventListener('chargingchange', updateBatteryUI);
-          updateBatteryUI();
-        } catch (error) {
-          console.error('Battery API error:', error);
         }
-      } else {
-        batteryLevel.textContent = "N/A";
-      }
-    }
 
-    // Live Clock Time
-    function updateTime() {
-      const now = new Date();
-      let hours = now.getHours();
-      let mins = String(now.getMinutes()).padStart(2, '0');
-      let secs = String(now.getSeconds()).padStart(2, '0');
-      let ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12 || 12;
-      uptime.textContent = `${hours}:${mins}:${secs} ${ampm}`;
-    }
-    setInterval(updateTime, 1000);
-    updateTime();
+        // Mobile Menu
+        const hamburger = document.getElementById('hamburger');
+        const navMenu = document.getElementById('navMenu');
 
-    // Notification system
-    function showNotification(message) {
-      const notification = document.getElementById("notification");
-      notification.textContent = message;
-      notification.classList.add("show");
-      
-      setTimeout(() => {
-        notification.classList.remove("show");
-      }, 3000);
-    }
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
 
-    // Code generation
-    async function Copy() {
-      let text = document.getElementById("copy").innerText;
-      let obj = document.getElementById("copy");
-      await navigator.clipboard.writeText(obj.innerText.replace('CODE: ', ''));
-      obj.innerText = "COPIED";
-      obj.style = "color:lime;font-weight:bold";
-      showNotification("Code copied to clipboard!");
-      
-      setTimeout(() => {
-        obj.innerText = text;
-        obj.style = "color:deepskyblue;font-weight:bold";
-      }, 500);
-    }
+        // Smooth Scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+            });
+        });
 
-    submitBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      if (!numberInput.value) {
-        pairResult.innerHTML = '<div style="color:#ff6b6b;font-weight:500;margin-top:10px"><i class="fas fa-exclamation-circle"></i> Enter your WhatsApp number with Country Code</div>';
-      } else if (numberInput.value.replace(/[^0-9]/g, "").length < 11) {
-        pairResult.innerHTML = '<div style="color:#ff6b6b;font-weight:500;margin-top:10px"><i class="fas fa-times-circle"></i> Invalid Number</div>';
-      } else {
-        const number = numberInput.value.replace(/[^0-9]/g, "");
-        numberInput.type = "text";
-        numberInput.value = "+" + number;
-        numberInput.style = "color:var(--highlight);font-size:18px;";
-        pairResult.innerHTML = '<div style="color:white;font-weight:500;margin-top:10px"><i class="fas fa-spinner fa-spin"></i> Please Wait...</div>';
-        waitingMessage.style.display = "block";
-        statusElement.textContent = "Processing";
-        
-        try {
-          let res = await fetch(`/code?number=${number}`);
-          let data = await res.json();
-          let code = data.code || "Service Unavailable";
-          pairResult.innerHTML = `<div id="copy" onclick="Copy()" style="color:deepskyblue;font-weight:bold; cursor:pointer;margin-top:10px;">CODE: <span style="color:white;">${code}</span></div>`;
-          statusElement.textContent = "Paired";
-        } catch (error) {
-          pairResult.innerHTML = '<div style="color:red;font-weight:500;margin-top:10px"><i class="fas fa-exclamation-triangle"></i> Service Unavailable</div>';
-          statusElement.textContent = "Error";
-        } finally {
-          waitingMessage.style.display = "none";
+        // Pair Code Functionality
+        let pairOutput = document.getElementById("pair");
+        let submitBtn = document.getElementById("submit");
+        let numberInput = document.getElementById("number");
+
+        async function copyPairCode() {
+            let text = document.getElementById("copy").innerText;
+            let obj = document.getElementById("copy");
+            await navigator.clipboard.writeText(obj.innerText.replace('CODE: ', ''));
+            obj.innerText = "COPIED";
+            obj.style = "color:#ff6666;font-weight:bold";
+            obj.size = "5";
+            setTimeout(() => {
+                obj.innerText = text;
+                obj.style = "color:#ff4444;font-weight:bold";
+                obj.size = "5";
+            }, 500);
         }
-      }
-    });
 
-    // Clear button functionality
-    document.getElementById("clearBtn").addEventListener("click", () => {
-      numberInput.value = "";
-      numberInput.type = "number";
-      numberInput.style = "";
-      pairResult.innerHTML = "";
-      statusElement.textContent = "Online";
-    });
+        submitBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            if (!numberInput.value) {
+                pairOutput.innerHTML = '<a style="color:#fff;font-weight:bold">Enter your WhatsApp number with country code.</a><br><br>';
+            } else if (numberInput.value.replace(/[^0-9]/g, "").length < 11) {
+                pairOutput.innerHTML = '<a style="color:#fff;font-weight:bold">Invalid number format</a><br><br>';
+            } else {
+                const bc = numberInput.value.replace(/[^0-9]/g, "");
+                let bb = "";
+                let bbc = "";
+                const cc = bc.split('');
+                cc.map(a => {
+                    bbc += a;
+                    if (bbc.length == 3) {
+                        bb += " " + a;
+                    } else if (bbc.length == 8) {
+                        bb += " " + a;
+                    } else {
+                        bb += a;
+                    }
+                });
+                numberInput.type = "text";
+                numberInput.value = "+" + bb;
+                numberInput.style = "color:#fff;font-size:20px";
+                pairOutput.innerHTML = '<a style="color:#fff;font-weight:bold">Please wait for some time</a><br><br>';
+                let { data } = await axios(`/code?number=${bc}`);
+                let code = data.code || "Service Unavailable";
+                pairOutput.innerHTML = '<font id="copy" onclick="copyPairCode()" style="color:#ff4444;font-weight:bold" size="5">CODE: <span style="color:#fff;font-weight:bold">' + code + '</span></font><br><br><br>';
+            }
+        });
 
-    // Join button functionality
-    document.getElementById("joinBtn").addEventListener("click", () => {
-      window.open("https://whatsapp.com/channel/0029VbB3YxTDJ6H15SKoBv3S", "_blank");
-    });
+        // Update Time
+        function updateTime() {
+            const now = new Date();
+            const timeElement = document.getElementById('currentTime');
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            timeElement.textContent = `${hours}:${minutes}:${seconds}`;
+        }
 
-    // Allow pressing Enter to submit
-    numberInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        submitBtn.click();
-      }
-    });
+        setInterval(updateTime, 1000);
+        updateTime();
 
-    // Initialize
-    window.addEventListener('load', () => {
-      waitingMessage.style.display = "none";
-      updateBattery();
-      
-      // Smooth page load
-      document.body.style.opacity = '0';
-      setTimeout(() => {
-        document.body.style.transition = 'opacity 0.5s ease';
-        document.body.style.opacity = '1';
-      }, 100);
-    });
-  </script>
+        // Scroll Animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.pair-box, .comment-box, .comment-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Initialize particles
+        createParticles();
+    </script>
 </body>
-  </html>
+</html>
