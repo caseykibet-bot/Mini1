@@ -23,7 +23,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 Don't Forget To Give Star ‼️
 
-made By ᴄᴀsᴇʏʀʜᴏᴅᴇs
+made By Caseyrhodes 
 
 Server running on http://0.0.0.0:` + PORT);
 });
