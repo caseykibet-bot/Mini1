@@ -157,7 +157,7 @@ let totalcmds = async () => {
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'GBz10zMKECuEKUlmfNsglx'; // Hardcoded default
+    let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -539,7 +539,7 @@ function setupCommandHandlers(socket, number) {
             },
             message: {
                 contactMessage: {
-                    displayName: "© ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs",
+                    displayName: "© ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴠᴇʀɪғɪᴇᴅ ✅",
                     vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:Meta\nORG:META AI;\nTEL;type=CELL;type=VOICE;waid=254101022551:+254101022551\nEND:VCARD`
                 }
             }
@@ -559,12 +559,12 @@ function setupCommandHandlers(socket, number) {
 
                         const captionText = `
 *╭───〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 〙───⊷*
-*┊* ʙᴏᴛ ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
-*┊* ᴀᴄᴛɪᴠᴇ ʙᴏᴛs: ${activeSockets.size}
-*┊* ʏᴏᴜʀ ɴᴜᴍʙᴇʀ: ${number}
-*┊* ᴠᴇʀsɪᴏɴ: ${config.version}
-*┊* ᴍᴇᴍᴏʀʏ ᴜsᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
-*╰─────────────────┈⊷*
+*┃* ʙᴏᴛ ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
+*┃* ᴀᴄᴛɪᴠᴇ ʙᴏᴛs: ${activeSockets.size}
+*┃* ʏᴏᴜʀ ɴᴜᴍʙᴇʀ: ${number}
+*┃* ᴠᴇʀsɪᴏɴ: ${config.version}
+*┃* ᴍᴇᴍᴏʀʏ ᴜsᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+*╰───────────────┈⊷*
 
 > *▫️ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴍᴀɪɴ*
 > sᴛᴀᴛᴜs: ONLINE ✅
@@ -605,7 +605,7 @@ function setupCommandHandlers(socket, number) {
                                         })
                                     }
                                 },
-                                { buttonId: `${config.PREFIX}bot_info`, buttonText: { displayText: 'ℹ️ ʙᴏᴛ ɪɴғᴏ' }, type: 1 },
+                                { buttonId: `${config.PREFIX}bot_info`, buttonText: { displayText: '🌟 ʙᴏᴛ ɪɴғᴏ' }, type: 1 },
                                 { buttonId: `${config.PREFIX}bot_stats`, buttonText: { displayText: '📈 ʙᴏᴛ sᴛᴀᴛs' }, type: 1 }
                             ],
                             headerType: 1,
@@ -635,20 +635,20 @@ function setupCommandHandlers(socket, number) {
                     break;
                 }
 
-                // Case: bot_stats
-                case 'bot_stats': {
-                    try {
-                        const from = m.key.remoteJid;
-                        const startTime = socketCreationTime.get(number) || Date.now();
-                        const uptime = Math.floor((Date.now() - startTime) / 1000);
-                        const hours = Math.floor(uptime / 3600);
-                        const minutes = Math.floor((uptime % 3600) / 60);
-                        const seconds = Math.floor(uptime % 60);
-                        const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
-                        const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
-                        const activeCount = activeSockets.size;
+        // Case: bot_stats
+case 'bot_stats': {
+    try {
+        const from = m.key.remoteJid;
+        const startTime = socketCreationTime.get(number) || Date.now();
+        const uptime = Math.floor((Date.now() - startTime) / 1000);
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const seconds = Math.floor(uptime % 60);
+        const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+        const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
+        const activeCount = activeSockets.size;
 
-                        const captionText = `
+        const captionText = `
 *┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃* Uptime: ${hours}h ${minutes}m ${seconds}s
 *┃* Memory: ${usedMemory}MB / ${totalMemory}MB
@@ -657,23 +657,33 @@ function setupCommandHandlers(socket, number) {
 *┃* Version: ${config.version}
 *┗──────────────⊷*`;
 
-                        await socket.sendMessage(from, {
-                            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-                            caption: captionText
-                        }, { quoted: m });
-                    } catch (error) {
-                        console.error('Bot stats error:', error);
-                        const from = m.key.remoteJid;
-                        await socket.sendMessage(from, { text: '❌ Failed to retrieve stats. Please try again later.' }, { quoted: m });
-                    }
-                    break;
-                }
+        // Common message context
+        const messageContext = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363402973786789@newsletter',
+                newsletterName: 'POWERED BY CASEYRHODES TECH',
+                serverMessageId: -1
+            }
+        };
 
-                // Case: bot_info
-                case 'bot_info': {
-                    try {
-                        const from = m.key.remoteJid;
-                        const captionText = `
+        await socket.sendMessage(from, {
+            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+            caption: captionText
+        }, { quoted: m });
+    } catch (error) {
+        console.error('Bot stats error:', error);
+        const from = m.key.remoteJid;
+        await socket.sendMessage(from, { text: '❌ Failed to retrieve stats. Please try again later.' }, { quoted: m });
+    }
+    break;
+}
+// Case: bot_info
+case 'bot_info': {
+    try {
+        const from = m.key.remoteJid;
+        const captionText = `
 *┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  👤 ɴᴀᴍᴇ: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ
 *┃*  🇰🇪 ᴄʀᴇᴀᴛᴏʀ: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
@@ -681,19 +691,29 @@ function setupCommandHandlers(socket, number) {
 *┃*  📍 ᴘʀᴇғɪx: ${config.PREFIX}
 *┃*  📖 ᴅᴇsᴄ: ʏᴏᴜʀ sᴘɪᴄʏ, ʟᴏᴠɪɴɢ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏᴍᴘᴀɴɪᴏɴ 😘
 *┗──────────────⊷*`;
-
-                        await socket.sendMessage(from, {
-                            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-                            caption: captionText
-                        }, { quoted: m });
-                    } catch (error) {
-                        console.error('Bot info error:', error);
-                        const from = m.key.remoteJid;
-                        await socket.sendMessage(from, { text: '❌ Failed to retrieve bot info.' }, { quoted: m });
-                    }
-                    break;
-                }
-
+        
+        // Common message context
+        const messageContext = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363402973786789@newsletter',
+                newsletterName: 'POWERED BY CASEYRHODES TECH',
+                serverMessageId: -1
+            }
+        };
+        
+        await socket.sendMessage(from, {
+            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+            caption: captionText
+        }, { quoted: m });
+    } catch (error) {
+        console.error('Bot info error:', error);
+        const from = m.key.remoteJid;
+        await socket.sendMessage(from, { text: '❌ Failed to retrieve bot info.' }, { quoted: m });
+    }
+    break;
+}
                 // Case: menu
                 case 'menu': {
   try {
@@ -707,14 +727,14 @@ function setupCommandHandlers(socket, number) {
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     
     let menuText = `
-*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ 〙───⊷*  
-*┃* ᑲ᥆𝗍 ᥒᥲmᥱ: ᴄᴀsᴇʏʀʜᴏᴅᴇs mіᥒі
-*┃* ᥙsᥱr: gᥙᥱs𝗍
-*┃* ⍴rᥱ𝖿і᥊: .
-*┃* ᥙ⍴𝗍іmᥱ: ${hours}h ${minutes}m ${seconds}s
-*┃* s𝗍᥆rᥲgᥱ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
-*┃* mᥲkᥱr: ᴄᴀsᴇʏʀʜᴏᴅᴇs
-*╰───────────────┈⊷*
+*╭─────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ 〙───⊷*  
+*┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ : ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
+*┃* 🎉ᴜsᴇʀ: ɢᴜᴇsᴛ
+*┃* 📍ᴘʀᴇғɪx: .
+*┃* ⏰ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
+*┃* 📂sᴛᴏʀᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+*┃* 🎭ᴅᴇᴠ: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
+*╰──────────────⊷*
 `;
 
     const menuMessage = {
@@ -862,9 +882,8 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
   break;
-}
-
-case 'allmenu': {
+  }
+  case 'allmenu': {
   try {
     await socket.sendMessage(sender, { react: { text: '📜', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -963,15 +982,37 @@ case 'allmenu': {
 > *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
 
+    // Newsletter context
+    const messageContext = {
+      forwardingScore: 1,
+      isForwarded: true,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid: '120363402973786789@newsletter',
+        newsletterName: 'POWERED BY CASEYRHODES TECH',
+        serverMessageId: -1
+      }
+    };
+
     await socket.sendMessage(from, {
-      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-      caption: allMenuText
+      image: { url: "https://i.ibb.co/fGSVG8v/caseyweb.jpg" },
+      caption: allMenuText,
+      contextInfo: messageContext
     }, { quoted: fakevCard });
+    
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Allmenu command error:', error);
     await socket.sendMessage(from, {
-      text: `❌ *Oh, darling, the menu got shy! 😢*\nError: ${error.message || 'Unknown error'}\nTry again, love?`
+      text: `❌ *Oh, darling, the menu got shy! 😢*\nError: ${error.message || 'Unknown error'}\nTry again, love?`,
+      contextInfo: {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '120363402973786789@newsletter',
+          newsletterName: 'POWERED BY CASEYRHODES TECH',
+          serverMessageId: -1
+        }
+      }
     }, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
@@ -1226,138 +1267,144 @@ case 'vv': {
   break;
 }
 
-                // Case: song
-                case 'song': {
-                await socket.sendMessage(sender, { react: { text: '🎵', key: msg.key } });
-                    const yts = require('yt-search');
-                    const ddownr = require('denethdev-ytmp3');
-                    const fs = require('fs');
-                    const path = require('path');
-                    const { exec } = require('child_process');
-                    const util = require('util');
-                    const execPromise = util.promisify(exec);
+// Case: song
+case 'song': {
+    await socket.sendMessage(sender, { react: { text: '🎵', key: msg.key } });
+    const yts = require('yt-search');
+    const ddownr = require('denethdev-ytmp3');
+    const fs = require('fs');
+    const path = require('path');
+    const { exec } = require('child_process');
+    const util = require('util');
+    const execPromise = util.promisify(exec);
 
-                    const tempDir = './temp';
-                    if (!fs.existsSync(tempDir)) {
-                        fs.mkdirSync(tempDir, { recursive: true });
-                    }
+    const tempDir = './temp';
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+    }
 
-                    function extractYouTubeId(url) {
-                        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-                        const match = url.match(regex);
-                        return match ? match[1] : null;
-                    }
+    function extractYouTubeId(url) {
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    }
 
-                    function convertYouTubeLink(input) {
-                        const videoId = extractYouTubeId(input);
-                        if (videoId) {
-                            return `https://www.youtube.com/watch?v=${videoId}`;
-                        }
-                        return input;
-                    }
+    function convertYouTubeLink(input) {
+        const videoId = extractYouTubeId(input);
+        if (videoId) {
+            return `https://www.youtube.com/watch?v=${videoId}`;
+        }
+        return input;
+    }
 
-                    async function compressAudio(inputPath, outputPath, targetSizeMB = 3.8) {
-                        try {
-                            const { stdout: durationOutput } = await execPromise(
-                                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
-                            );
-                            const duration = parseFloat(durationOutput) || 180;
-                            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
-                            const constrainedBitrate = Math.min(Math.max(targetBitrate, 32), 128);
-                            console.log(`Compressing audio: Duration=${duration}s, Target bitrate=${constrainedBitrate}kbps`);
-                            await execPromise(
-                                `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
-                            );
-                            return true;
-                        } catch (error) {
-                            console.error('Audio compression failed:', error);
-                            return false;
-                        }
-                    }
+    async function compressAudio(inputPath, outputPath, targetSizeMB = 3.8) {
+        try {
+            const { stdout: durationOutput } = await execPromise(
+                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
+            );
+            const duration = parseFloat(durationOutput) || 180;
+            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
+            const constrainedBitrate = Math.min(Math.max(targetBitrate, 32), 128);
+            console.log(`Compressing audio: Duration=${duration}s, Target bitrate=${constrainedBitrate}kbps`);
+            await execPromise(
+                `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
+            );
+            return true;
+        } catch (error) {
+            console.error('Audio compression failed:', error);
+            return false;
+        }
+    }
 
-                    const q = msg.message?.conversation || 
-                            msg.message?.extendedTextMessage?.text || 
-                            msg.message?.imageMessage?.caption || 
-                            msg.message?.videoMessage?.caption || '';
+    const q = msg.message?.conversation || 
+            msg.message?.extendedTextMessage?.text || 
+            msg.message?.imageMessage?.caption || 
+            msg.message?.videoMessage?.caption || '';
 
-                    if (!q || q.trim() === '') {
-                        return await socket.sendMessage(sender, { text: '*`Give me a song title or YouTube link, love 😘`*' }, { quoted: fakevCard });
-                    }
+    if (!q || q.trim() === '') {
+        return await socket.sendMessage(sender, { text: '*`Give me a song title or YouTube link, love 😘`*' }, { quoted: fakevCard });
+    }
 
-                    const fixedQuery = convertYouTubeLink(q.trim());
-                    let tempFilePath = '';
-                    let compressedFilePath = '';
+    const fixedQuery = convertYouTubeLink(q.trim());
+    let tempFilePath = '';
+    let compressedFilePath = '';
 
-                    try {
-                        await socket.sendMessage(sender, { react: { text: '🔍', key: msg.key } });
-                        const search = await yts(fixedQuery);
-                        const data = search.videos[0];
-                        if (!data) {
-                            return await socket.sendMessage(sender, { text: '*`No songs found, darling! Try another? 💔`*' }, { quoted: fakevCard });
-                        }
+    try {
+        await socket.sendMessage(sender, { react: { text: '🔍', key: msg.key } });
+        const search = await yts(fixedQuery);
+        const data = search.videos[0];
+        if (!data) {
+            return await socket.sendMessage(sender, { text: '*`No songs found, darling! Try another? 💔`*' }, { quoted: fakevCard });
+        }
 
-                        const url = data.url;
-                        const desc = `
- *ᴛɪᴛᴛʟᴇ:* \`${data.title}\`
+        const url = data.url;
+        const desc = `
+*ᴛɪᴛᴛʟᴇ:* \`${data.title}\`
 ◆ *ᴅᴜʀᴀᴛɪᴏɴ* : ${data.timestamp} 
 ◆ *ᴠɪᴇᴡs* : ${data.views.toLocaleString()}
 ◆ *ʀᴇʟᴇᴀsᴇᴅ* : ${data.ago}
+
+*POWERED BY CASEYRHODES TECH*
 `;
 
-                        await socket.sendMessage(sender, {
-                            image: { url: data.thumbnail },
-                            caption: desc,
-                        }, { quoted: fakevCard });
-
-                        await socket.sendMessage(sender, { react: { text: '⬇️', key: msg.key } });
-                        await socket.sendMessage(sender, { text: '*📥 Downloading your song, please wait...*' }, { quoted: fakevCard });
-
-                        const result = await ddownr.download(url, 'mp3');
-                        const downloadLink = result.downloadUrl;
-
-                        const cleanTitle = data.title.replace(/[^\w\s]/gi, '').substring(0, 30);
-                        tempFilePath = path.join(tempDir, `${cleanTitle}_${Date.now()}_original.mp3`);
-                        compressedFilePath = path.join(tempDir, `${cleanTitle}_${Date.now()}_compressed.mp3`);
-
-                        const response = await fetch(downloadLink);
-                        const arrayBuffer = await response.arrayBuffer();
-                        fs.writeFileSync(tempFilePath, Buffer.from(arrayBuffer));
-
-                        const stats = fs.statSync(tempFilePath);
-                        const fileSizeMB = stats.size / (1024 * 1024);
-                        
-                        if (fileSizeMB > 4) {
-                            await socket.sendMessage(sender, { text: '*⚡ Compressing audio to optimal size...*' }, { quoted: fakevCard });
-                            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
-                            if (compressionSuccess) {
-                                tempFilePath = compressedFilePath;
-                                await socket.sendMessage(sender, { text: '*✅ Audio compressed successfully!*' }, { quoted: fakevCard });
-                            } else {
-                                await socket.sendMessage(sender, { text: '*⚠️ Using original audio (compression failed)*' }, { quoted: fakevCard });
-                            }
-                        }
-
-                        await socket.sendMessage(sender, { react: { text: '⬆️', key: msg.key } });
-
-                        await socket.sendMessage(sender, {
-                            audio: fs.readFileSync(tempFilePath),
-                            mimetype: "audio/mpeg",
-                            fileName: `${cleanTitle}.mp3`,
-                            ptt: false
-                        }, { quoted: fakevCard });
-
-                        if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
-                        if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
-                        
-                        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-                    } catch (err) {
-                        console.error('Song command error:', err);
-                        if (tempFilePath && fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
-                        if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
-                        await socket.sendMessage(sender, { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, { quoted: fakevCard });
-                    }
-                    break;
+        await socket.sendMessage(sender, {
+            image: { url: data.thumbnail },
+            caption: desc,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363402973786789@newsletter',
+                    newsletterName: 'POWERED BY CASEYRHODES TECH',
+                    serverMessageId: -1
                 }
+            }
+        }, { quoted: fakevCard });
+
+        await socket.sendMessage(sender, { react: { text: '⬇️', key: msg.key } });
+
+        const result = await ddownr.download(url, 'mp3');
+        const downloadLink = result.downloadUrl;
+
+        const cleanTitle = data.title.replace(/[^\w\s]/gi, '').substring(0, 30);
+        tempFilePath = path.join(tempDir, `${cleanTitle}_${Date.now()}_original.mp3`);
+        compressedFilePath = path.join(tempDir, `${cleanTitle}_${Date.now()}_compressed.mp3`);
+
+        const response = await fetch(downloadLink);
+        const arrayBuffer = await response.arrayBuffer();
+        fs.writeFileSync(tempFilePath, Buffer.from(arrayBuffer));
+
+        const stats = fs.statSync(tempFilePath);
+        const fileSizeMB = stats.size / (1024 * 1024);
+        
+        if (fileSizeMB > 4) {
+            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
+            if (compressionSuccess) {
+                tempFilePath = compressedFilePath;
+            }
+        }
+
+        await socket.sendMessage(sender, { react: { text: '⬆️', key: msg.key } });
+
+        await socket.sendMessage(sender, {
+            audio: fs.readFileSync(tempFilePath),
+            mimetype: "audio/mpeg",
+            fileName: `${cleanTitle}.mp3`,
+            ptt: false
+        }, { quoted: fakevCard });
+
+        if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+        if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
+        
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    } catch (err) {
+        console.error('Song command error:', err);
+        if (tempFilePath && fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+        if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
+        await socket.sendMessage(sender, { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, { quoted: fakevCard });
+    }
+    break;
+}
                                
 //===============================   
   case 'logo': { 
