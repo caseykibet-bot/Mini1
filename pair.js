@@ -43,7 +43,7 @@ const config = {
     OTP_EXPIRY: 300000,
     version: '1.0.0',
     OWNER_NUMBER: '254101022551',
-    BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
+    BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
 
@@ -354,32 +354,140 @@ async function setupStatusHandlers(socket) {
         }
     });
 }
+const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser, delay } = require('@whiskeysockets/baileys');
 
+// Configuration (adjust as needed)
+const config = {
+    RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' // Replace with your image URL
+};
+
+// Helper function to format timestamp
+function getSriLankaTimestamp() {
+    const now = new Date();
+    const options = {
+        timeZone: 'Asia/Colombo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    };
+    return now.toLocaleString('en-US', options);
+}
+
+// Helper function to format message
+function formatMessage(title, content, footer) {
+    return `*${title}*\n\n${content}\n\n_${footer}_`;
+}
+
+// Main function to handle message revocation
 async function handleMessageRevocation(socket, number) {
     socket.ev.on('messages.delete', async ({ keys }) => {
         if (!keys || keys.length === 0) return;
 
-        const messageKey = keys[0];
-        const userJid = jidNormalizedUser(socket.user.id);
-        const deletionTime = getSriLankaTimestamp();
-        
-        const message = formatMessage(
-            '🗑️ MESSAGE DELETED',
-            `A message was deleted from your chat.\n📋 From: ${messageKey.remoteJid}\n🍁 Deletion Time: ${deletionTime}`,
-            'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ '
-        );
-
         try {
+            const messageKey = keys[0];
+            const userJid = jidNormalizedUser(socket.user.id);
+            const deletionTime = getSriLankaTimestamp();
+            
+            // Get chat information for better context
+            let chatName = messageKey.remoteJid;
+            if (messageKey.remoteJid.includes('@g.us')) {
+                try {
+                    const groupMetadata = await socket.groupMetadata(messageKey.remoteJid);
+                    chatName = groupMetadata.subject || 'Group Chat';
+                } catch (error) {
+                    chatName = 'Group Chat';
+                }
+            } else {
+                try {
+                    const contact = await socket.getContact(messageKey.remoteJid);
+                    chatName = contact.notify || contact.name || 'Private Chat';
+                } catch (error) {
+                    chatName = 'Private Chat';
+                }
+            }
+            
+            const message = formatMessage(
+                '🗑️ MESSAGE DELETED',
+                `A message was deleted from your chat.\n📋 From: ${chatName}\n⏰ Deletion Time: ${deletionTime}\n💬 Message ID: ${messageKey.id}`,
+                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+            );
+
+            // Add a small delay to ensure the deletion is processed
+            await delay(1000);
+            
             await socket.sendMessage(userJid, {
                 image: { url: config.RCD_IMAGE_PATH },
-                caption: message
+                caption: message,
+                contextInfo: {
+                    mentionedJid: [userJid]
+                }
             });
-            console.log(`Notified ${number} about message deletion: ${messageKey.id}`);
+            
+            console.log(`✅ Notified ${number} about message deletion: ${messageKey.id}`);
+            
         } catch (error) {
-            console.error('Failed to send deletion notification:', error);
+            console.error('❌ Failed to send deletion notification:', error);
+            // Retry logic (optional)
+            if (error.message.includes('timeout') || error.message.includes('connection')) {
+                console.log('🔄 Retrying notification in 3 seconds...');
+                await delay(3000);
+                // You could add retry logic here if needed
+            }
         }
     });
 }
+
+// Complete working example with connection setup
+async function startBot() {
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+        
+        const socket = makeWASocket({
+            auth: state,
+            printQRInTerminal: true,
+            syncFullHistory: false,
+            markOnlineOnConnect: true,
+            generateHighQualityLinkPreview: true,
+            getMessage: async (key) => {
+                return {
+                    conversation: "message content unavailable"
+                };
+            }
+        });
+
+        socket.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect } = update;
+            if (connection === 'close') {
+                const shouldReconnect = lastDisconnect.error?.output?.statusCode !== 401;
+                console.log('Connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
+                if (shouldReconnect) {
+                    startBot();
+                }
+            } else if (connection === 'open') {
+                console.log('✅ Connected successfully!');
+                // Initialize message revocation handler
+                handleMessageRevocation(socket, 'your-bot-number');
+            }
+        });
+
+        socket.ev.on('creds.update', saveCreds);
+
+        // Handle other events
+        socket.ev.on('messages.upsert', async (m) => {
+            if (m.type === 'notify') {
+                console.log('New message received');
+            }
+        });
+
+    } catch (error) {
+        console.error('Failed to start bot:', error);
+        process.exit(1);
+    }
+}
+
 
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
@@ -635,7 +743,7 @@ function setupCommandHandlers(socket, number) {
                     break;
                 }
 
-        // Case: bot_stats
+// Case: bot_stats
 case 'bot_stats': {
     try {
         const from = m.key.remoteJid;
@@ -657,8 +765,8 @@ case 'bot_stats': {
 *┃* Version: ${config.version}
 *┗──────────────⊷*`;
 
-        // Common message context
-        const messageContext = {
+        // Newsletter message context
+        const newsletterContext = {
             forwardingScore: 1,
             isForwarded: true,
             forwardedNewsletterMessageInfo: {
@@ -671,11 +779,16 @@ case 'bot_stats': {
         await socket.sendMessage(from, {
             image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
             caption: captionText
-        }, { quoted: m });
+        }, { 
+            quoted: m,
+            contextInfo: newsletterContext
+        });
     } catch (error) {
         console.error('Bot stats error:', error);
         const from = m.key.remoteJid;
-        await socket.sendMessage(from, { text: '❌ Failed to retrieve stats. Please try again later.' }, { quoted: m });
+        await socket.sendMessage(from, { 
+            text: '❌ Failed to retrieve stats. Please try again later.' 
+        }, { quoted: m });
     }
     break;
 }
@@ -715,7 +828,8 @@ case 'bot_info': {
     break;
 }
                 // Case: menu
-                case 'menu': {
+       // Case: menu
+case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -727,19 +841,32 @@ case 'bot_info': {
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     
     let menuText = `
-*╭─────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ 〙───⊷*  
+  ʜɪ 👋
+*╭────────────────⊷*  
 *┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ : ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
 *┃* 🎉ᴜsᴇʀ: ɢᴜᴇsᴛ
 *┃* 📍ᴘʀᴇғɪx: .
 *┃* ⏰ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
 *┃* 📂sᴛᴏʀᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
 *┃* 🎭ᴅᴇᴠ: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
-*╰──────────────⊷*
+*╰─────────────────⊷*
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
+
+    // Common message context
+    const messageContext = {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363402973786789@newsletter',
+            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+            serverMessageId: -1
+        }
+    };
 
     const menuMessage = {
       image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-      caption: `> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ\n${menuText}`,
+      caption: `ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ\n${menuText}`,
       buttons: [
         {
           buttonId: `${config.PREFIX}quick_commands`,
@@ -830,7 +957,7 @@ case 'bot_info': {
                     { title: "🔍 ᴡʜᴏɪs", description: "Retrieve domain details", id: `${config.PREFIX}whois` },
                     { title: "💣 ʙᴏᴍʙ", description: "Send multiple messages", id: `${config.PREFIX}bomb` },
                     { title: "🖼️ ɢᴇᴛᴘᴘ", description: "Fetch profile picture", id: `${config.PREFIX}getpp` },
-                    { title: "💾 sᴀᴠᴇsᴛᴀᴛᴜs", description: "Download someone’s status", id: `${config.PREFIX}savestatus` },
+                    { title: "💾 sᴀᴠᴇsᴛᴀᴛᴜs", description: "Download someone's status", id: `${config.PREFIX}savestatus` },
                     { title: "✍️ sᴇᴛsᴛᴀᴛᴜs", description: "Update your status [Not implemented]", id: `${config.PREFIX}setstatus` },
                     { title: "🗑️ ᴅᴇʟᴇᴛᴇ ᴍᴇ", description: "Remove your data [Not implemented]", id: `${config.PREFIX}deleteme` },
                     { title: "🌦️ ᴡᴇᴀᴛʜᴇʀ", description: "Get weather forecast", id: `${config.PREFIX}weather` },
@@ -846,17 +973,19 @@ case 'bot_info': {
         },
         {
           buttonId: `${config.PREFIX}bot_stats`,
-          buttonText: { displayText: 'ℹ️ ʙᴏᴛ sᴛᴀᴛs' },
+          buttonText: { displayText: '🌟 ʙᴏᴛ sᴛᴀᴛs' },
           type: 1
         },
         {
           buttonId: `${config.PREFIX}bot_info`,
-          buttonText: { displayText: '📈 ʙᴏᴛ ɪɴғᴏ' },
+          buttonText: { displayText: '🌸 ʙᴏᴛ ɪɴғᴏ' },
           type: 1
         }
       ],
-      headerType: 1
+      headerType: 1,
+      contextInfo: messageContext // Added the newsletter context here
     };
+    
     await socket.sendMessage(from, menuMessage, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
@@ -877,12 +1006,13 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 
     await socket.sendMessage(from, {
       image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-      caption: fallbackMenuText
+      caption: fallbackMenuText,
+      contextInfo: messageContext // Added the newsletter context here too
     }, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
   break;
-  }
+}
   case 'allmenu': {
   try {
     await socket.sendMessage(sender, { react: { text: '📜', key: msg.key } });
@@ -896,13 +1026,13 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
     
 
     let allMenuText = `
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs〙───⊷*
-*┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
+*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┃*  🤖 *Bot*: ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ
 *┃*  📍 *Prefix*: ${config.PREFIX}
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
 *┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
 *┃*  🔮 *Commands*: ${count}
-*┃*  🇰🇪 *Owner*: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
+*┃*  🇿🇼 *Owner*: ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ
 *┗──────────────⊷*
 
 ╭─『 🌐 *General Commands* 』─╮
@@ -918,7 +1048,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  📱 *${config.PREFIX}qr* - Generate QR codes [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
 *┃*  🎵 *${config.PREFIX}song* - Download YouTube music
 *┃*  📱 *${config.PREFIX}tiktok* - Download TikTok videos
 *┃*  📘 *${config.PREFIX}fb* - Download Facebook content
@@ -930,7 +1060,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🖼️ *${config.PREFIX}sticker* - Convert to sticker [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
 *┃*  ➕ *${config.PREFIX}add* - Add member to group
 *┃*  🦶 *${config.PREFIX}kick* - Remove member from group
 *┃*  🔓 *${config.PREFIX}open* - Unlock group
@@ -941,7 +1071,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  👤 *${config.PREFIX}join* - Join group via link
 *┗──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
 *┃*  📰 *${config.PREFIX}news* - Latest news updates
 *┃*  🚀 *${config.PREFIX}nasa* - NASA space updates
 *┃*  💬 *${config.PREFIX}gossip* - Entertainment gossip
@@ -949,7 +1079,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🎭 *${config.PREFIX}anonymous* - Fun interaction [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
 *┃*  😂 *${config.PREFIX}joke* - Lighthearted joke
 *┃*  🌚 *${config.PREFIX}darkjoke* - Dark humor joke
 *┃*  🏏 *${config.PREFIX}waifu* - Random anime waifu
@@ -963,7 +1093,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  💭 *${config.PREFIX}quote* - Bold or witty quote
 *┗──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
 *┃*  🤖 *${config.PREFIX}ai* - Chat with AI
 *┃*  📊 *${config.PREFIX}winfo* - WhatsApp user info
 *┃*  🔍 *${config.PREFIX}whois* - Domain WHOIS lookup
@@ -979,40 +1109,18 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  📲 *${config.PREFIX}fc* - Follow newsletter channel
 *┗──────────────⊷*
 
-> *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
+> *mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ*
 `;
 
-    // Newsletter context
-    const messageContext = {
-      forwardingScore: 1,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: '120363402973786789@newsletter',
-        newsletterName: 'POWERED BY CASEYRHODES TECH',
-        serverMessageId: -1
-      }
-    };
-
     await socket.sendMessage(from, {
-      image: { url: "https://i.ibb.co/fGSVG8v/caseyweb.jpg" },
-      caption: allMenuText,
-      contextInfo: messageContext
+      image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
+      caption: allMenuText
     }, { quoted: fakevCard });
-    
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Allmenu command error:', error);
     await socket.sendMessage(from, {
-      text: `❌ *Oh, darling, the menu got shy! 😢*\nError: ${error.message || 'Unknown error'}\nTry again, love?`,
-      contextInfo: {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363402973786789@newsletter',
-          newsletterName: 'POWERED BY CASEYRHODES TECH',
-          serverMessageId: -1
-        }
-      }
+      text: `❌ *Oh, darling, the menu got shy! 😢*\nError: ${error.message || 'Unknown error'}\nTry again, love?`
     }, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
@@ -2284,8 +2392,8 @@ User Message: ${q}
   `;
 
   const apis = [
-    `https://api.ryzendesu.vip/api/ai/deepseek?text=${encodeURIComponent(prompt)}`,
-    `https://vapis.my.id/api/openai?q=${encodeURIComponent(prompt)}`,
+    `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
+    `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
     `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(prompt)}`
   ];
 
@@ -2878,7 +2986,7 @@ case 'apk': {
             caption: formatMessage(
                 '📦 APK DETAILS',
                 `🔖 Name: ${name || 'N/A'}\n📅 Last Update: ${lastup || 'N/A'}\n📦 Package: ${package || 'N/A'}\n📏 Size: ${size || 'N/A'}`,
-                'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
             )
         }, { quoted: fakevCard });
 
@@ -3051,30 +3159,33 @@ case 'savestatus': {
   }
   break;
 }
-
-case 'tourl2': {
+case 'url': {
   try {
     await socket.sendMessage(sender, { react: { text: '📤', key: msg.key || {} } });
 
     console.log('Message:', JSON.stringify(msg, null, 2));
     const quoted = msg.quoted || msg;
     console.log('Quoted:', JSON.stringify(quoted, null, 2));
-    const mime = quoted.mimetype || (quoted.message ? Object.keys(quoted.message)[0] : '');
+    
+    // Extract mime type from quoted message
+    let mime = quoted.mimetype || '';
+    if (!mime && quoted.message) {
+      const messageType = Object.keys(quoted.message)[0];
+      const mimeMap = {
+        imageMessage: 'image/jpeg',
+        videoMessage: 'video/mp4',
+        audioMessage: 'audio/mpeg',
+        documentMessage: 'application/octet-stream'
+      };
+      mime = mimeMap[messageType] || '';
+    }
 
-    console.log('MIME Type or Message Type:', mime);
+    console.log('MIME Type:', mime);
 
-    // Map message types to MIME types if mimetype is unavailable
-    const mimeMap = {
-      imageMessage: 'image/jpeg',
-      videoMessage: 'video/mp4',
-      audioMessage: 'audio/mp3'
-    };
-    const effectiveMime = mimeMap[mime] || mime;
-
-    if (!effectiveMime || !['image', 'video', 'audio'].some(type => effectiveMime.includes(type))) {
+    if (!mime || !['image', 'video', 'audio', 'application'].some(type => mime.includes(type))) {
       await socket.sendMessage(sender, {
         text: `❌ *ʀᴇᴘʟʏ ᴛᴏ ɪᴍᴀɢᴇ, ᴀᴜᴅɪᴏ, ᴏʀ ᴠɪᴅᴇᴏ, ʙᴀʙᴇ!* 😘\n` +
-              `Detected type: ${effectiveMime || 'none'}`
+              `Detected type: ${mime || 'none'}`
       }, { quoted: msg });
       break;
     }
@@ -3088,12 +3199,21 @@ case 'tourl2': {
       throw new Error('Failed to download media: Empty buffer');
     }
 
-    const ext = effectiveMime.includes('image/jpeg') ? '.jpg' :
-                effectiveMime.includes('image/png') ? '.png' :
-                effectiveMime.includes('video') ? '.mp4' :
-                effectiveMime.includes('audio') ? '.mp3' : '.bin';
+    // Determine file extension
+    const ext = mime.includes('image/jpeg') ? '.jpg' :
+                mime.includes('image/png') ? '.png' :
+                mime.includes('image/gif') ? '.gif' :
+                mime.includes('video') ? '.mp4' :
+                mime.includes('audio') ? '.mp3' : '.bin';
+    
     const name = `file_${Date.now()}${ext}`;
-    const tmp = path.join(os.tmpdir(), `catbox_${Date.now()}${ext}`);
+    const tmp = path.join(os.tmpdir(), name);
+    
+    // Ensure the tmp directory exists
+    if (!fs.existsSync(os.tmpdir())) {
+      fs.mkdirSync(os.tmpdir(), { recursive: true });
+    }
+    
     fs.writeFileSync(tmp, buffer);
     console.log('Saved file to:', tmp);
 
@@ -3102,18 +3222,22 @@ case 'tourl2': {
     form.append('reqtype', 'fileupload');
 
     const res = await axios.post('https://catbox.moe/user/api.php', form, {
-      headers: form.getHeaders()
+      headers: form.getHeaders(),
+      timeout: 30000 // 30 second timeout
     });
 
-    fs.unlinkSync(tmp);
+    // Clean up temporary file
+    if (fs.existsSync(tmp)) {
+      fs.unlinkSync(tmp);
+    }
 
     if (!res.data || res.data.includes('error')) {
       throw new Error(`Upload failed: ${res.data || 'No response data'}`);
     }
 
-    const type = effectiveMime.includes('image') ? 'ɪᴍᴀɢᴇ' :
-                 effectiveMime.includes('video') ? 'ᴠɪᴅᴇᴏ' :
-                 effectiveMime.includes('audio') ? 'ᴀᴜᴅɪᴏ' : 'ғɪʟᴇ';
+    const type = mime.includes('image') ? 'ɪᴍᴀɢᴇ' :
+                 mime.includes('video') ? 'ᴠɪᴅᴇᴏ' :
+                 mime.includes('audio') ? 'ᴀᴜᴅɪᴏ' : 'ғɪʟᴇ';
 
     await socket.sendMessage(sender, {
       text: `✅ *${type} ᴜᴘʟᴏᴀᴅᴇᴅ, ᴅᴀʀʟɪɴɢ!* 😘\n\n` +
@@ -3125,6 +3249,16 @@ case 'tourl2': {
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key || {} } });
   } catch (error) {
     console.error('tourl2 error:', error.message, error.stack);
+    
+    // Clean up temporary file if it exists
+    if (tmp && fs.existsSync(tmp)) {
+      try {
+        fs.unlinkSync(tmp);
+      } catch (e) {
+        console.error('Error cleaning up temp file:', e.message);
+      }
+    }
+    
     await socket.sendMessage(sender, {
       text: `❌ *ᴏʜ, ʟᴏᴠᴇ, ᴄᴏᴜʟᴅɴ'ᴛ ᴜᴘʟᴏᴀᴅ ᴛʜᴀᴛ ғɪʟᴇ! 😢*\n` +
             `ᴇʀʀᴏʀ: ${error.message || 'sᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ'}\n` +
@@ -3134,7 +3268,6 @@ case 'tourl2': {
   }
   break;
 }
-
 case 'tourl2': {
   try {
     await socket.sendMessage(sender, { react: { text: '📤', key: msg.key || {} } });
@@ -3557,7 +3690,7 @@ function setupAutoRestart(socket, number) {
                         caption: formatMessage(
                             '🗑️ SESSION DELETED',
                             '✅ Your session has been deleted due to logout.',
-                            'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                            'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
                         )
                     });
                 } catch (error) {
@@ -3785,7 +3918,7 @@ router.get('/active', (req, res) => {
 router.get('/ping', (req, res) => {
     res.status(200).send({
         status: 'active',
-        message: '👻 ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ',
+        message: '👻 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ',
         activesession: activeSockets.size
     });
 });
@@ -3937,7 +4070,7 @@ router.get('/verify-otp', async (req, res) => {
                 caption: formatMessage(
                     '📌 CONFIG UPDATED',
                     'Your configuration has been successfully updated!',
-                    'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                    'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
                 )
             });
         }
