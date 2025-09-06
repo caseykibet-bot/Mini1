@@ -43,7 +43,7 @@ const config = {
     OTP_EXPIRY: 300000,
     version: '1.0.0',
     OWNER_NUMBER: '254101022551',
-    BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
+    BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
 
@@ -153,7 +153,6 @@ let totalcmds = async () => {
     return 0; // Return 0 on error to avoid breaking the bot
   }
   }
-
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
@@ -1128,7 +1127,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
                     }
                     break;
                 }
-                 // Case: pair
+                     // Case: pair
                 case 'pair': {
                 await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
                     const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
@@ -1188,7 +1187,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
                     }
                     break;
                 }
-                // Case: viewonce
+            // Case: viewonce
 case 'viewonce':
 case 'rvo':
 case 'vv': {
