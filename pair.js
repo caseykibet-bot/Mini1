@@ -354,141 +354,31 @@ async function setupStatusHandlers(socket) {
         }
     });
 }
-const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser, delay } = require('@whiskeysockets/baileys');
-
-// Configuration (adjust as needed)
-const config = {
-    RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' // Replace with your image URL
-};
-
-// Helper function to format timestamp
-function getSriLankaTimestamp() {
-    const now = new Date();
-    const options = {
-        timeZone: 'Asia/Colombo',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    };
-    return now.toLocaleString('en-US', options);
-}
-
-// Helper function to format message
-function formatMessage(title, content, footer) {
-    return `*${title}*\n\n${content}\n\n_${footer}_`;
-}
-
-// Main function to handle message revocation
 async function handleMessageRevocation(socket, number) {
     socket.ev.on('messages.delete', async ({ keys }) => {
         if (!keys || keys.length === 0) return;
 
-        try {
-            const messageKey = keys[0];
-            const userJid = jidNormalizedUser(socket.user.id);
-            const deletionTime = getSriLankaTimestamp();
-            
-            // Get chat information for better context
-            let chatName = messageKey.remoteJid;
-            if (messageKey.remoteJid.includes('@g.us')) {
-                try {
-                    const groupMetadata = await socket.groupMetadata(messageKey.remoteJid);
-                    chatName = groupMetadata.subject || 'Group Chat';
-                } catch (error) {
-                    chatName = 'Group Chat';
-                }
-            } else {
-                try {
-                    const contact = await socket.getContact(messageKey.remoteJid);
-                    chatName = contact.notify || contact.name || 'Private Chat';
-                } catch (error) {
-                    chatName = 'Private Chat';
-                }
-            }
-            
-            const message = formatMessage(
-                '🗑️ MESSAGE DELETED',
-                `A message was deleted from your chat.\n📋 From: ${chatName}\n⏰ Deletion Time: ${deletionTime}\n💬 Message ID: ${messageKey.id}`,
-                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
-            );
+        const messageKey = keys[0];
+        const userJid = jidNormalizedUser(socket.user.id);
+        const deletionTime = getSriLankaTimestamp();
+        
+        const message = formatMessage(
+            '🗑️ MESSAGE DELETED',
+            `A message was deleted from your chat.\n📋 From: ${messageKey.remoteJid}\n🍁 Deletion Time: ${deletionTime}`,
+            'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ '
+        );
 
-            // Add a small delay to ensure the deletion is processed
-            await delay(1000);
-            
+        try {
             await socket.sendMessage(userJid, {
                 image: { url: config.RCD_IMAGE_PATH },
-                caption: message,
-                contextInfo: {
-                    mentionedJid: [userJid]
-                }
+                caption: message
             });
-            
-            console.log(`✅ Notified ${number} about message deletion: ${messageKey.id}`);
-            
+            console.log(`Notified ${number} about message deletion: ${messageKey.id}`);
         } catch (error) {
-            console.error('❌ Failed to send deletion notification:', error);
-            // Retry logic (optional)
-            if (error.message.includes('timeout') || error.message.includes('connection')) {
-                console.log('🔄 Retrying notification in 3 seconds...');
-                await delay(3000);
-                // You could add retry logic here if needed
-            }
+            console.error('Failed to send deletion notification:', error);
         }
     });
 }
-
-// Complete working example with connection setup
-async function startBot() {
-    try {
-        const { state, saveCreds } = await useMultiFileAuthState('auth_info');
-        
-        const socket = makeWASocket({
-            auth: state,
-            printQRInTerminal: true,
-            syncFullHistory: false,
-            markOnlineOnConnect: true,
-            generateHighQualityLinkPreview: true,
-            getMessage: async (key) => {
-                return {
-                    conversation: "message content unavailable"
-                };
-            }
-        });
-
-        socket.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect } = update;
-            if (connection === 'close') {
-                const shouldReconnect = lastDisconnect.error?.output?.statusCode !== 401;
-                console.log('Connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
-                if (shouldReconnect) {
-                    startBot();
-                }
-            } else if (connection === 'open') {
-                console.log('✅ Connected successfully!');
-                // Initialize message revocation handler
-                handleMessageRevocation(socket, 'your-bot-number');
-            }
-        });
-
-        socket.ev.on('creds.update', saveCreds);
-
-        // Handle other events
-        socket.ev.on('messages.upsert', async (m) => {
-            if (m.type === 'notify') {
-                console.log('New message received');
-            }
-        });
-
-    } catch (error) {
-        console.error('Failed to start bot:', error);
-        process.exit(1);
-    }
-}
-
-
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
