@@ -354,6 +354,7 @@ async function setupStatusHandlers(socket) {
         }
     });
 }
+
 async function handleMessageRevocation(socket, number) {
     socket.ev.on('messages.delete', async ({ keys }) => {
         if (!keys || keys.length === 0) return;
@@ -378,22 +379,6 @@ async function handleMessageRevocation(socket, number) {
             console.error('Failed to send deletion notification:', error);
         }
     });
-}
-
-// Helper functions that would need to be implemented
-function jidNormalizedUser(id) {
-    // Implementation to normalize JID
-    return id;
-}
-
-function getSriLankaTimestamp() {
-    // Implementation to get Sri Lanka time
-    return new Date().toLocaleString("en-US", {timeZone: "Asia/Colombo"});
-}
-
-function formatMessage(title, body, footer) {
-    // Implementation to format message
-    return `${title}\n${body}\n${footer}`;
 }
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
