@@ -37,14 +37,14 @@ const config = {
     MAX_RETRIES: 3,
     GROUP_INVITE_LINK: '',
     ADMIN_LIST_PATH: './admin.json',
-    RCD_IMAGE_PATH: 'https://i.ibb.co/ynmqJG8j/vision-v.jpg',
+    RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
     NEWSLETTER_JID: '120363299029326322@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    OWNER_NUMBER: '254740007567',
-    BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vajvy2kEwEjwAKP4SI0x'
+    OWNER_NUMBER: '254101022551',
+    BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -707,19 +707,19 @@ function setupCommandHandlers(socket, number) {
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     
     let menuText = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*  
-*┃* ᑲ᥆𝗍 ᥒᥲmᥱ: mᥱrᥴᥱძᥱs mіᥒі
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*  
+*┃* ᑲ᥆𝗍 ᥒᥲmᥱ: ᴄᴀsᴇʏʀʜᴏᴅᴇs mіᥒі
 *┃* ᥙsᥱr: gᥙᥱs𝗍
 *┃* ⍴rᥱ𝖿і᥊: .
 *┃* ᥙ⍴𝗍іmᥱ: ${hours}h ${minutes}m ${seconds}s
 *┃* s𝗍᥆rᥲgᥱ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
-*┃* mᥲkᥱr: mᥲrіsᥱᥣ
+*┃* mᥲkᥱr: ᴄᴀsᴇʏʀʜᴏᴅᴇs
 *┗──────────────⊷*
 `;
 
     const menuMessage = {
-      image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
-      caption: `> ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴍᴇɴᴜ\n${menuText}`,
+      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+      caption: `> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ\n${menuText}`,
       buttons: [
         {
           buttonId: `${config.PREFIX}quick_commands`,
@@ -728,7 +728,7 @@ function setupCommandHandlers(socket, number) {
           nativeFlowInfo: {
             name: 'single_select',
             paramsJson: JSON.stringify({
-              title: '🤖 ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ᴄᴍᴅs',
+              title: '🤖 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴄᴍᴅs',
               sections: [
                 {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
@@ -844,7 +844,7 @@ function setupCommandHandlers(socket, number) {
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     let fallbackMenuText = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *Bot*: ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ
 *┃*  📍 *Prefix*: ${config.PREFIX}
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
@@ -852,11 +852,11 @@ function setupCommandHandlers(socket, number) {
 *┗──────────────⊷*
 
 ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs 
-> *mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ*
+> *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
 
     await socket.sendMessage(from, {
-      image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
+      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
       caption: fallbackMenuText
     }, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
@@ -877,13 +877,13 @@ case 'allmenu': {
     
 
     let allMenuText = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
-*┃*  🤖 *Bot*: ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs〙───⊷*
+*┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
 *┃*  📍 *Prefix*: ${config.PREFIX}
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
 *┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
 *┃*  🔮 *Commands*: ${count}
-*┃*  🇿🇼 *Owner*: ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ
+*┃*  🇰🇪 *Owner*: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
 *┗──────────────⊷*
 
 ╭─『 🌐 *General Commands* 』─╮
@@ -899,7 +899,7 @@ case 'allmenu': {
 *┃*  📱 *${config.PREFIX}qr* - Generate QR codes [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🎵 *${config.PREFIX}song* - Download YouTube music
 *┃*  📱 *${config.PREFIX}tiktok* - Download TikTok videos
 *┃*  📘 *${config.PREFIX}fb* - Download Facebook content
@@ -911,7 +911,7 @@ case 'allmenu': {
 *┃*  🖼️ *${config.PREFIX}sticker* - Convert to sticker [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  ➕ *${config.PREFIX}add* - Add member to group
 *┃*  🦶 *${config.PREFIX}kick* - Remove member from group
 *┃*  🔓 *${config.PREFIX}open* - Unlock group
@@ -922,7 +922,7 @@ case 'allmenu': {
 *┃*  👤 *${config.PREFIX}join* - Join group via link
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  📰 *${config.PREFIX}news* - Latest news updates
 *┃*  🚀 *${config.PREFIX}nasa* - NASA space updates
 *┃*  💬 *${config.PREFIX}gossip* - Entertainment gossip
@@ -930,7 +930,7 @@ case 'allmenu': {
 *┃*  🎭 *${config.PREFIX}anonymous* - Fun interaction [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  😂 *${config.PREFIX}joke* - Lighthearted joke
 *┃*  🌚 *${config.PREFIX}darkjoke* - Dark humor joke
 *┃*  🏏 *${config.PREFIX}waifu* - Random anime waifu
@@ -944,7 +944,7 @@ case 'allmenu': {
 *┃*  💭 *${config.PREFIX}quote* - Bold or witty quote
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *${config.PREFIX}ai* - Chat with AI
 *┃*  📊 *${config.PREFIX}winfo* - WhatsApp user info
 *┃*  🔍 *${config.PREFIX}whois* - Domain WHOIS lookup
@@ -960,11 +960,11 @@ case 'allmenu': {
 *┃*  📲 *${config.PREFIX}fc* - Follow newsletter channel
 *┗──────────────⊷*
 
-> *mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ*
+> *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
 
     await socket.sendMessage(from, {
-      image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
+      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
       caption: allMenuText
     }, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
@@ -1575,7 +1575,7 @@ const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // F
 
     // Prepare caption
     const caption = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  📝 ᴛɪᴛᴛʟᴇ: ${title.replace(/[<>:"\/\\|?*]/g, '')}
 *┃*  👤 ᴀᴜᴛʜᴏʀ: @${author.username.replace(/[<>:"\/\\|?*]/g, '')} (${author.nickname.replace(/[<>:"\/\\|?*]/g, '')})
 *┃*  ❤️ ʟɪᴋᴇs: ${metrics.digg_count.toLocaleString()}
@@ -1620,7 +1620,7 @@ const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // F
     await socket.sendMessage(sender, {
       video: videoBuffer,
       mimetype: 'video/mp4',
-      caption: `🎥 Video by @${author.username.replace(/[<>:"\/\\|?*]/g, '')}\n> ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ`
+      caption: `🎥 Video by @${author.username.replace(/[<>:"\/\\|?*]/g, '')}\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs`
     }, { quoted: fakevCard });
 
     // Update loading message
@@ -2802,7 +2802,7 @@ case 'apk': {
             caption: formatMessage(
                 '📦 DOWNLOADING APK',
                 `Downloading ${name}... Please wait.`,
-                'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
             )
         }, { quoted: fakevCard });
 
@@ -3155,7 +3155,7 @@ case 'tourl2': {
       text: `✅ *${type} ᴜᴘʟᴏᴀᴅᴇᴅ, ᴅᴀʀʟɪɴɢ!* 😘\n\n` +
             `📁 *sɪᴢᴇ:* ${formatBytes(buffer.length)}\n` +
             `🔗 *ᴜʀʟ:* ${res.data}\n\n` +
-            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ`
+            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
     }, { quoted: msg });
 
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key || {} } });
@@ -3327,7 +3327,7 @@ case 'repo-audio': {
                         caption: formatMessage(
                             '🗑️ SESSION DELETED',
                             '✅ Your session has been successfully deleted.',
-                            'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                            'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
                         )
                     });
                     break;
@@ -3652,7 +3652,7 @@ const groupStatus = groupResult.status === 'success'
 await socket.sendMessage(userJid, {
     image: { url: config.RCD_IMAGE_PATH },
     caption: formatMessage(
-        '👻 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ 👻',
+        '👻 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ 👻',
         `✅ Successfully connected!\n\n` +
         `🔢 ɴᴜᴍʙᴇʀ: ${sanitizedNumber}\n` +
         `🏠 ɢʀᴏᴜᴘ sᴛᴀᴛᴜs: ${groupStatus}\n` +
@@ -3660,7 +3660,7 @@ await socket.sendMessage(userJid, {
         `📢 ғᴏʟʟᴏᴡ ᴍᴀɪɴ ᴄʜᴀɴɴᴇʟ 👇\n` +
         `https://whatsapp.com/channel/0029VbB3YxTDJ6H15SKoBv3S\n\n` +
         `🤖 ᴛʏᴘᴇ *${config.PREFIX}menu* ᴛᴏ ɢᴇᴛ sᴛᴀʀᴛᴇᴅ!`,
-        '> mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ'
+        '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ'
     )
 });
 
