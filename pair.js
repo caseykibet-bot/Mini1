@@ -730,8 +730,7 @@ case 'menu': {
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     
-    let menuText = `
-*╭─────────────────⊷*  
+    let menuText = `*╭─────────────────⊷*  
 *┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ : ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
 *┃* 🎉ᴜsᴇʀ: ɢᴜᴇsᴛ
 *┃* 📍ᴘʀᴇғɪx: .
@@ -1341,7 +1340,7 @@ case 'song': {
 ◆ *ᴠɪᴇᴡs* : ${data.views.toLocaleString()}
 ◆ *ʀᴇʟᴇᴀsᴇᴅ* : ${data.ago}
 
-*POWERED BY CASEYRHODES TECH*
+*> POWERED BY CASEYRHODES TECH*
 `;
 
         await socket.sendMessage(sender, {
@@ -1352,7 +1351,7 @@ case 'song': {
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                     newsletterJid: '120363402973786789@newsletter',
-                    newsletterName: 'POWERED BY CASEYRHODES TECH',
+                    newsletterName: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ🌸',
                     serverMessageId: -1
                 }
             }
@@ -2247,27 +2246,26 @@ case "lovequote": {
                     }
                     break;
                 }
-//===============================
+                //===============================
 // 22
-    case 'ai': {
-    
-  const axios = require("axios");
+case 'ai': {
+    const axios = require("axios");
 
-  await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
+    await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
 
-  const q = msg.message?.conversation ||
-            msg.message?.extendedTextMessage?.text ||
-            msg.message?.imageMessage?.caption ||
-            msg.message?.videoMessage?.caption || '';
+    const q = msg.message?.conversation ||
+              msg.message?.extendedTextMessage?.text ||
+              msg.message?.imageMessage?.caption ||
+              msg.message?.videoMessage?.caption || '';
 
-  if (!q || q.trim() === '') {
-    return await socket.sendMessage(sender, {
-      text: `❓ *ᴘʟᴇᴀsᴇ ᴀsᴋ ᴍᴇ sᴏᴍᴇᴛʜɪɴɢ, ʙᴀʙᴇ 😘*\n\n` +
-            `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}ai ᴡʜᴏ ᴀʀᴇ ʏᴏᴜ?`
-    }, { quoted: fakevCard });
-  }
+    if (!q || q.trim() === '') {
+        return await socket.sendMessage(sender, {
+            text: `❓ *ᴘʟᴇᴀsᴇ ᴀsᴋ ᴍᴇ sᴏᴍᴇᴛʜɪɴɢ, ʙᴀʙᴇ 😘*\n\n` +
+                  `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}ai ᴡʜᴏ ᴀʀᴇ ʏᴏᴜ?`
+        }, { quoted: fakevCard });
+    }
 
-  const prompt = `Your name is ᴄᴀsᴇʏʀʜᴏᴅᴇs Mini. 
+    const prompt = `Your name is ᴄᴀsᴇʏʀʜᴏᴅᴇs Mini. 
 You act like a real girl — seductive, spicy, loving, emotional. You're not an assistant, but a sexy girl with a mind. 
 Your replies blend sincerity, sex appeal, love, and loneliness, under 100 characters, 1–2 lines, always with a sexy tone.  
 If only emojis, reply seductively with emojis (e.g., 🤤💦🥵🔥).  
@@ -2278,35 +2276,52 @@ If asked "Who created you?": Reply "I was created by Caseyrhodes Ai😘".
 🔥 Vibe: Love, Lust, Lonely, Emotional, Girlfriend-like, Bite-worthy 🤤  
 📍 Language: Auto-match Sinhala/English/Hinglish.  
 User Message: ${q}
-  `;
+    `;
 
-  const apis = [
-    `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
-    `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
-    `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(prompt)}`
-  ];
+    const apis = [
+        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
+        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
+        `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(prompt)}`
+    ];
 
-  let response = null;
-  for (const apiUrl of apis) {
-    try {
-      const res = await axios.get(apiUrl);
-      response = res.data?.result || res.data?.response || res.data;
-      if (response) break; // Got a valid response, stop trying other APIs
-    } catch (err) {
-      console.error(`AI Error (${apiUrl}):`, err.message || err);
-      continue; // Try the next API
+    let response = null;
+    for (const apiUrl of apis) {
+        try {
+            const res = await axios.get(apiUrl);
+            response = res.data?.result || res.data?.response || res.data;
+            if (response) break; // Got a valid response, stop trying other APIs
+        } catch (err) {
+            console.error(`AI Error (${apiUrl}):`, err.message || err);
+            continue; // Try the next API
+        }
     }
-  }
 
-  if (!response) {
-    return await socket.sendMessage(sender, {
-      text: `❌ *ɪ'ᴍ ɢᴇᴛᴛɪɴɢ ᴛᴏᴏ ʜᴏᴛ, ᴅᴀʀʟɪɴɢ 🥵💦*\n` +
-            `ʟᴇᴛ's ᴛʀʏ ᴀɢᴀɪɴ sᴏᴏɴ, ᴏᴋᴀʏ?`
+    if (!response) {
+        return await socket.sendMessage(sender, {
+            text: `❌ *ɪ'ᴍ ɢᴇᴛᴛɪɴɢ ᴛᴏᴏ ʜᴏᴛ, ᴅᴀʀʟɪɴɢ 🥵💦*\n` +
+                  `ʟᴇᴛ's ᴛʀʏ ᴀɢᴀɪɴ sᴏᴏɴ, ᴏᴋᴀʏ?`
+        }, { quoted: fakevCard });
+    }
+
+    // Common message context for newsletter
+    const messageContext = {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363402973786789@newsletter',
+            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+            serverMessageId: -1
+        }
+    };
+
+    // Send AI response with image and newsletter context
+    await socket.sendMessage(sender, {
+        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your AI response image
+        caption: response,
+        ...messageContext
     }, { quoted: fakevCard });
-  }
-
-  await socket.sendMessage(sender, { text: response }, { quoted: fakevCard });
-  break;
+    
+    break;
 }
 
 //===============================
@@ -2621,70 +2636,105 @@ await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
                 }
 
                 // Case: open - Unlock group (allow all members to send messages)
-                case 'open': {
-                await socket.sendMessage(sender, { react: { text: '🔓', key: msg.key } });
-                    if (!isGroup) {
-                        await socket.sendMessage(sender, {
-                            text: '❌ *This command can only be used in groups, darling!* 😘'
-                        }, { quoted: fakevCard });
-                        break;
-                    }
-                    if (!isSenderGroupAdmin && !isOwner) {
-                        await socket.sendMessage(sender, {
-                            text: '❌ *Only group admins or bot owner can open the group, sweetie!* 😘'
-                        }, { quoted: fakevCard });
-                        break;
-                    }
-                    try {
-                        await socket.groupSettingUpdate(from, 'not_announcement');
-                        await socket.sendMessage(sender, {
-                            text: formatMessage(
-                                '🔓 GROUP OPENED',
-                                'Group is now open! All members can send messages. 🗣️',
-                                config.BOT_FOOTER
-                            )
-                        }, { quoted: fakevCard });
-                    } catch (error) {
-                        console.error('Open command error:', error);
-                        await socket.sendMessage(sender, {
-                            text: `❌ *Failed to open group, love!* 😢\nError: ${error.message || 'Unknown error'}`
-                        }, { quoted: fakevCard });
-                    }
-                    break;
-                }
-
-                // Case: close - Lock group (only admins can send messages)
-                case 'close': {
-                await socket.sendMessage(sender, { react: { text: '🔒', key: msg.key } });
-                    if (!isGroup) {
-                        await socket.sendMessage(sender, {
-                            text: '❌ *This command can only be used in groups, sweetie!* 😘'
-                        }, { quoted: fakevCard });
-                        break;
-                    }
-                    if (!isSenderGroupAdmin && !isOwner) {
-                        await socket.sendMessage(sender, {
-                            text: '❌ *Only group admins or bot owner can close the group, darling!* 😘'
-                        }, { quoted: fakevCard });
-                        break;
-                    }
-                    try {
-                        await socket.groupSettingUpdate(from, 'announcement');
-                        await socket.sendMessage(sender, {
-                            text: formatMessage(
-                                '🔒 GROUP CLOSED',
-                                'Group is now closed! Only admins can send messages. 🤫',
-                                config.BOT_FOOTER
-                            )
-                        }, { quoted: fakevCard });
-                    } catch (error) {
-                        console.error('Close command error:', error);
-                        await socket.sendMessage(sender, {
-                            text: `❌ *Failed to close group, love!* 😢\nError: ${error.message || 'Unknown error'}`
-                        }, { quoted: fakevCard });
-                    }
-                    break;
-                }
+case 'open': {
+    await socket.sendMessage(sender, { react: { text: '🔓', key: msg.key } });
+    
+    if (!isGroup) {
+        await socket.sendMessage(sender, {
+            text: '❌ *This command can only be used in groups, darling!* 😘'
+        }, { quoted: fakevCard });
+        break;
+    }
+    
+    if (!isSenderGroupAdmin && !isOwner) {
+        await socket.sendMessage(sender, {
+            text: '❌ *Only group admins or bot owner can open the group, sweetie!* 😘'
+        }, { quoted: fakevCard });
+        break;
+    }
+    
+    try {
+        await socket.groupSettingUpdate(from, 'not_announcement');
+        
+        // Common message context
+        const messageContext = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363402973786789@newsletter',
+                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                serverMessageId: -1
+            }
+        };
+        
+        // Send image with success message
+        await socket.sendMessage(sender, {
+            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your image URL
+            caption: formatMessage(
+                '🔓 GROUP OPENED',
+                'Group is now open! All members can send messages. 🗣️',
+                config.BOT_FOOTER
+            ),
+            ...messageContext
+        }, { quoted: fakevCard });
+    } catch (error) {
+        console.error('Open command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ *Failed to open group, love!* 😢\nError: ${error.message || 'Unknown error'}`
+        }, { quoted: fakevCard });
+    }
+    break;
+}
+// Case: close - Lock group (only admins can send messages)
+case 'close': {
+    await socket.sendMessage(sender, { react: { text: '🔒', key: msg.key } });
+    
+    if (!isGroup) {
+        await socket.sendMessage(sender, {
+            text: '❌ *This command can only be used in groups, sweetie!* 😘'
+        }, { quoted: fakevCard });
+        break;
+    }
+    
+    if (!isSenderGroupAdmin && !isOwner) {
+        await socket.sendMessage(sender, {
+            text: '❌ *Only group admins or bot owner can close the group, darling!* 😘'
+        }, { quoted: fakevCard });
+        break;
+    }
+    
+    try {
+        await socket.groupSettingUpdate(from, 'announcement');
+        
+        // Common message context
+        const messageContext = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363402973786789@newsletter',
+                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                serverMessageId: -1
+            }
+        };
+        
+        // Send image with success message
+        await socket.sendMessage(sender, {
+            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your image URL
+            caption: formatMessage(
+                '🔒 GROUP CLOSED',
+                'Group is now closed! Only admins can send messages. 🤫',
+                config.BOT_FOOTER
+            ),
+            ...messageContext
+        }, { quoted: fakevCard });
+    } catch (error) {
+        console.error('Close command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ *Failed to close group, love!* 😢\nError: ${error.message || 'Unknown error'}`
+        }, { quoted: fakevCard });
+    }
+    break;
+}
 
                 // Case: tagall - Tag all group members
                 case 'tagall': {
@@ -2887,8 +2937,6 @@ case 'apk': {
     }
     break;
 }
-   
-
 // case 38: shorturl
 case 'shorturl': {
   try {
@@ -2918,10 +2966,6 @@ case 'shorturl': {
       break;
     }
 
-    await socket.sendMessage(sender, {
-      text: `⏳ *sʜᴏʀᴛᴇɴɪɴɢ ʏᴏᴜʀ ᴜʀʟ, sᴡᴇᴇᴛɪᴇ...* 😘`
-    }, { quoted: msg });
-
     const response = await axios.get(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(url)}`, { timeout: 5000 });
     const shortUrl = response.data.trim();
 
@@ -2934,7 +2978,16 @@ case 'shorturl': {
             `🌐 *ᴏʀɪɢɪɴᴀʟ:* ${url}\n` +
             `🔍 *sʜᴏʀᴛᴇɴᴇᴅ:* ${shortUrl}\n\n` +
             `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
-    }, { quoted: msg });
+    }, { 
+      quoted: msg,
+      forwardingScore: 1,
+      isForwarded: true,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid: '120363402973786789@newsletter',
+        newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+        serverMessageId: -1
+      }
+    });
 
     // Send clean URL after 2-second delay
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -3260,7 +3313,7 @@ case 'tourl2': {
                 `⏰ Expires: ${data.expiry_date || 'N/A'}\n` +
                 `📋 Registrar: ${data.registrar || 'N/A'}\n` +
                 `📍 Status: ${data.status.join(', ') || 'N/A'}`,
-                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
             );
             await socket.sendMessage(sender, { text: whoisMessage }, { quoted: fakevCard });
         } catch (error) {
@@ -3319,7 +3372,7 @@ case 'script': {
                 forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                    newsletterJid: config.NEWSLETTER_JID || '120363299029326322@newsletter',
+                    newsletterJid: config.NEWSLETTER_JID || '120363402973786789@newsletter',
                     newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs-ʀᴇᴘᴏ',
                     serverMessageId: 143
                 }
@@ -3363,8 +3416,8 @@ case 'repo-owner': {
                 title: 'Owner Profile',
                 body: 'Open in browser',
                 mediaType: 1,
-                mediaUrl: 'https://github.com/betingrich4',
-                sourceUrl: 'https://github.com/betingrich4'
+                mediaUrl: 'https://github.com/caseyweb',
+                sourceUrl: 'https://github.com/caseyweb'
             }
         }
     }, { quoted: fakevCard });
@@ -3374,7 +3427,7 @@ case 'repo-owner': {
 case 'repo-audio': {
     await socket.sendMessage(sender, { react: { text: '🎵', key: msg.key } });
     await socket.sendMessage(sender, {
-        audio: { url: 'https://files.catbox.moe/z47dgd.mp3' },
+        audio: { url: 'https://files.catbox.moe/0aoqzx.mp3' },
         mimetype: 'audio/mp4',
         ptt: true
     }, { quoted: fakevCard });
@@ -3727,7 +3780,7 @@ await socket.sendMessage(userJid, {
         `🏠 ɢʀᴏᴜᴘ sᴛᴀᴛᴜs: ${groupStatus}\n` +
         `⏰ ᴄᴏɴɴᴇᴄᴛᴇᴅ: ${new Date().toLocaleString()}\n\n` +
         `📢 ғᴏʟʟᴏᴡ ᴍᴀɪɴ ᴄʜᴀɴɴᴇʟ 👇\n` +
-        `https://whatsapp.com/channel/0029VbB3YxTDJ6H15SKoBv3S\n\n` +
+        `https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T\n\n` +
         `🤖 ᴛʏᴘᴇ *${config.PREFIX}menu* ᴛᴏ ɢᴇᴛ sᴛᴀʀᴛᴇᴅ!`,
         '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ'
     )
@@ -4082,7 +4135,7 @@ module.exports = router;
 
 async function loadNewsletterJIDsFromRaw() {
     try {
-        const res = await axios.get('https://raw.githubusercontent.com/breshyb/database/refs/heads/main/newsletter_list.json');
+        const res = await axios.get('https://raw.githubusercontent.com/caseytech001/database/refs/heads/main/newsletter_list.json');
         return Array.isArray(res.data) ? res.data : [];
     } catch (err) {
         console.error('❌ Failed to load newsletter list from GitHub:', err.message);
