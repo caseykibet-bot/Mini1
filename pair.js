@@ -38,7 +38,7 @@ const config = {
     GROUP_INVITE_LINK: '',
     ADMIN_LIST_PATH: './admin.json',
     RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
-    NEWSLETTER_JID: '120363299029326322@newsletter',
+    NEWSLETTER_JID: '120363402973786789@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
@@ -48,7 +48,7 @@ const config = {
 };
 
 const octokit = new Octokit({ auth: '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' });
-const owner = 'betingrich4';
+const owner = 'caseyweb';
 const repo = 'session';
 
 const activeSockets = new Map();
@@ -255,7 +255,7 @@ async function sendOTP(socket, number, otp) {
     const message = formatMessage(
         '🔐 OTP VERIFICATION',
         `Your OTP for config update is: *${otp}*\nThis OTP will expire in 5 minutes.`,
-        'mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ'
+        '> mᥲძᥱ ᑲᥡ Caseyrhodes'
     );
 
     try {
@@ -539,8 +539,8 @@ function setupCommandHandlers(socket, number) {
             },
             message: {
                 contactMessage: {
-                    displayName: "© ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ",
-                    vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:Meta\nORG:META AI;\nTEL;type=CELL;type=VOICE;waid=254740007567:+254740007567\nEND:VCARD`
+                    displayName: "© ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs",
+                    vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:Meta\nORG:META AI;\nTEL;type=CELL;type=VOICE;waid=254101022551:+254101022551\nEND:VCARD`
                 }
             }
         };
@@ -558,20 +558,20 @@ function setupCommandHandlers(socket, number) {
                         const seconds = Math.floor(uptime % 60);
 
                         const captionText = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
-*┃* ʙᴏᴛ ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
-*┃* ᴀᴄᴛɪᴠᴇ ʙᴏᴛs: ${activeSockets.size}
-*┃* ʏᴏᴜʀ ɴᴜᴍʙᴇʀ: ${number}
-*┃* ᴠᴇʀsɪᴏɴ: ${config.version}
-*┃* ᴍᴇᴍᴏʀʏ ᴜsᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
-*┗──────────────⊷
+*╭───〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 〙───⊷*
+*┊* ʙᴏᴛ ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
+*┊* ᴀᴄᴛɪᴠᴇ ʙᴏᴛs: ${activeSockets.size}
+*┊* ʏᴏᴜʀ ɴᴜᴍʙᴇʀ: ${number}
+*┊* ᴠᴇʀsɪᴏɴ: ${config.version}
+*┊* ᴍᴇᴍᴏʀʏ ᴜsᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+*╰─────────────────┈⊷*
 
-> *▫️ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ᴍᴀɪɴ*
+> *▫️ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴍᴀɪɴ*
 > sᴛᴀᴛᴜs: ONLINE ✅
 > ʀᴇsᴘᴏɴᴅ ᴛɪᴍᴇ: ${Date.now() - msg.messageTimestamp * 1000}ms`;
 
                         const aliveMessage = {
-                            image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
+                            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
                             caption: `> ᴀᴍ ᴀʟɪᴠᴇ ɴ ᴋɪᴄᴋɪɴɢ 🥳\n\n${captionText}`,
                             buttons: [
                                 {
@@ -584,7 +584,7 @@ function setupCommandHandlers(socket, number) {
                                             title: 'ᴄʟɪᴄᴋ ʜᴇʀᴇ ❏',
                                             sections: [
                                                 {
-                                                    title: `ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ`,
+                                                    title: `ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ`,
                                                     highlight_label: 'Quick Actions',
                                                     rows: [
                                                         { title: '📋 ғᴜʟʟ ᴍᴇɴᴜ', description: 'ᴠɪᴇᴡ ᴀʟʟ ᴀᴠᴀɪʟᴀʙʟᴇ ᴄᴍᴅs', id: `${config.PREFIX}menu` },
@@ -622,9 +622,9 @@ function setupCommandHandlers(socket, number) {
                         const seconds = Math.floor(uptime % 60);
 
                         await socket.sendMessage(m.chat, {
-                            image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
-                            caption: `*🤖 ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ᴀʟɪᴠᴇ*\n\n` +
-                                    `*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*\n` +
+                            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+                            caption: `*🤖 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴀʟɪᴠᴇ*\n\n` +
+                                    `*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
                                     `*┃* ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s\n` +
                                     `*┃* sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n` +
                                     `*┃* ɴᴜᴍʙᴇʀ: ${number}\n` +
@@ -649,7 +649,7 @@ function setupCommandHandlers(socket, number) {
                         const activeCount = activeSockets.size;
 
                         const captionText = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃* Uptime: ${hours}h ${minutes}m ${seconds}s
 *┃* Memory: ${usedMemory}MB / ${totalMemory}MB
 *┃* Active Users: ${activeCount}
@@ -658,7 +658,7 @@ function setupCommandHandlers(socket, number) {
 *┗──────────────⊷*`;
 
                         await socket.sendMessage(from, {
-                            image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
+                            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
                             caption: captionText
                         }, { quoted: m });
                     } catch (error) {
@@ -674,16 +674,16 @@ function setupCommandHandlers(socket, number) {
                     try {
                         const from = m.key.remoteJid;
                         const captionText = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
-*┃*  👤 ɴᴀᴍᴇ: ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ
-*┃*  🇿🇼 ᴄʀᴇᴀᴛᴏʀ: ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*┃*  👤 ɴᴀᴍᴇ: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ
+*┃*  🇰🇪 ᴄʀᴇᴀᴛᴏʀ: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
 *┃*  🌐 ᴠᴇʀsɪᴏɴ: ${config.version}
 *┃*  📍 ᴘʀᴇғɪx: ${config.PREFIX}
 *┃*  📖 ᴅᴇsᴄ: ʏᴏᴜʀ sᴘɪᴄʏ, ʟᴏᴠɪɴɢ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏᴍᴘᴀɴɪᴏɴ 😘
 *┗──────────────⊷*`;
 
                         await socket.sendMessage(from, {
-                            image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
+                            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
                             caption: captionText
                         }, { quoted: m });
                     } catch (error) {
@@ -707,14 +707,14 @@ function setupCommandHandlers(socket, number) {
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     
     let menuText = `
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*  
+*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ 〙───⊷*  
 *┃* ᑲ᥆𝗍 ᥒᥲmᥱ: ᴄᴀsᴇʏʀʜᴏᴅᴇs mіᥒі
 *┃* ᥙsᥱr: gᥙᥱs𝗍
 *┃* ⍴rᥱ𝖿і᥊: .
 *┃* ᥙ⍴𝗍іmᥱ: ${hours}h ${minutes}m ${seconds}s
 *┃* s𝗍᥆rᥲgᥱ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
 *┃* mᥲkᥱr: ᴄᴀsᴇʏʀʜᴏᴅᴇs
-*┗──────────────⊷*
+*╰───────────────┈⊷*
 `;
 
     const menuMessage = {
@@ -723,7 +723,7 @@ function setupCommandHandlers(socket, number) {
       buttons: [
         {
           buttonId: `${config.PREFIX}quick_commands`,
-          buttonText: { displayText: '🤖 ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ᴄᴍᴅs' },
+          buttonText: { displayText: '🤖 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴄᴍᴅs' },
           type: 4,
           nativeFlowInfo: {
             name: 'single_select',
@@ -1067,7 +1067,7 @@ case 'allmenu': {
                                 `⚡ *sᴘᴇᴇᴅ:* ${latency}ms\n` +
                                 `${emoji} *ϙᴜᴀʟɪᴛʏ:* ${quality}\n` +
                                 `🕒 *ᴛɪᴍᴇsᴛᴀᴍᴘ:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC', hour12: true })}\n\n` +
-                                `*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*\n` +
+                                `*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
                                 `*┃*    ᴄᴏɴɴᴇᴄᴛɪᴏɴ sᴛᴀᴛᴜs  \n` +
                                 `*┗──────────────⊷.`,
                             buttons: [
@@ -1131,7 +1131,7 @@ case 'allmenu': {
                         }
 
                         await socket.sendMessage(sender, {
-                            text: `> *ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
+                            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
                         }, { quoted: msg });
 
                         await sleep(2000);
@@ -1400,7 +1400,7 @@ case 'vv': {
                         headerType: 1,
                         viewOnce: true,
                         caption: '❏ *LOGO MAKER*',
-                        image: { url: 'https://i.ibb.co/ynmqJG8j/vision-v.jpg' },
+                        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
                     };
 
                     await socket.sendMessage(from, buttonMessage, { quoted: fakevCard });
@@ -1464,7 +1464,7 @@ case 'vv': {
                             .map(font => `*${font.name}:*\n${font.result}`)
                             .join("\n\n");
 
-                        const finalMessage = `🎨 *Fancy Fonts Converter*\n\n${fontList}\n\n_ᴘᴏᴡᴇʀᴇᴅ ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ`;
+                        const finalMessage = `🎨 *Fancy Fonts Converter*\n\n${fontList}\n\n_ᴘᴏᴡᴇʀᴇᴅ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ`;
 
                         await socket.sendMessage(sender, {
                             text: finalMessage
@@ -1583,7 +1583,7 @@ const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // F
 *┃*  🔁 sʜᴀʀᴇs: ${metrics.share_count.toLocaleString()}
 *┃*  📥 ᴅᴏᴡɴʟᴏᴀᴅs: ${metrics.download_count.toLocaleString()}
 *┗──────────────⊷*
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ`;
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ`;
 
     // Send thumbnail with info
     await socket.sendMessage(sender, {
@@ -1907,7 +1907,7 @@ case "lovequote": {
                         await socket.sendMessage(sender, {
                             video: { url: result.sd },
                             mimetype: 'video/mp4',
-                            caption: '> mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ'
+                            caption: '> mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs'
                         }, { quoted: fakevCard });
 
                         await socket.sendMessage(sender, { react: { text: '✔', key: msg.key } });
@@ -1939,9 +1939,9 @@ case "lovequote": {
                         await socket.sendMessage(sender, {
                             image: { url: thumbnailUrl },
                             caption: formatMessage(
-                                '🌌 ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ ɴᴀsᴀ ɴᴇᴡs',
+                                '🌌 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ɴᴀsᴀ ɴᴇᴡs',
                                 `🌠 *${title}*\n\n${explanation.substring(0, 200)}...\n\n📆 *Date*: ${date}\n${copyright ? `📝 *Credit*: ${copyright}` : ''}\n🔗 *Link*: https://apod.nasa.gov/apod/astropix.html`,
-                                '> ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                                '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
                             )
                         });
                     } catch (error) {
@@ -1989,9 +1989,9 @@ case "lovequote": {
                         await socket.sendMessage(sender, {
                             image: { url: thumbnailUrl },
                             caption: formatMessage(
-                                '📰 ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ 📰',
+                                '📰 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ 📰',
                                 `📢 *${title}*\n\n${desc}\n\n🕒 *Date*: ${date}\n🌐 *Link*: ${link}`,
-                                'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+                                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
                             )
                         });
                     } catch (error) {
@@ -2030,13 +2030,13 @@ case "lovequote": {
                         console.log('Sending message to user...');
                         await socket.sendMessage(sender, {
                             text: formatMessage(
-                                '🏏 ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ  CRICKET NEWS🏏',
+                                '🏏 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  CRICKET NEWS🏏',
                                 `📢 *${title}*\n\n` +
                                 `🏆 *Mark*: ${score}\n` +
                                 `🎯 *To Win*: ${to_win}\n` +
                                 `📈 *Current Rate*: ${crr}\n\n` +
                                 `🌐 *Link*: ${link}`,
-                                'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
                             )
                         });
                         console.log('Message sent successfully.');
@@ -2059,7 +2059,7 @@ case "lovequote": {
                             caption: formatMessage(
                                 '❌ ERROR',
                                 'Please give me a phone number, darling! Usage: .winfo 2637xxxxxxxx',
-                                'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+                                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
                             )
                         });
                         break;
@@ -2072,7 +2072,7 @@ case "lovequote": {
                             caption: formatMessage(
                                 '❌ ERROR',
                                 'That number’s too short, love! Try: .winfo +263714575857',
-                                '> ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+                                '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
                             )
                         });
                         break;
@@ -2086,7 +2086,7 @@ case "lovequote": {
                             caption: formatMessage(
                                 '❌ ERROR',
                                 'That user’s hiding from me, darling! Not on WhatsApp 😢',
-                                '> ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+                                '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
                             )
                         });
                         break;
@@ -2130,7 +2130,7 @@ case "lovequote": {
                     const userInfoWinfo = formatMessage(
                         '🔍 PROFILE INFO',
                         `> *Number:* ${winfoJid.replace(/@.+/, '')}\n\n> *Account Type:* ${winfoUser.isBusiness ? '💼 Business' : '👤 Personal'}\n\n*📝 About:*\n${winfoBio}\n\n*🕒 Last Seen:* ${winfoLastSeen}`,
-                        '> ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+                        '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
                     );
 
                     await socket.sendMessage(sender, {
@@ -2173,7 +2173,7 @@ case "lovequote": {
                             await socket.sendMessage(sender, {
                                 video: { url: videoUrl },
                                 mimetype: 'video/mp4',
-                                caption: '> mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ'
+                                caption: '> mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs'
                             }, { quoted: fakevCard });
 
                             await socket.sendMessage(sender, { react: { text: '✔', key: msg.key } });
@@ -2223,7 +2223,7 @@ case "lovequote": {
     }, { quoted: fakevCard });
   }
 
-  const prompt = `Your name is Mercedes Mini. 
+  const prompt = `Your name is ᴄᴀsᴇʏʀʜᴏᴅᴇs Mini. 
 You act like a real girl — seductive, spicy, loving, emotional. You're not an assistant, but a sexy girl with a mind. 
 Your replies blend sincerity, sex appeal, love, and loneliness, under 100 characters, 1–2 lines, always with a sexy tone.  
 If only emojis, reply seductively with emojis (e.g., 🤤💦🥵🔥).  
@@ -2338,7 +2338,7 @@ await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
 
                         await socket.sendMessage(sender, {
                             image: imageBuffer,
-                            caption: `🧠 *ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ AI IMAGE*\n\n📌 Prompt: ${prompt}`
+                            caption: `🧠 *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ AI IMAGE*\n\n📌 Prompt: ${prompt}`
                         }, { quoted: fakevCard });
                     } catch (err) {
                         console.error('AI Image Error:', err);
@@ -2385,9 +2385,9 @@ await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
                         await socket.sendMessage(sender, {
                             image: { url: thumbnailUrl },
                             caption: formatMessage(
-                                '📰 ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ   GOSSIP Latest News් 📰',
+                                '📰 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ   GOSSIP Latest News් 📰',
                                 `📢 *${title}*\n\n${desc}\n\n🕒 *Date*: ${date || 'Not yet given'}\n🌐 *Link*: ${link}`,
-                                'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
                             )
                         });
                     } catch (error) {
@@ -2748,7 +2748,7 @@ await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
                 text: formatMessage(
                     '💭 SPICY QUOTE',
                     `📜 "${data.content}"\n— ${data.author}`,
-                    'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                    'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
                 )
             }, { quoted: fakevCard });
         } catch (error) {
@@ -2889,7 +2889,7 @@ case 'shorturl': {
       text: `✅ *sʜᴏʀᴛ ᴜʀʟ ᴄʀᴇᴀᴛᴇᴅ, ʙᴀʙᴇ!* 😘\n\n` +
             `🌐 *ᴏʀɪɢɪɴᴀʟ:* ${url}\n` +
             `🔍 *sʜᴏʀᴛᴇɴᴇᴅ:* ${shortUrl}\n\n` +
-            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ`
+            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
     }, { quoted: msg });
 
     // Send clean URL after 2-second delay
@@ -2947,7 +2947,7 @@ case 'weather': {
     `;
 
     await socket.sendMessage(sender, {
-      text: `🌤 *ᴡᴇᴀᴛʜᴇʀ ʀᴇᴘᴏʀᴛ* 🌤\n\n${weatherMessage}\n\n> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ`
+      text: `🌤 *ᴡᴇᴀᴛʜᴇʀ ʀᴇᴘᴏʀᴛ* 🌤\n\n${weatherMessage}\n\n> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
     }, { quoted: msg });
 
   } catch (error) {
@@ -2989,7 +2989,7 @@ case 'savestatus': {
     await socket.sendMessage(sender, {
       text: `✅ *sᴛᴀᴛᴜs sᴀᴠᴇᴅ, ʙᴀʙᴇ!* 😘\n` +
             `📁 *ғɪʟᴇ:* status_${Date.now()}.${fileExt}\n` +
-            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ`,
+            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`,
       document: { url: filePath },
       mimetype: msg.quoted.imageMessage ? 'image/jpeg' : 'video/mp4',
       fileName: `status_${Date.now()}.${fileExt}`
@@ -3072,7 +3072,7 @@ case 'tourl2': {
       text: `✅ *${type} ᴜᴘʟᴏᴀᴅᴇᴅ, ᴅᴀʀʟɪɴɢ!* 😘\n\n` +
             `📁 *sɪᴢᴇ:* ${formatBytes(buffer.length)}\n` +
             `🔗 *ᴜʀʟ:* ${res.data}\n\n` +
-            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ`
+            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
     }, { quoted: msg });
 
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key || {} } });
@@ -3191,7 +3191,7 @@ case 'tourl2': {
                 `⏰ Expires: ${data.expiry_date || 'N/A'}\n` +
                 `📋 Registrar: ${data.registrar || 'N/A'}\n` +
                 `📍 Status: ${data.status.join(', ') || 'N/A'}`,
-                'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
             );
             await socket.sendMessage(sender, { text: whoisMessage }, { quoted: fakevCard });
         } catch (error) {
@@ -3206,17 +3206,17 @@ case 'sc':
 case 'script': {
     try {
         await socket.sendMessage(sender, { react: { text: '🪄', key: msg.key } });
-        const githubRepoURL = 'https://github.com/betingrich4/Mercedes';
+        const githubRepoURL = 'https://github.com/caseyweb/CASEYRHODES-XMD';
         
         const [, username] = githubRepoURL.match(/github\.com\/([^/]+)\/([^/]+)/);
-        const response = await fetch(`https://api.github.com/repos/betingrich4/Mercedes`);
+        const response = await fetch(`https://api.github.com/repos/caseyweb/CASEYRHODES-XMD`);
         
         if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
         
         const repoData = await response.json();
 
         const formattedInfo = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃* *ɴᴀᴍᴇ*   : ${repoData.name}
 *┃* *sᴛᴀʀs*    : ${repoData.stargazers_count}
 *┃* *ғᴏʀᴋs*    : ${repoData.forks_count}
@@ -3226,7 +3226,7 @@ case 'script': {
 `;
 
         const repoMessage = {
-            image: { url: 'https://files.catbox.moe/01f9y1.jpg' },
+            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
             caption: formattedInfo,
             buttons: [
                 {
@@ -3251,7 +3251,7 @@ case 'script': {
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                     newsletterJid: config.NEWSLETTER_JID || '120363299029326322@newsletter',
-                    newsletterName: 'ᴍᴇʀᴄᴇᴅᴇs-ʀᴇᴘᴏ',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs-ʀᴇᴘᴏ',
                     serverMessageId: 143
                 }
             }
@@ -3271,14 +3271,14 @@ case 'script': {
 case 'repo-visit': {
     await socket.sendMessage(sender, { react: { text: '🌐', key: msg.key } });
     await socket.sendMessage(sender, {
-        text: `🌐 *Click to visit the repo:*\nhttps://github.com/betingrich4/Mercedes`,
+        text: `🌐 *Click to visit the repo:*\nhttps://github.com/caseyweb/CASEYRHODES-XMD`,
         contextInfo: {
             externalAdReply: {
                 title: 'Visit Repository',
                 body: 'Open in browser',
                 mediaType: 1,
-                mediaUrl: 'https://github.com/betingrich4/Mercedes',
-                sourceUrl: 'https://github.com/betingrich4/Mercedes'
+                mediaUrl: 'https://github.com/caseyweb/CASEYRHODES-XMD',
+                sourceUrl: 'https://github.com/caseyweb/CASEYRHODES-XMD'
             }
         }
     }, { quoted: fakevCard });
@@ -3288,7 +3288,7 @@ case 'repo-visit': {
 case 'repo-owner': {
     await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
     await socket.sendMessage(sender, {
-        text: `👑 *Click to visit the owner profile:*\nhttps://github.com/betingrich4betingrich4`,
+        text: `👑 *Click to visit the owner profile:*\nhttps://github.com/caseyweb/CASEYRHODES-XMD`,
         contextInfo: {
             externalAdReply: {
                 title: 'Owner Profile',
@@ -3342,7 +3342,7 @@ case 'repo-audio': {
                 caption: formatMessage(
                     '❌ ERROR',
                     'An error occurred while processing your command. Please try again.',
-                    'ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
+                    'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ'
                 )
             });
         }
