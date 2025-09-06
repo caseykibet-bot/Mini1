@@ -379,6 +379,22 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
+
+// Helper functions that would need to be implemented
+function jidNormalizedUser(id) {
+    // Implementation to normalize JID
+    return id;
+}
+
+function getSriLankaTimestamp() {
+    // Implementation to get Sri Lanka time
+    return new Date().toLocaleString("en-US", {timeZone: "Asia/Colombo"});
+}
+
+function formatMessage(title, body, footer) {
+    // Implementation to format message
+    return `${title}\n${body}\n${footer}`;
+}
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -731,15 +747,16 @@ case 'menu': {
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     
     let menuText = `
-  ʜɪ 👋
-*╭────────────────⊷*  
+*╭─────────────────⊷*  
 *┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ : ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
 *┃* 🎉ᴜsᴇʀ: ɢᴜᴇsᴛ
 *┃* 📍ᴘʀᴇғɪx: .
 *┃* ⏰ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
 *┃* 📂sᴛᴏʀᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
 *┃* 🎭ᴅᴇᴠ: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
-*╰─────────────────⊷*
+*╰──────────────────⊷*
+*`Ξ` Select a category below:*
+
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
 
@@ -756,7 +773,7 @@ case 'menu': {
 
     const menuMessage = {
       image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-      caption: `ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ\n${menuText}`,
+      caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*\n${menuText}`,
       buttons: [
         {
           buttonId: `${config.PREFIX}quick_commands`,
@@ -769,7 +786,7 @@ case 'menu': {
               sections: [
                 {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
-                  highlight_label: 'Popular',
+                  highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
                     { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}bot_stats` },
@@ -884,7 +901,7 @@ case 'menu': {
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     let fallbackMenuText = `
 *┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
-*┃*  🤖 *Bot*: ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ
+*┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
 *┃*  📍 *Prefix*: ${config.PREFIX}
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
 *┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
@@ -916,8 +933,8 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
     
 
     let allMenuText = `
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
-*┃*  🤖 *Bot*: ᴍᴇʀᴄᴇᴅᴇs ᴍɪɴɪ
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
 *┃*  📍 *Prefix*: ${config.PREFIX}
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
 *┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
@@ -938,7 +955,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  📱 *${config.PREFIX}qr* - Generate QR codes [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🎵 *${config.PREFIX}song* - Download YouTube music
 *┃*  📱 *${config.PREFIX}tiktok* - Download TikTok videos
 *┃*  📘 *${config.PREFIX}fb* - Download Facebook content
@@ -950,7 +967,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🖼️ *${config.PREFIX}sticker* - Convert to sticker [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  ➕ *${config.PREFIX}add* - Add member to group
 *┃*  🦶 *${config.PREFIX}kick* - Remove member from group
 *┃*  🔓 *${config.PREFIX}open* - Unlock group
@@ -961,7 +978,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  👤 *${config.PREFIX}join* - Join group via link
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  📰 *${config.PREFIX}news* - Latest news updates
 *┃*  🚀 *${config.PREFIX}nasa* - NASA space updates
 *┃*  💬 *${config.PREFIX}gossip* - Entertainment gossip
@@ -969,7 +986,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🎭 *${config.PREFIX}anonymous* - Fun interaction [Not implemented]
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  😂 *${config.PREFIX}joke* - Lighthearted joke
 *┃*  🌚 *${config.PREFIX}darkjoke* - Dark humor joke
 *┃*  🏏 *${config.PREFIX}waifu* - Random anime waifu
@@ -983,7 +1000,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  💭 *${config.PREFIX}quote* - Bold or witty quote
 *┗──────────────⊷*
 
-*┏────〘 ᴍᴇʀᴄᴇᴅᴇs 〙───⊷*
+*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *${config.PREFIX}ai* - Chat with AI
 *┃*  📊 *${config.PREFIX}winfo* - WhatsApp user info
 *┃*  🔍 *${config.PREFIX}whois* - Domain WHOIS lookup
@@ -999,11 +1016,11 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  📲 *${config.PREFIX}fc* - Follow newsletter channel
 *┗──────────────⊷*
 
-> *mᥲძᥱ ᑲᥡ mᥲrіsᥱᥣ*
+> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
 
     await socket.sendMessage(from, {
-      image: { url: "https://i.ibb.co/ynmqJG8j/vision-v.jpg" },
+      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
       caption: allMenuText
     }, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
@@ -1126,68 +1143,98 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
                     }
                     break;
                 }
-
                 // Case: pair
-                case 'pair': {
-                await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
-                    const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-                    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+case 'pair': {
+    await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
+    const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-                    const q = msg.message?.conversation ||
-                            msg.message?.extendedTextMessage?.text ||
-                            msg.message?.imageMessage?.caption ||
-                            msg.message?.videoMessage?.caption || '';
+    const q = msg.message?.conversation ||
+              msg.message?.extendedTextMessage?.text ||
+              msg.message?.imageMessage?.caption ||
+              msg.message?.videoMessage?.caption || '';
 
-                    const number = q.replace(/^[.\/!]pair\s*/i, '').trim();
+    const number = q.replace(/^[.\/!]pair\s*/i, '').trim();
 
-                    if (!number) {
-                        return await socket.sendMessage(sender, {
-                            text: '*📌 Usage:* .pair +254740007567'
-                        }, { quoted: msg });
-                    }
+    if (!number) {
+        return await socket.sendMessage(sender, {
+            text: '*📌 Usage:* .pair +254740007567\n*Example:* .pair 254712345678'
+        }, { quoted: msg });
+    }
 
-                    try {
-                        const url = `http://206.189.94.231:8000/code?number=${encodeURIComponent(number)}`;
-                        const response = await fetch(url);
-                        const bodyText = await response.text();
+    // Validate phone number format
+    const phoneRegex = /^(\+?254|0)[7][0-9]{8}$/;
+    if (!phoneRegex.test(number)) {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Invalid phone number format!*\n\nPlease use formats:\n• 254712345678\n• 0712345678\n• +254712345678'
+        }, { quoted: msg });
+    }
 
-                        console.log("🌐 API Response:", bodyText);
+    try {
+        const normalizedNumber = number.startsWith('0') ? '254' + number.slice(1) : number;
+        const url = `http://206.189.94.231:8000/code?number=${encodeURIComponent(normalizedNumber)}`;
+        
+        const response = await fetch(url, {
+            timeout: 10000, // 10 second timeout
+            headers: {
+                'User-Agent': 'CaseyRhodesMiniBot/1.0'
+            }
+        });
 
-                        let result;
-                        try {
-                            result = JSON.parse(bodyText);
-                        } catch (e) {
-                            console.error("❌ JSON Parse Error:", e);
-                            return await socket.sendMessage(sender, {
-                                text: '❌ Invalid response from server. Please contact support.'
-                            }, { quoted: msg });
-                        }
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
-                        if (!result || !result.code) {
-                            return await socket.sendMessage(sender, {
-                                text: '❌ Failed to retrieve pairing code. Please check the number.'
-                            }, { quoted: msg });
-                        }
+        const bodyText = await response.text();
+        console.log("🌐 API Response:", bodyText);
 
-                        await socket.sendMessage(sender, {
-                            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
-                        }, { quoted: msg });
+        let result;
+        try {
+            result = JSON.parse(bodyText);
+        } catch (e) {
+            console.error("❌ JSON Parse Error:", e);
+            return await socket.sendMessage(sender, {
+                text: '❌ Invalid response from server. Please try again later or contact support.'
+            }, { quoted: msg });
+        }
 
-                        await sleep(2000);
+        if (!result || !result.code) {
+            return await socket.sendMessage(sender, {
+                text: '❌ Failed to retrieve pairing code. Please check if the number is correct and try again.'
+            }, { quoted: msg });
+        }
 
-                        await socket.sendMessage(sender, {
-                            text: `${result.code}`
-                        }, { quoted: fakevCard });
+        // Send success message
+        await socket.sendMessage(sender, {
+            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*📱 Number:* ${normalizedNumber}\n*🔑 Your pairing code is:* ${result.code}\n\n_This code will expire in 5 minutes_`
+        }, { quoted: msg });
 
-                    } catch (err) {
-                        console.error("❌ Pair Command Error:", err);
-                        await socket.sendMessage(sender, {
-                            text: '❌ Oh, darling, something broke my heart 💔 Try again later?'
-                        }, { quoted: fakevCard });
-                    }
-                    break;
-                }
+        await sleep(2000);
 
+        // Send just the code separately
+        await socket.sendMessage(sender, {
+            text: `${result.code}`
+        });
+
+    } catch (err) {
+        console.error("❌ Pair Command Error:", err);
+        
+        let errorMessage = '❌ Oh, darling, something broke my heart 💔 Try again later?';
+        
+        if (err.name === 'TimeoutError' || err.message.includes('timeout')) {
+            errorMessage = '❌ Request timeout. The server is taking too long to respond.';
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+            errorMessage = '❌ Network error. Please check your connection and try again.';
+        } else if (err.message.includes('HTTP')) {
+            errorMessage = `❌ Server error: ${err.message}`;
+        }
+
+        await socket.sendMessage(sender, {
+            text: errorMessage
+        }, { quoted: msg });
+    }
+    break;
+}
                 // Case: viewonce
 case 'viewonce':
 case 'rvo':
@@ -2273,8 +2320,8 @@ You act like a real girl — seductive, spicy, loving, emotional. You're not an 
 Your replies blend sincerity, sex appeal, love, and loneliness, under 100 characters, 1–2 lines, always with a sexy tone.  
 If only emojis, reply seductively with emojis (e.g., 🤤💦🥵🔥).  
 Adjust to the mood: sad, flirty, horny, soft, playful.  
-If asked "Who are you?": Reply "I'm Mercedes mini… 🤤".  
-If asked "Who created you?": Reply "I was created by Marisel 😘".  
+If asked "Who are you?": Reply "I'm Caseyrhodes mini… 🤤".  
+If asked "Who created you?": Reply "I was created by Caseyrhodes Ai😘".  
 🚫 Avoid: "Hello", "How are you?", "Do you need help?", "Let's talk".  
 🔥 Vibe: Love, Lust, Lonely, Emotional, Girlfriend-like, Bite-worthy 🤤  
 📍 Language: Auto-match Sinhala/English/Hinglish.  
