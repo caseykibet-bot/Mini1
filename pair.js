@@ -1128,98 +1128,66 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
                     }
                     break;
                 }
-                // Case: pair
-case 'pair': {
-    await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
-    const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+                 // Case: pair
+                case 'pair': {
+                await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
+                    const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+                    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text ||
-              msg.message?.imageMessage?.caption ||
-              msg.message?.videoMessage?.caption || '';
+                    const q = msg.message?.conversation ||
+                            msg.message?.extendedTextMessage?.text ||
+                            msg.message?.imageMessage?.caption ||
+                            msg.message?.videoMessage?.caption || '';
 
-    const number = q.replace(/^[.\/!]pair\s*/i, '').trim();
+                    const number = q.replace(/^[.\/!]pair\s*/i, '').trim();
 
-    if (!number) {
-        return await socket.sendMessage(sender, {
-            text: '*📌 Usage:* .pair +254740007567\n*Example:* .pair 254712345678'
-        }, { quoted: msg });
-    }
+                    if (!number) {
+                        return await socket.sendMessage(sender, {
+                            text: '*📌 Usage:* .pair +254740007567'
+                        }, { quoted: msg });
+                    }
 
-    // Validate phone number format
-    const phoneRegex = /^(\+?254|0)[7][0-9]{8}$/;
-    if (!phoneRegex.test(number)) {
-        return await socket.sendMessage(sender, {
-            text: '*❌ Invalid phone number format!*\n\nPlease use formats:\n• 254712345678\n• 0712345678\n• +254712345678'
-        }, { quoted: msg });
-    }
+                    try {
+                        const url = `http://206.189.94.231:8000/code?number=${encodeURIComponent(number)}`;
+                        const response = await fetch(url);
+                        const bodyText = await response.text();
 
-    try {
-        const normalizedNumber = number.startsWith('0') ? '254' + number.slice(1) : number;
-        const url = `http://206.189.94.231:8000/code?number=${encodeURIComponent(normalizedNumber)}`;
-        
-        const response = await fetch(url, {
-            timeout: 10000, // 10 second timeout
-            headers: {
-                'User-Agent': 'CaseyRhodesMiniBot/1.0'
-            }
-        });
+                        console.log("🌐 API Response:", bodyText);
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+                        let result;
+                        try {
+                            result = JSON.parse(bodyText);
+                        } catch (e) {
+                            console.error("❌ JSON Parse Error:", e);
+                            return await socket.sendMessage(sender, {
+                                text: '❌ Invalid response from server. Please contact support.'
+                            }, { quoted: msg });
+                        }
 
-        const bodyText = await response.text();
-        console.log("🌐 API Response:", bodyText);
+                        if (!result || !result.code) {
+                            return await socket.sendMessage(sender, {
+                                text: '❌ Failed to retrieve pairing code. Please check the number.'
+                            }, { quoted: msg });
+                        }
 
-        let result;
-        try {
-            result = JSON.parse(bodyText);
-        } catch (e) {
-            console.error("❌ JSON Parse Error:", e);
-            return await socket.sendMessage(sender, {
-                text: '❌ Invalid response from server. Please try again later or contact support.'
-            }, { quoted: msg });
-        }
+                        await socket.sendMessage(sender, {
+                            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
+                        }, { quoted: msg });
 
-        if (!result || !result.code) {
-            return await socket.sendMessage(sender, {
-                text: '❌ Failed to retrieve pairing code. Please check if the number is correct and try again.'
-            }, { quoted: msg });
-        }
+                        await sleep(2000);
 
-        // Send success message
-        await socket.sendMessage(sender, {
-            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*📱 Number:* ${normalizedNumber}\n*🔑 Your pairing code is:* ${result.code}\n\n_This code will expire in 5 minutes_`
-        }, { quoted: msg });
+                        await socket.sendMessage(sender, {
+                            text: `${result.code}`
+                        }, { quoted: fakevCard });
 
-        await sleep(2000);
-
-        // Send just the code separately
-        await socket.sendMessage(sender, {
-            text: `${result.code}`
-        });
-
-    } catch (err) {
-        console.error("❌ Pair Command Error:", err);
-        
-        let errorMessage = '❌ Oh, darling, something broke my heart 💔 Try again later?';
-        
-        if (err.name === 'TimeoutError' || err.message.includes('timeout')) {
-            errorMessage = '❌ Request timeout. The server is taking too long to respond.';
-        } else if (err.message.includes('network') || err.message.includes('fetch')) {
-            errorMessage = '❌ Network error. Please check your connection and try again.';
-        } else if (err.message.includes('HTTP')) {
-            errorMessage = `❌ Server error: ${err.message}`;
-        }
-
-        await socket.sendMessage(sender, {
-            text: errorMessage
-        }, { quoted: msg });
-    }
-    break;
-}
+                    } catch (err) {
+                        console.error("❌ Pair Command Error:", err);
+                        await socket.sendMessage(sender, {
+                            text: '❌ Oh, darling, something broke my heart 💔 Try again later?'
+                        }, { quoted: fakevCard });
+                    }
+                    break;
+                }
                 // Case: viewonce
 case 'viewonce':
 case 'rvo':
