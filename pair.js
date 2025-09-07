@@ -277,7 +277,7 @@ function setupNewsletterHandlers(socket) {
         if (!allNewsletterJIDs.includes(jid)) return;
 
         try {
-            const emojis = ['🩵', '🫶', '😀', '👍', '😶'];
+            const emojis = ['🥹', '🫶', '😀', '👍', '🤗'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const messageId = message.newsletterServerId;
 
@@ -718,8 +718,7 @@ case 'bot_info': {
     break;
 }
                 // Case: menu
-       // Case: menu
-case 'menu': {
+                case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -873,10 +872,32 @@ case 'menu': {
         }
       ],
       headerType: 1,
-      contextInfo: messageContext // Added the newsletter context here
+      contextInfo: messageContext
     };
     
+    // Send menu first
     await socket.sendMessage(from, menuMessage, { quoted: fakevCard });
+    
+    // Send audio after menu
+    try {
+      const audioUrls = [
+        'https://github.com/caseyweb/autovoice/raw/refs/heads/main/caseytech/alive.mp3',
+        'https://github.com/caseyweb/autovoice/raw/refs/heads/main/caseytech/roddyrich.mp3',
+        'https://github.com/caseyweb/autovoice/raw/refs/heads/main/caseytech/casey.mp3'
+      ];
+     
+      const randomAudioUrl = audioUrls[Math.floor(Math.random() * audioUrls.length)];
+      
+      await socket.sendMessage(from, {
+        audio: { url: randomAudioUrl },
+        mimetype: 'audio/mp4',
+        ptt: true
+      });
+    } catch (audioError) {
+      console.error('Audio sending error:', audioError);
+      // Continue even if audio fails
+    }
+    
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Menu command error:', error);
@@ -897,7 +918,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
     await socket.sendMessage(from, {
       image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
       caption: fallbackMenuText,
-      contextInfo: messageContext // Added the newsletter context here too
+      contextInfo: messageContext
     }, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
@@ -1452,7 +1473,7 @@ case 'song': {
         
         // Create description
         const desc = `
-*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐌𝐔𝐒𝐈𝐂 🎀
+*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐌𝐔𝐒𝐈𝐂 🎀*
 ╭───────────────┈  ⊷
 ├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
 ├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
