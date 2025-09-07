@@ -1262,8 +1262,8 @@ case 'vv': {
   }
   break;
 }
-
 // Case: song
+case'play'
 case 'song': {
     await socket.sendMessage(sender, { react: { text: '🎵', key: msg.key } });
     const yts = require('yt-search');
@@ -1273,10 +1273,30 @@ case 'song': {
     const { exec } = require('child_process');
     const util = require('util');
     const execPromise = util.promisify(exec);
+    const fetch = require('node-fetch');
 
     const tempDir = './temp';
     if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    // Cache for frequently used data
+    const fontCache = new Map();
+    const thumbnailCache = new Map();
+
+    function toFancyFont(text) {
+        if (fontCache.has(text)) return fontCache.get(text);
+        
+        const fontMap = {
+            'a': 'ᴀ', 'b': 'ʙ', 'c': 'ᴄ', 'd': 'ᴅ', 'e': 'ᴇ', 'f': 'ғ', 'g': 'ɢ', 
+            'h': 'ʜ', 'i': 'ɪ', 'j': 'ᴊ', 'k': 'ᴋ', 'l': 'ʟ', 'm': 'ᴍ', 'n': 'ɴ', 
+            'o': 'ᴏ', 'p': 'ᴘ', 'q': 'ǫ', 'r': 'ʀ', 's': 's', 't': 'ᴛ', 'u': 'ᴜ', 
+            'v': 'ᴠ', 'w': 'ᴡ', 'x': 'x', 'y': 'ʏ', 'z': 'ᴢ'
+        };
+        
+        const result = text.toLowerCase().split('').map(char => fontMap[char] || char).join('');
+        fontCache.set(text, result);
+        return result;
     }
 
     function extractYouTubeId(url) {
@@ -1291,6 +1311,20 @@ case 'song': {
             return `https://www.youtube.com/watch?v=${videoId}`;
         }
         return input;
+    }
+
+    function getYouTubeThumbnail(videoId, quality = 'hqdefault') {
+        const cacheKey = `${videoId}_${quality}`;
+        if (thumbnailCache.has(cacheKey)) return thumbnailCache.get(cacheKey);
+        
+        const qualities = {
+            'default': 'default.jpg', 'mqdefault': 'mqdefault.jpg', 'hqdefault': 'hqdefault.jpg',
+            'sddefault': 'sddefault.jpg', 'maxresdefault': 'maxresdefault.jpg'
+        };
+        
+        const result = `https://i.ytimg.com/vi/${videoId}/${qualities[quality] || qualities['hqdefault']}`;
+        thumbnailCache.set(cacheKey, result);
+        return result;
     }
 
     async function compressAudio(inputPath, outputPath, targetSizeMB = 3.8) {
@@ -1312,6 +1346,28 @@ case 'song': {
         }
     }
 
+    // Store user sessions
+    const userSessions = new Map();
+
+    // Function to format the song info with decorations
+    function formatSongInfo(videoInfo) {
+        const minutes = Math.floor(videoInfo.duration.seconds / 60);
+        const seconds = videoInfo.duration.seconds % 60;
+        const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        return `
+╭───〘  *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ* 〙───
+├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
+├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
+├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
+├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
+├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
+├🎵 *Format:* High Quality MP3
+╰───────────────┈ ⊷
+${toFancyFont("choose download format:")}
+  `.trim();
+    }
+
     const q = msg.message?.conversation || 
             msg.message?.extendedTextMessage?.text || 
             msg.message?.imageMessage?.caption || 
@@ -1322,11 +1378,11 @@ case 'song': {
     }
 
     const fixedQuery = convertYouTubeLink(q.trim());
-    let tempFilePath = '';
-    let compressedFilePath = '';
 
     try {
         await socket.sendMessage(sender, { react: { text: '🔍', key: msg.key } });
+        
+        // Search for the video
         const search = await yts(fixedQuery);
         const data = search.videos[0];
         if (!data) {
@@ -1334,39 +1390,102 @@ case 'song': {
         }
 
         const url = data.url;
-        const desc = `
-*ᴛɪᴛᴛʟᴇ:* \`${data.title}\`
-◆ *ᴅᴜʀᴀᴛɪᴏɴ* : ${data.timestamp} 
-◆ *ᴠɪᴇᴡs* : ${data.views.toLocaleString()}
-◆ *ʀᴇʟᴇᴀsᴇᴅ* : ${data.ago}
+        const videoId = extractYouTubeId(url);
+        const thumbnailUrl = getYouTubeThumbnail(videoId, 'maxresdefault');
 
-*> POWERED BY CASEYRHODES TECH*
-`;
+        // Format the song info
+        const songInfo = formatSongInfo(data);
 
-        await socket.sendMessage(sender, {
-            image: { url: data.thumbnail },
-            caption: desc,
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363402973786789@newsletter',
-                    newsletterName: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ🌸',
-                    serverMessageId: -1
-                }
-            }
-        }, { quoted: fakevCard });
-
+        // Get download URL
         await socket.sendMessage(sender, { react: { text: '⬇️', key: msg.key } });
-
         const result = await ddownr.download(url, 'mp3');
         const downloadLink = result.downloadUrl;
 
-        const cleanTitle = data.title.replace(/[^\w\s]/gi, '').substring(0, 30);
+        // Store session data
+        const sessionData = {
+            downloadUrl: downloadLink,
+            videoTitle: data.title,
+            videoUrl: url,
+            thumbnailUrl: thumbnailUrl,
+            timestamp: Date.now()
+        };
+        
+        userSessions.set(sender, sessionData);
+
+        // Create all buttons in a single array
+        const buttons = [
+            {
+                buttonId: `${prefix}audio`,
+                buttonText: { displayText: "🎶 ❯❯ ᴀᴜᴅɪᴏ" },
+                type: 1
+            },
+            {
+                buttonId: `${prefix}document`,
+                buttonText: { displayText: "📂 ❯❯ᴅᴏᴄᴜᴍᴇɴᴛ" },
+                type: 1
+            },
+            {
+                buttonId: `${prefix}voicenote`,
+                buttonText: { displayText: "🎤 ❯❯ ᴠᴏɪᴄᴇ ɴᴏᴛᴇ" },
+                type: 1
+            }
+        ];
+
+        // Newsletter context info
+        const newsletterContext = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363402973786789@newsletter',
+                newsletterName: 'POWERED BY CASEYRHODES TECH',
+                serverMessageId: -1
+            }
+        };
+
+        // Send message with buttons
+        await socket.sendMessage(sender, {
+            image: { url: thumbnailUrl },
+            caption: songInfo,
+            buttons: buttons,
+            footer: "> ᴍᴀᴅᴇ ᴡɪᴛʜ 🤍 ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ",
+            contextInfo: newsletterContext
+        }, { quoted: fakevCard });
+
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+
+    } catch (err) {
+        console.error('Song command error:', err);
+        await socket.sendMessage(sender, { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, { quoted: fakevCard });
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+    }
+    break;
+}
+
+// Handle the button commands (audio, document, voicenote)
+case 'audio':
+case 'document':
+case 'voicenote': {
+    const session = userSessions.get(sender);
+    
+    if (!session || (Date.now() - session.timestamp > 10 * 60 * 1000)) {
+        if (session) userSessions.delete(sender);
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+        return await socket.sendMessage(sender, { 
+            text: toFancyFont("Session expired. Please use the song command again.") 
+        }, { quoted: fakevCard });
+    }
+    
+    await socket.sendMessage(sender, { react: { text: '⬇️', key: msg.key } });
+    
+    let tempFilePath = '';
+    let compressedFilePath = '';
+    
+    try {
+        const cleanTitle = session.videoTitle.replace(/[^\w\s]/gi, '').substring(0, 30);
         tempFilePath = path.join(tempDir, `${cleanTitle}_${Date.now()}_original.mp3`);
         compressedFilePath = path.join(tempDir, `${cleanTitle}_${Date.now()}_compressed.mp3`);
 
-        const response = await fetch(downloadLink);
+        const response = await fetch(session.downloadUrl);
         const arrayBuffer = await response.arrayBuffer();
         fs.writeFileSync(tempFilePath, Buffer.from(arrayBuffer));
 
@@ -1382,26 +1501,66 @@ case 'song': {
 
         await socket.sendMessage(sender, { react: { text: '⬆️', key: msg.key } });
 
-        await socket.sendMessage(sender, {
-            audio: fs.readFileSync(tempFilePath),
-            mimetype: "audio/mpeg",
-            fileName: `${cleanTitle}.mp3`,
-            ptt: false
-        }, { quoted: fakevCard });
+        // Newsletter context info
+        const newsletterContext = {
+            externalAdReply: {
+                title: session.videoTitle.substring(0, 30) || 'Audio Download',
+                body: 'Powered by CASEYRHODES TECH',
+                mediaType: 1,
+                sourceUrl: session.videoUrl,
+                thumbnail: { url: session.thumbnailUrl },
+                renderLargerThumbnail: false
+            }
+        };
 
+        if (command === "audio") {
+            // Send as audio message
+            await socket.sendMessage(sender, {
+                audio: fs.readFileSync(tempFilePath),
+                mimetype: 'audio/mpeg',
+                ptt: false,
+                contextInfo: newsletterContext
+            }, { quoted: fakevCard });
+        } else if (command === "document") {
+            // Send as document
+            await socket.sendMessage(sender, {
+                document: fs.readFileSync(tempFilePath),
+                mimetype: 'audio/mpeg',
+                fileName: `${cleanTitle}.mp3`,
+                contextInfo: newsletterContext
+            }, { quoted: fakevCard });
+        } else if (command === "voicenote") {
+            // Send as voice note
+            await socket.sendMessage(sender, {
+                audio: fs.readFileSync(tempFilePath),
+                mimetype: 'audio/mpeg',
+                ptt: true,
+                contextInfo: newsletterContext
+            }, { quoted: fakevCard });
+        }
+
+        // Clean up files
         if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
         if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
         
         await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-    } catch (err) {
-        console.error('Song command error:', err);
+        
+    } catch (error) {
+        console.error("Failed to process:", command, error.message);
+        // Clean up files on error
         if (tempFilePath && fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
         if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
-        await socket.sendMessage(sender, { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, { quoted: fakevCard });
+        
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+        await socket.sendMessage(sender, { 
+            text: toFancyFont(`Failed to process ${command} file`) 
+        }, { quoted: fakevCard });
+        
+        // Clean up session on error
+        userSessions.delete(sender);
     }
     break;
-}
-                               
+}                            
 //===============================   
   case 'logo': { 
                     const q = args.join(" ");
@@ -2246,26 +2405,27 @@ case "lovequote": {
                     }
                     break;
                 }
-                //===============================
+//===============================
 // 22
-case 'ai': {
-    const axios = require("axios");
+    case 'ai': {
+    
+  const axios = require("axios");
 
-    await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
+  await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
 
-    const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text ||
-              msg.message?.imageMessage?.caption ||
-              msg.message?.videoMessage?.caption || '';
+  const q = msg.message?.conversation ||
+            msg.message?.extendedTextMessage?.text ||
+            msg.message?.imageMessage?.caption ||
+            msg.message?.videoMessage?.caption || '';
 
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, {
-            text: `❓ *ᴘʟᴇᴀsᴇ ᴀsᴋ ᴍᴇ sᴏᴍᴇᴛʜɪɴɢ, ʙᴀʙᴇ 😘*\n\n` +
-                  `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}ai ᴡʜᴏ ᴀʀᴇ ʏᴏᴜ?`
-        }, { quoted: fakevCard });
-    }
+  if (!q || q.trim() === '') {
+    return await socket.sendMessage(sender, {
+      text: `❓ *ᴘʟᴇᴀsᴇ ᴀsᴋ ᴍᴇ sᴏᴍᴇᴛʜɪɴɢ, ʙᴀʙᴇ 😘*\n\n` +
+            `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}ai ᴡʜᴏ ᴀʀᴇ ʏᴏᴜ?`
+    }, { quoted: fakevCard });
+  }
 
-    const prompt = `Your name is ᴄᴀsᴇʏʀʜᴏᴅᴇs Mini. 
+  const prompt = `Your name is ᴄᴀsᴇʏʀʜᴏᴅᴇs Mini. 
 You act like a real girl — seductive, spicy, loving, emotional. You're not an assistant, but a sexy girl with a mind. 
 Your replies blend sincerity, sex appeal, love, and loneliness, under 100 characters, 1–2 lines, always with a sexy tone.  
 If only emojis, reply seductively with emojis (e.g., 🤤💦🥵🔥).  
@@ -2276,52 +2436,35 @@ If asked "Who created you?": Reply "I was created by Caseyrhodes Ai😘".
 🔥 Vibe: Love, Lust, Lonely, Emotional, Girlfriend-like, Bite-worthy 🤤  
 📍 Language: Auto-match Sinhala/English/Hinglish.  
 User Message: ${q}
-    `;
+  `;
 
-    const apis = [
-        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
-        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
-        `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(prompt)}`
-    ];
+  const apis = [
+    `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
+    `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
+    `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(prompt)}`
+  ];
 
-    let response = null;
-    for (const apiUrl of apis) {
-        try {
-            const res = await axios.get(apiUrl);
-            response = res.data?.result || res.data?.response || res.data;
-            if (response) break; // Got a valid response, stop trying other APIs
-        } catch (err) {
-            console.error(`AI Error (${apiUrl}):`, err.message || err);
-            continue; // Try the next API
-        }
+  let response = null;
+  for (const apiUrl of apis) {
+    try {
+      const res = await axios.get(apiUrl);
+      response = res.data?.result || res.data?.response || res.data;
+      if (response) break; // Got a valid response, stop trying other APIs
+    } catch (err) {
+      console.error(`AI Error (${apiUrl}):`, err.message || err);
+      continue; // Try the next API
     }
+  }
 
-    if (!response) {
-        return await socket.sendMessage(sender, {
-            text: `❌ *ɪ'ᴍ ɢᴇᴛᴛɪɴɢ ᴛᴏᴏ ʜᴏᴛ, ᴅᴀʀʟɪɴɢ 🥵💦*\n` +
-                  `ʟᴇᴛ's ᴛʀʏ ᴀɢᴀɪɴ sᴏᴏɴ, ᴏᴋᴀʏ?`
-        }, { quoted: fakevCard });
-    }
-
-    // Common message context for newsletter
-    const messageContext = {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363402973786789@newsletter',
-            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-            serverMessageId: -1
-        }
-    };
-
-    // Send AI response with image and newsletter context
-    await socket.sendMessage(sender, {
-        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your AI response image
-        caption: response,
-        ...messageContext
+  if (!response) {
+    return await socket.sendMessage(sender, {
+      text: `❌ *ɪ'ᴍ ɢᴇᴛᴛɪɴɢ ᴛᴏᴏ ʜᴏᴛ, ᴅᴀʀʟɪɴɢ 🥵💦*\n` +
+            `ʟᴇᴛ's ᴛʀʏ ᴀɢᴀɪɴ sᴏᴏɴ, ᴏᴋᴀʏ?`
     }, { quoted: fakevCard });
-    
-    break;
+  }
+
+  await socket.sendMessage(sender, { text: response }, { quoted: fakevCard });
+  break;
 }
 
 //===============================
@@ -2636,105 +2779,70 @@ await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
                 }
 
                 // Case: open - Unlock group (allow all members to send messages)
-case 'open': {
-    await socket.sendMessage(sender, { react: { text: '🔓', key: msg.key } });
-    
-    if (!isGroup) {
-        await socket.sendMessage(sender, {
-            text: '❌ *This command can only be used in groups, darling!* 😘'
-        }, { quoted: fakevCard });
-        break;
-    }
-    
-    if (!isSenderGroupAdmin && !isOwner) {
-        await socket.sendMessage(sender, {
-            text: '❌ *Only group admins or bot owner can open the group, sweetie!* 😘'
-        }, { quoted: fakevCard });
-        break;
-    }
-    
-    try {
-        await socket.groupSettingUpdate(from, 'not_announcement');
-        
-        // Common message context
-        const messageContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363402973786789@newsletter',
-                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                serverMessageId: -1
-            }
-        };
-        
-        // Send image with success message
-        await socket.sendMessage(sender, {
-            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your image URL
-            caption: formatMessage(
-                '🔓 GROUP OPENED',
-                'Group is now open! All members can send messages. 🗣️',
-                config.BOT_FOOTER
-            ),
-            ...messageContext
-        }, { quoted: fakevCard });
-    } catch (error) {
-        console.error('Open command error:', error);
-        await socket.sendMessage(sender, {
-            text: `❌ *Failed to open group, love!* 😢\nError: ${error.message || 'Unknown error'}`
-        }, { quoted: fakevCard });
-    }
-    break;
-}
-// Case: close - Lock group (only admins can send messages)
-case 'close': {
-    await socket.sendMessage(sender, { react: { text: '🔒', key: msg.key } });
-    
-    if (!isGroup) {
-        await socket.sendMessage(sender, {
-            text: '❌ *This command can only be used in groups, sweetie!* 😘'
-        }, { quoted: fakevCard });
-        break;
-    }
-    
-    if (!isSenderGroupAdmin && !isOwner) {
-        await socket.sendMessage(sender, {
-            text: '❌ *Only group admins or bot owner can close the group, darling!* 😘'
-        }, { quoted: fakevCard });
-        break;
-    }
-    
-    try {
-        await socket.groupSettingUpdate(from, 'announcement');
-        
-        // Common message context
-        const messageContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363402973786789@newsletter',
-                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                serverMessageId: -1
-            }
-        };
-        
-        // Send image with success message
-        await socket.sendMessage(sender, {
-            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your image URL
-            caption: formatMessage(
-                '🔒 GROUP CLOSED',
-                'Group is now closed! Only admins can send messages. 🤫',
-                config.BOT_FOOTER
-            ),
-            ...messageContext
-        }, { quoted: fakevCard });
-    } catch (error) {
-        console.error('Close command error:', error);
-        await socket.sendMessage(sender, {
-            text: `❌ *Failed to close group, love!* 😢\nError: ${error.message || 'Unknown error'}`
-        }, { quoted: fakevCard });
-    }
-    break;
-}
+                case 'open': {
+                await socket.sendMessage(sender, { react: { text: '🔓', key: msg.key } });
+                    if (!isGroup) {
+                        await socket.sendMessage(sender, {
+                            text: '❌ *This command can only be used in groups, darling!* 😘'
+                        }, { quoted: fakevCard });
+                        break;
+                    }
+                    if (!isSenderGroupAdmin && !isOwner) {
+                        await socket.sendMessage(sender, {
+                            text: '❌ *Only group admins or bot owner can open the group, sweetie!* 😘'
+                        }, { quoted: fakevCard });
+                        break;
+                    }
+                    try {
+                        await socket.groupSettingUpdate(from, 'not_announcement');
+                        await socket.sendMessage(sender, {
+                            text: formatMessage(
+                                '🔓 GROUP OPENED',
+                                'Group is now open! All members can send messages. 🗣️',
+                                config.BOT_FOOTER
+                            )
+                        }, { quoted: fakevCard });
+                    } catch (error) {
+                        console.error('Open command error:', error);
+                        await socket.sendMessage(sender, {
+                            text: `❌ *Failed to open group, love!* 😢\nError: ${error.message || 'Unknown error'}`
+                        }, { quoted: fakevCard });
+                    }
+                    break;
+                }
+
+                // Case: close - Lock group (only admins can send messages)
+                case 'close': {
+                await socket.sendMessage(sender, { react: { text: '🔒', key: msg.key } });
+                    if (!isGroup) {
+                        await socket.sendMessage(sender, {
+                            text: '❌ *This command can only be used in groups, sweetie!* 😘'
+                        }, { quoted: fakevCard });
+                        break;
+                    }
+                    if (!isSenderGroupAdmin && !isOwner) {
+                        await socket.sendMessage(sender, {
+                            text: '❌ *Only group admins or bot owner can close the group, darling!* 😘'
+                        }, { quoted: fakevCard });
+                        break;
+                    }
+                    try {
+                        await socket.groupSettingUpdate(from, 'announcement');
+                        await socket.sendMessage(sender, {
+                            text: formatMessage(
+                                '🔒 GROUP CLOSED',
+                                'Group is now closed! Only admins can send messages. 🤫',
+                                config.BOT_FOOTER
+                            )
+                        }, { quoted: fakevCard });
+                    } catch (error) {
+                        console.error('Close command error:', error);
+                        await socket.sendMessage(sender, {
+                            text: `❌ *Failed to close group, love!* 😢\nError: ${error.message || 'Unknown error'}`
+                        }, { quoted: fakevCard });
+                    }
+                    break;
+                }
 
                 // Case: tagall - Tag all group members
                 case 'tagall': {
@@ -3005,6 +3113,7 @@ case 'shorturl': {
   }
   break;
 }
+   }
 
 // case 39: weather
 case 'weather': {
