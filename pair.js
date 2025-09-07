@@ -556,7 +556,8 @@ function setupCommandHandlers(socket, number) {
                         const seconds = Math.floor(uptime % 60);
 
                         const captionText = `
-*╭───〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 〙───⊷*
+*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*
+*╭─────────────────⊷*
 *┃* ʙᴏᴛ ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
 *┃* ᴀᴄᴛɪᴠᴇ ʙᴏᴛs: ${activeSockets.size}
 *┃* ʏᴏᴜʀ ɴᴜᴍʙᴇʀ: ${number}
@@ -634,7 +635,7 @@ function setupCommandHandlers(socket, number) {
                 }
 
 // Case: bot_stats
-case 'bot_stats': {
+case 'session': {
     try {
         const from = m.key.remoteJid;
         const startTime = socketCreationTime.get(number) || Date.now();
@@ -683,7 +684,7 @@ case 'bot_stats': {
     break;
 }
 // Case: bot_info
-case 'bot_info': {
+case 'info': {
     try {
         const from = m.key.remoteJid;
         const captionText = `
@@ -717,8 +718,8 @@ case 'bot_info': {
     }
     break;
 }
-                // Case: menu
-                case 'menu': {
+               // Case: menu
+case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -859,45 +860,14 @@ case 'bot_info': {
               ]
             })
           }
-        },
-        {
-          buttonId: `${config.PREFIX}bot_stats`,
-          buttonText: { displayText: '🌟 ʙᴏᴛ sᴛᴀᴛs' },
-          type: 1
-        },
-        {
-          buttonId: `${config.PREFIX}bot_info`,
-          buttonText: { displayText: '🌸 ʙᴏᴛ ɪɴғᴏ' },
-          type: 1
         }
       ],
       headerType: 1,
       contextInfo: messageContext
     };
     
-    // Send menu first
+    // Send menu
     await socket.sendMessage(from, menuMessage, { quoted: fakevCard });
-    
-    // Send audio after menu
-    try {
-      const audioUrls = [
-        'https://github.com/caseyweb/autovoice/raw/refs/heads/main/caseytech/alive.mp3',
-        'https://github.com/caseyweb/autovoice/raw/refs/heads/main/caseytech/roddyrich.mp3',
-        'https://github.com/caseyweb/autovoice/raw/refs/heads/main/caseytech/casey.mp3'
-      ];
-     
-      const randomAudioUrl = audioUrls[Math.floor(Math.random() * audioUrls.length)];
-      
-      await socket.sendMessage(from, {
-        audio: { url: randomAudioUrl },
-        mimetype: 'audio/mp4',
-        ptt: true
-      });
-    } catch (audioError) {
-      console.error('Audio sending error:', audioError);
-      // Continue even if audio fails
-    }
-    
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Menu command error:', error);
@@ -937,14 +907,15 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
     
 
     let allMenuText = `
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*
+*┏───────────────⊷*
 *┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
 *┃*  📍 *Prefix*: ${config.PREFIX}
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
 *┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
 *┃*  🔮 *Commands*: ${count}
-*┃*  🇿🇼 *Owner*: ᴍᴀᴅᴇ ʙʏ ᴍᴀʀɪsᴇʟ
-*┗──────────────⊷*
+*┃*  🇰🇪*Owner*: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
+*┗────────────────⊷*
 
 ╭─『 🌐 *General Commands* 』─╮
 *┃*  🟢 *${config.PREFIX}alive* - Check bot status
@@ -1023,10 +994,20 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 > *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
 
-    await socket.sendMessage(from, {
+    const buttons = [
+      {buttonId: `${config.PREFIX}alive`, buttonText: {displayText: '🟢 ALIVE'}, type: 1},
+      {buttonId: `${config.PREFIX}repo`, buttonText: {displayText: '📂 REPO'}, type: 1}
+    ];
+
+    const buttonMessage = {
       image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-      caption: allMenuText
-    }, { quoted: fakevCard });
+      caption: allMenuText,
+      footer: "Click buttons for quick actions",
+      buttons: buttons,
+      headerType: 4
+    };
+
+    await socket.sendMessage(from, buttonMessage, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Allmenu command error:', error);
@@ -1038,45 +1019,44 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
   break;
 }
 
-                // Case: fc (follow channel)
-                case 'fc': {
-                    if (args.length === 0) {
-                        return await socket.sendMessage(sender, {
-                            text: '❗ Please provide a channel JID.\n\nExample:\n.fcn 120363299029326322@newsletter'
-                        });
-                    }
+// Case: fc (follow channel)
+case 'fc': {
+  if (args.length === 0) {
+    return await socket.sendMessage(sender, {
+      text: '❗ Please provide a channel JID.\n\nExample:\n.fcn 120363299029326322@newsletter'
+    });
+  }
 
-                    const jid = args[0];
-                    if (!jid.endsWith("@newsletter")) {
-                        return await socket.sendMessage(sender, {
-                            text: '❗ Invalid JID. Please provide a JID ending with `@newsletter`'
-                        });
-                    }
+  const jid = args[0];
+  if (!jid.endsWith("@newsletter")) {
+    return await socket.sendMessage(sender, {
+      text: '❗ Invalid JID. Please provide a JID ending with `@newsletter`'
+    });
+  }
 
-                    try {
-                    await socket.sendMessage(sender, { react: { text: '😌', key: msg.key } });
-                        const metadata = await socket.newsletterMetadata("jid", jid);
-                        if (metadata?.viewer_metadata === null) {
-                            await socket.newsletterFollow(jid);
-                            await socket.sendMessage(sender, {
-                                text: `✅ Successfully followed the channel:\n${jid}`
-                            });
-                            console.log(`FOLLOWED CHANNEL: ${jid}`);
-                        } else {
-                            await socket.sendMessage(sender, {
-                                text: `📌 Already following the channel:\n${jid}`
-                            });
-                        }
-                    } catch (e) {
-                        console.error('❌ Error in follow channel:', e.message);
-                        await socket.sendMessage(sender, {
-                            text: `❌ Error: ${e.message}`
-                        });
-                    }
-                    break;
-                }
-
-                // Case: ping
+  try {
+    await socket.sendMessage(sender, { react: { text: '😌', key: msg.key } });
+    const metadata = await socket.newsletterMetadata("jid", jid);
+    if (metadata?.viewer_metadata === null) {
+      await socket.newsletterFollow(jid);
+      await socket.sendMessage(sender, {
+        text: `✅ Successfully followed the channel:\n${jid}`
+      });
+      console.log(`FOLLOWED CHANNEL: ${jid}`);
+    } else {
+      await socket.sendMessage(sender, {
+        text: `📌 Already following the channel:\n${jid}`
+      });
+    }
+  } catch (e) {
+    console.error('❌ Error in follow channel:', e.message);
+    await socket.sendMessage(sender, {
+      text: `❌ Error: ${e.message}`
+    });
+  }
+  break;
+}
+            // Case: ping
                 case 'ping': {
                 await socket.sendMessage(sender, { react: { text: '📍', key: msg.key } });
                     try {
