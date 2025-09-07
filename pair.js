@@ -1203,7 +1203,11 @@ case 'vv': {
       });
     }
 
-    const quotedMessage = msg?.quoted?.message || msg?.msg?.contextInfo?.quotedMessage;
+    // Get the quoted message with multiple fallback approaches
+    const contextInfo = msg.msg?.contextInfo;
+    const quotedMessage = msg.quoted?.message || 
+                         contextInfo?.quotedMessage || 
+                         (contextInfo?.stanzaId ? await getQuotedMessage(contextInfo.stanzaId) : null);
 
     if (!quotedMessage) {
       return await socket.sendMessage(sender, {
@@ -1214,16 +1218,50 @@ case 'vv': {
       });
     }
 
+    // Check for view once message
     let fileType = null;
-    if (quotedMessage.imageMessage?.viewOnce) {
-      fileType = 'image';
-    } else if (quotedMessage.videoMessage?.viewOnce) {
-      fileType = 'video';
-    } else if (quotedMessage.audioMessage?.viewOnce) {
-      fileType = 'audio';
+    let mediaMessage = null;
+    
+    if (quotedMessage.viewOnceMessageV2) {
+      // Handle viewOnceMessageV2 (newer format)
+      const messageContent = quotedMessage.viewOnceMessageV2.message;
+      if (messageContent.imageMessage) {
+        fileType = 'image';
+        mediaMessage = messageContent.imageMessage;
+      } else if (messageContent.videoMessage) {
+        fileType = 'video';
+        mediaMessage = messageContent.videoMessage;
+      } else if (messageContent.audioMessage) {
+        fileType = 'audio';
+        mediaMessage = messageContent.audioMessage;
+      }
+    } else if (quotedMessage.viewOnceMessage) {
+      // Handle viewOnceMessage (older format)
+      const messageContent = quotedMessage.viewOnceMessage.message;
+      if (messageContent.imageMessage) {
+        fileType = 'image';
+        mediaMessage = messageContent.imageMessage;
+      } else if (messageContent.videoMessage) {
+        fileType = 'video';
+        mediaMessage = messageContent.videoMessage;
+      }
+    } else if (quotedMessage.imageMessage?.viewOnce || 
+               quotedMessage.videoMessage?.viewOnce || 
+               quotedMessage.audioMessage?.viewOnce) {
+      // Handle direct viewOnce properties
+      if (quotedMessage.imageMessage?.viewOnce) {
+        fileType = 'image';
+        mediaMessage = quotedMessage.imageMessage;
+      } else if (quotedMessage.videoMessage?.viewOnce) {
+        fileType = 'video';
+        mediaMessage = quotedMessage.videoMessage;
+      } else if (quotedMessage.audioMessage?.viewOnce) {
+        fileType = 'audio';
+        mediaMessage = quotedMessage.audioMessage;
+      }
     }
 
-    if (!fileType) {
+    if (!fileType || !mediaMessage) {
       return await socket.sendMessage(sender, {
         text: `⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, sᴡᴇᴇᴛɪᴇ 😘*\n\n` +
               `ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ (ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ), ᴏᴋᴀʏ?`
@@ -1234,7 +1272,53 @@ case 'vv': {
       text: `🔓 *ᴜɴᴠᴇɪʟɪɴɢ ʏᴏᴜʀ sᴇᴄʀᴇᴛ ${fileType.toUpperCase()}, ᴅᴀʀʟɪɴɢ...*`
     });
 
-    await oneViewmeg(socket, isOwner, quotedMessage, sender, msg, fileType);
+    // Download and send the media
+    const mediaBuffer = await downloadMediaMessage(
+      { 
+        key: msg.quoted.key, 
+        message: { 
+          [fileType + 'Message']: mediaMessage 
+        } 
+      },
+      'buffer',
+      {}
+    );
+
+    if (!mediaBuffer) {
+      throw new Error('Failed to download media');
+    }
+
+    // Determine the mimetype and filename
+    const mimetype = mediaMessage.mimetype || 
+                    (fileType === 'image' ? 'image/jpeg' : 
+                     fileType === 'video' ? 'video/mp4' : 'audio/mpeg');
+    
+    const extension = mimetype.split('/')[1];
+    const filename = `revealed-${fileType}-${Date.now()}.${extension}`;
+
+    // Prepare message options based on media type
+    let messageOptions = {
+      caption: `✨ *ʀᴇᴠᴇᴀʟᴇᴅ ${fileType.toUpperCase()}* - ʏᴏᴜ'ʀᴇ ᴡᴇʟᴄᴏᴍᴇ, ʙᴀʙᴇ 💋`
+    };
+
+    // Send the media based on its type
+    if (fileType === 'image') {
+      await socket.sendMessage(sender, {
+        image: mediaBuffer,
+        ...messageOptions
+      });
+    } else if (fileType === 'video') {
+      await socket.sendMessage(sender, {
+        video: mediaBuffer,
+        ...messageOptions
+      });
+    } else if (fileType === 'audio') {
+      await socket.sendMessage(sender, {
+        audio: mediaBuffer,
+        ...messageOptions,
+        mimetype: mimetype
+      });
+    }
 
     await socket.sendMessage(sender, {
       react: { text: '✅', key: msg.key }
@@ -1243,11 +1327,11 @@ case 'vv': {
     console.error('ViewOnce command error:', error);
     let errorMessage = `❌ *ᴏʜ ɴᴏ, ɪ ᴄᴏᴜʟᴅɴ'ᴛ ᴜɴᴠᴇɪʟ ɪᴛ, ʙᴀʙᴇ 💔*\n\n`;
 
-    if (error.message?.includes('decrypt')) {
+    if (error.message?.includes('decrypt') || error.message?.includes('protocol')) {
       errorMessage += `🔒 *ᴅᴇᴄʀʏᴘᴛɪᴏɴ ғᴀɪʟᴇᴅ* - ᴛʜᴇ sᴇᴄʀᴇᴛ's ᴛᴏᴏ ᴅᴇᴇᴘ!`;
-    } else if (error.message?.includes('download')) {
+    } else if (error.message?.includes('download') || error.message?.includes('buffer')) {
       errorMessage += `📥 *ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ* - ᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴄᴏɴɴᴇᴄᴛɪᴏɴ, ʟᴏᴠᴇ.`;
-    } else if (error.message?.includes('expired')) {
+    } else if (error.message?.includes('expired') || error.message?.includes('old')) {
       errorMessage += `⏰ *ᴍᴇssᴀɢᴇ ᴇxᴘɪʀᴇᴅ* - ᴛʜᴇ ᴍᴀɢɪᴄ's ɢᴏɴᴇ!`;
     } else {
       errorMessage += `🐛 *ᴇʀʀᴏʀ:* ${error.message || 'sᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ'}`;
@@ -1262,7 +1346,6 @@ case 'vv': {
   }
   break;
 }
-
 // Case: song
 case 'play':
 case 'song': {
@@ -1360,8 +1443,7 @@ case 'song': {
         const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         
         return `
-*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐌𝐔𝐒𝐈𝐂 🎀*
-╭─────────────────⊷
+╭───〘  *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ* 〙───
 ├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
 ├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
 ├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
@@ -1467,24 +1549,11 @@ ${toFancyFont("choose download format:")}
             }
         ];
 
-        // Newsletter context info
-        const newsletterContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363402973786789@newsletter',
-                newsletterName: 'POWERED BY CASEYRHODES TECH',
-                serverMessageId: -1
-            }
-        };
-
-        // Send message with buttons
+        // Send message with buttons (without image/thumbnail)
         await socket.sendMessage(sender, {
-            image: { url: thumbnailUrl },
-            caption: songInfo,
+            text: songInfo,
             buttons: buttons,
-            footer: "> ᴍᴀᴅᴇ ᴡɪᴛʜ 🤍 ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ",
-            contextInfo: newsletterContext
+            footer: "> ᴍᴀᴅᴇ ᴡɪᴛʜ 🤍 ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
         }, { quoted: fakevCard });
 
         await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
@@ -1493,6 +1562,95 @@ ${toFancyFont("choose download format:")}
         console.error('Song command error:', err);
         await socket.sendMessage(sender, { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, { quoted: fakevCard });
         await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+    }
+    break;
+}
+
+// Handle the button commands (audio, document, voicenote)
+case 'audio':
+case 'document':
+case 'voicenote': {
+    // Send reaction for button selection
+    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
+    
+    const session = userSessions.get(sender);
+    
+    if (!session || (Date.now() - session.timestamp > 10 * 60 * 1000)) {
+        if (session) userSessions.delete(sender);
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+        return await socket.sendMessage(sender, { 
+            text: toFancyFont("Session expired. Please use the song command again.") 
+        }, { quoted: fakevCard });
+    }
+    
+    await socket.sendMessage(sender, { react: { text: '⬇️', key: msg.key } });
+    
+    let tempFilePath = '';
+    let compressedFilePath = '';
+    
+    try {
+        const cleanTitle = session.videoTitle.replace(/[^\w\s]/gi, '').substring(0, 30);
+        tempFilePath = path.join(tempDir, `${cleanTitle}_${Date.now()}_original.mp3`);
+        compressedFilePath = path.join(tempDir, `${cleanTitle}_${Date.now()}_compressed.mp3`);
+
+        const response = await fetch(session.downloadUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        fs.writeFileSync(tempFilePath, Buffer.from(arrayBuffer));
+
+        const stats = fs.statSync(tempFilePath);
+        const fileSizeMB = stats.size / (1024 * 1024);
+        
+        if (fileSizeMB > 4) {
+            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
+            if (compressionSuccess) {
+                tempFilePath = compressedFilePath;
+            }
+        }
+
+        await socket.sendMessage(sender, { react: { text: '⬆️', key: msg.key } });
+
+        if (command === "audio") {
+            // Send as audio message (without contextInfo)
+            await socket.sendMessage(sender, {
+                audio: fs.readFileSync(tempFilePath),
+                mimetype: 'audio/mpeg',
+                ptt: false
+            }, { quoted: fakevCard });
+        } else if (command === "document") {
+            // Send as document (without contextInfo)
+            await socket.sendMessage(sender, {
+                document: fs.readFileSync(tempFilePath),
+                mimetype: 'audio/mpeg',
+                fileName: `${cleanTitle}.mp3`
+            }, { quoted: fakevCard });
+        } else if (command === "voicenote") {
+            // Send as voice note (without contextInfo)
+            await socket.sendMessage(sender, {
+                audio: fs.readFileSync(tempFilePath),
+                mimetype: 'audio/mpeg',
+                ptt: true
+            }, { quoted: fakevCard });
+        }
+
+        // Clean up files
+        if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+        if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
+        
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+        
+    } catch (error) {
+        console.error("Failed to process:", command, error.message);
+        // Clean up files on error
+        if (tempFilePath && fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+        if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
+        
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+        await socket.sendMessage(sender, { 
+            text: toFancyFont(`Failed to process ${command} file`) 
+        }, { quoted: fakevCard });
+        
+        // Clean up session on error
+        userSessions.delete(sender);
     }
     break;
 }
