@@ -1268,13 +1268,16 @@ case 'play':
 case 'song': {
     await socket.sendMessage(sender, { react: { text: '🎵', key: msg.key } });
     const yts = require('yt-search');
-    const ddownr = require('denethdev-ytmp3');
     const fs = require('fs');
     const path = require('path');
     const { exec } = require('child_process');
     const util = require('util');
     const execPromise = util.promisify(exec);
     const fetch = require('node-fetch');
+
+    // Kaiz-API configuration
+    const KAIZ_API_KEY = 'cf2ca612-296f-45ba-abbc-473f18f991eb';
+    const KAIZ_API_URL = 'https://kaiz-apis.gleeze.com/api/ytdown-mp3';
 
     const tempDir = './temp';
     if (!fs.existsSync(tempDir)) {
@@ -1357,7 +1360,8 @@ case 'song': {
         const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         
         return `
-╭───〘  *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ* 〙───
+*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐌𝐔𝐒𝐈𝐂 🎀*
+╭─────────────────⊷
 ├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
 ├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
 ├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
@@ -1397,10 +1401,41 @@ ${toFancyFont("choose download format:")}
         // Format the song info
         const songInfo = formatSongInfo(data);
 
-        // Get download URL
+        // Get download URL using Kaiz-API
         await socket.sendMessage(sender, { react: { text: '⬇️', key: msg.key } });
-        const result = await ddownr.download(url, 'mp3');
-        const downloadLink = result.downloadUrl;
+        
+        let downloadLink;
+        try {
+            // Try Kaiz-API first
+            const kaizResponse = await fetch(KAIZ_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${KAIZ_API_KEY}`
+                },
+                body: JSON.stringify({
+                    url: url,
+                    format: 'mp3'
+                })
+            });
+            
+            if (kaizResponse.ok) {
+                const kaizData = await kaizResponse.json();
+                if (kaizData.success && kaizData.downloadUrl) {
+                    downloadLink = kaizData.downloadUrl;
+                } else {
+                    throw new Error('Kaiz-API returned no download URL');
+                }
+            } else {
+                throw new Error('Kaiz-API request failed');
+            }
+        } catch (kaizError) {
+            console.error('Kaiz-API failed, using fallback:', kaizError);
+            // Fallback to denethdev-ytmp3 if Kaiz-API fails
+            const ddownr = require('denethdev-ytmp3');
+            const result = await ddownr.download(url, 'mp3');
+            downloadLink = result.downloadUrl;
+        }
 
         // Store session data
         const sessionData = {
@@ -1466,6 +1501,9 @@ ${toFancyFont("choose download format:")}
 case 'audio':
 case 'document':
 case 'voicenote': {
+    // Send reaction for button selection
+    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
+    
     const session = userSessions.get(sender);
     
     if (!session || (Date.now() - session.timestamp > 10 * 60 * 1000)) {
