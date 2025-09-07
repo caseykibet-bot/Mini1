@@ -1263,7 +1263,7 @@ case 'vv': {
   break;
 }
 // Case: song
-case'play'
+case 'play':
 case 'song': {
     await socket.sendMessage(sender, { react: { text: '🎵', key: msg.key } });
     const yts = require('yt-search');
@@ -1560,7 +1560,7 @@ case 'voicenote': {
         userSessions.delete(sender);
     }
     break;
-}                            
+}
 //===============================   
   case 'logo': { 
                     const q = args.join(" ");
