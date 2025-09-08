@@ -45,8 +45,102 @@ const config = {
     OWNER_NUMBER: '254101022551',
     BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
-};
+    };
 
+// Helper function to check if user is owner
+function isOwner(senderNumber) {
+    return config.OWNER_NUMBERS.includes(senderNumber);
+}
+
+// In your command handlers, replace the owner check:
+const developers = config.OWNER_NUMBERS;
+const isOwner = developers.includes(senderNumber);
+
+// Fix the menu function to handle owner button properly
+async function handleOwnerButton(socket, m, sender) {
+    try {
+        const ownerNumber = config.OWNER_NUMBERS[0]; // Get first owner number
+        const str = `👑 *OWNER INFORMATION* 👑
+        
+🤖 *Bot Owner:* Casey Rhodes
+📞 *Contact:* +${ownerNumber}
+📧 *Business:* Professional Bot Developer
+🌐 *Channel:* ${config.CHANNEL_LINK}
+
+💬 *Message me for:* 
+• Bot customization
+• Premium features
+• Technical support
+• Collaboration opportunities`;
+
+        const buttons = [
+            {
+                name: "quick_reply",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "💬 Message Owner",
+                    id: "message_owner"
+                })
+            },
+            {
+                name: "cta_copy",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "📋 Copy Number",
+                    id: "copy_number",
+                    copy_code: ownerNumber
+                })
+            },
+            {
+                name: "cta_url",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "📚 Follow Channel",
+                    url: config.CHANNEL_LINK
+                })
+            }
+        ];
+
+        // Prepare interactive message
+        const messageContent = {
+            interactiveMessage: {
+                body: {
+                    text: str
+                },
+                footer: {
+                    text: config.BOT_FOOTER
+                },
+                nativeFlowMessage: {
+                    buttons: buttons
+                }
+            }
+        };
+
+        // Send the message
+        await socket.sendMessage(sender, messageContent);
+        
+    } catch (error) {
+        console.error('Owner button error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Failed to load owner information. Please try again later.`
+        });
+    }
+}
+
+// In your command switch case, add the owner command:
+switch (command) {
+    case 'owner':
+    case 'developer':
+    case 'creator':
+        await handleOwnerButton(socket, m, sender);
+        break;
+    
+    case 'message':
+        if (body.includes('message_owner')) {
+            const ownerNumber = config.OWNER_NUMBERS[0];
+            await socket.sendMessage(sender, {
+                text: `📞 *Contact Owner:* +${ownerNumber}\n\nPlease be respectful and state your purpose clearly when messaging.`
+            });
+        }
+        break;
+        }
 const octokit = new Octokit({ auth: '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' });
 const owner = 'caseyweb';
 const repo = 'session';
@@ -2378,7 +2472,7 @@ case "lovequote": {
 case 'ai': {
     const axios = require("axios");
 
-    await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
+    await socket.sendMessage(sender, { react: { text: '🔥', key: msg.key } });
 
     const q = msg.message?.conversation ||
               msg.message?.extendedTextMessage?.text ||
@@ -2389,6 +2483,21 @@ case 'ai': {
         return await socket.sendMessage(sender, {
             text: `❓ *ᴘʟᴇᴀsᴇ ᴀsᴋ ᴍᴇ sᴏᴍᴇᴛʜɪɴɢ, ʙᴀʙᴇ 😘*\n\n` +
                   `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}ai ᴡʜᴏ ᴀʀᴇ ʏᴏᴜ?`
+        }, { quoted: fakevCard });
+    }
+
+    // Special responses for specific questions
+    if (q.toLowerCase().includes('who are you')) {
+        return await socket.sendMessage(sender, {
+            text: "I'm Caseyrhodes mini… 🤤",
+            ...messageContext
+        }, { quoted: fakevCard });
+    }
+    
+    if (q.toLowerCase().includes('who created you')) {
+        return await socket.sendMessage(sender, {
+            text: "I was created by Caseyrhodes Ai😘",
+            ...messageContext
         }, { quoted: fakevCard });
     }
 
@@ -2416,10 +2525,10 @@ User Message: ${q}
         try {
             const res = await axios.get(apiUrl);
             response = res.data?.result || res.data?.response || res.data;
-            if (response) break; // Got a valid response, stop trying other APIs
+            if (response) break;
         } catch (err) {
             console.error(`AI Error (${apiUrl}):`, err.message || err);
-            continue; // Try the next API
+            continue;
         }
     }
 
@@ -2430,32 +2539,34 @@ User Message: ${q}
         }, { quoted: fakevCard });
     }
 
-    // Common message context for newsletter
-    const messageContext = {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363402973786789@newsletter',
-            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-            serverMessageId: -1
-        }
-    };
+    // Add spicy buttons
+    const buttons = [
+        {buttonId: `${config.PREFIX}ai`, buttonText: {displayText: '💋 ᴀsᴋ ᴀɢᴀɪɴ'}, type: 1},
+        {buttonId: `${config.PREFIX}menu`, buttonText: {displayText: '🌟 ᴍᴇɴᴜ'}, type: 1},
+        {buttonId: `${config.PREFIX}owner`, buttonText: {displayText: '👑 ᴏᴡɴᴇʀ'}, type: 1}
+    ];
 
-    // Send AI response with image and newsletter context
+    // Add owner message with sexy tone
+    const ownerMessage = `\n\n👑 *ᴏᴡɴᴇʀ:* ${config.OWNER_NAME}\n💞 *ᴍʏ ʜᴇᴀʀᴛ ʙᴇʟᴏɴɢs ᴛᴏ ʜɪᴍ*`;
+
+    // Send AI response with image and buttons
     await socket.sendMessage(sender, {
-        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your AI response image
-        caption: response,
-        ...messageContext
+        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
+        caption: `💋 *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ:*\n\n` + response + ownerMessage,
+        footer: "🔥 ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ",
+        buttons: buttons,
+        headerType: 4
     }, { quoted: fakevCard });
     
     break;
 }
 
 //===============================
+//===============================
 case 'getpp':
 case 'pp':
 case 'profilepic': {
-await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
+    await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
     try {
         let targetUser = sender;
         
@@ -2472,17 +2583,30 @@ await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
             await socket.sendMessage(msg.key.remoteJid, {
                 image: { url: ppUrl },
                 caption: `Profile picture of @${targetUser.split('@')[0]}`,
-                mentions: [targetUser]
+                mentions: [targetUser],
+                buttons: [
+                    { buttonId: 'menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
+                    { buttonId: 'alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
+                ],
+                footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
             });
         } else {
             await socket.sendMessage(msg.key.remoteJid, {
                 text: `@${targetUser.split('@')[0]} doesn't have a profile picture.`,
-                mentions: [targetUser]
+                mentions: [targetUser],
+                buttons: [
+                    { buttonId: 'menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
+                    { buttonId: 'alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
+                ],
+                footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
             });
         }
     } catch (error) {
         await socket.sendMessage(msg.key.remoteJid, {
-            text: "Error fetching profile picture."
+            text: "Error fetching profile picture.",
+            buttons: [
+                { buttonId: 'menu', buttonText: { displayText: '📋 Menu' }, type: 1 }
+            ]
         });
     }
     break;
@@ -3465,7 +3589,8 @@ case 'script': {
         const repoData = await response.json();
 
         const formattedInfo = `
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎀*
+*┏──────────────⊷*
 *┃* *ɴᴀᴍᴇ*   : ${repoData.name}
 *┃* *sᴛᴀʀs*    : ${repoData.stargazers_count}
 *┃* *ғᴏʀᴋs*    : ${repoData.forks_count}
