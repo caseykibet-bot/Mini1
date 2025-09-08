@@ -1580,7 +1580,7 @@ case 'play':
 case 'song': {
     // Import dependencies
     const yts = require('yt-search');
-    const ytdl = require('ytdl-core');
+    const ytdl = require('ytdl-core'); // More reliable than ddownr
     const fs = require('fs').promises;
     const path = require('path');
     const { exec } = require('child_process');
@@ -1589,11 +1589,6 @@ case 'song': {
     const { existsSync, mkdirSync, createWriteStream } = require('fs');
     const stream = require('stream');
     const pipeline = util.promisify(stream.pipeline);
-    const axios = require('axios');
-
-    // Kaiz-API configuration
-    const KAIZ_API_KEY = 'cf2ca612-296f-45ba-abbc-473f18f991eb';
-    const KAIZ_API_URL = 'https://kaiz-apis.gleeze.com/api/ytdown-mp3';
 
     // Constants
     const TEMP_DIR = './temp';
@@ -1651,6 +1646,7 @@ case 'song': {
             const targetBitrate = Math.floor((MAX_FILE_SIZE_MB * 8192) / duration) - 8; // Small buffer
             
             // Use higher quality settings while staying within limits
+            // Preserve original sample rate and channels for better quality
             await execPromise(
                 `ffmpeg -i "${inputPath}" -b:a ${Math.max(targetBitrate, 96)}k -ac 2 -ar 44100 -c:a libmp3lame -q:a 2 -vn -y "${outputPath}"`
             );
@@ -1659,42 +1655,6 @@ case 'song': {
         } catch (error) {
             console.error('Audio optimization failed:', error);
             return false;
-        }
-    }
-
-    async function downloadWithKaizAPI(videoUrl, outputPath) {
-        try {
-            console.log('Trying Kaiz API fallback for:', videoUrl);
-            
-            const response = await axios.post(
-                KAIZ_API_URL,
-                {
-                    url: videoUrl,
-                    quality: 'high'
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'API-Key': KAIZ_API_KEY
-                    },
-                    responseType: 'stream'
-                }
-            );
-
-            if (response.status !== 200) {
-                throw new Error(`Kaiz API returned status: ${response.status}`);
-            }
-
-            const writer = createWriteStream(outputPath);
-            response.data.pipe(writer);
-            
-            return new Promise((resolve, reject) => {
-                writer.on('finish', resolve);
-                writer.on('error', reject);
-            });
-        } catch (error) {
-            console.error('Kaiz API download failed:', error);
-            throw new Error(`Kaiz API download failed: ${error.message}`);
         }
     }
 
@@ -1726,7 +1686,6 @@ case 'song': {
     const fixedQuery = convertYouTubeLink(q.trim());
     let tempFilePath = '';
     let optimizedFilePath = '';
-    let downloadMethod = 'primary';
 
     try {
         // Send searching reaction
@@ -1799,50 +1758,34 @@ case 'song': {
             }
         }, { quoted: fakevCard });
 
-        // Clean title for filename
+        // Download the audio using ytdl-core for better quality and reliability
         const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
         tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_original.mp3`);
         optimizedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_optimized.mp3`);
         
-        // Try primary download method first (ytdl-core)
-        try {
-            console.log('Trying primary download method...');
-            const audioStream = ytdl(videoInfo.url, {
-                filter: 'audioonly',
-                quality: 'highestaudio',
-            });
-            
-            const writeStream = createWriteStream(tempFilePath);
-            await new Promise((resolve, reject) => {
-                audioStream.pipe(writeStream);
-                audioStream.on('end', resolve);
-                audioStream.on('error', reject);
-            });
-            downloadMethod = 'primary';
-        } catch (primaryError) {
-            console.log('Primary download failed, trying Kaiz API fallback:', primaryError);
-            
-            // Try Kaiz API as fallback
-            try {
-                await downloadWithKaizAPI(videoInfo.url, tempFilePath);
-                downloadMethod = 'kaiz';
-                console.log('Kaiz API download successful');
-            } catch (kaizError) {
-                console.error('Both download methods failed:', kaizError);
-                throw new Error('All download methods failed');
-            }
-        }
+        // Download highest quality audio available
+        const audioStream = ytdl(videoInfo.url, {
+            filter: 'audioonly',
+            quality: 'highestaudio',
+        });
+        
+        const writeStream = createWriteStream(tempFilePath);
+        await new Promise((resolve, reject) => {
+            audioStream.pipe(writeStream);
+            audioStream.on('end', resolve);
+            audioStream.on('error', reject);
+        });
 
-        // Optimize for WhatsApp
+        // Optimize for WhatsApp without sacrificing quality unnecessarily
         const optimizationSuccess = await optimizeAudioForWhatsApp(tempFilePath, optimizedFilePath);
         if (!optimizationSuccess) {
             throw new Error('Audio optimization failed');
         }
 
-        // Send success reaction with download method indicator
+        // Send success reaction
         await socket.sendMessage(sender, {
             react: {
-                text: downloadMethod === 'kaiz' ? "🌐" : "🎵", // Globe for Kaiz, music note for primary
+                text: "🎵", // Music note emoji for success
                 key: msg.key
             }
         });
@@ -1871,14 +1814,8 @@ case 'song': {
         });
         
         await cleanupFiles(tempFilePath, optimizedFilePath);
-        
-        let errorMessage = "*❌ Oh no, the music stopped, love! 😢 Try again?*";
-        if (err.message.includes('All download methods failed')) {
-            errorMessage = "*❌ All download methods failed! The song might be restricted. Try another?*";
-        }
-        
         await socket.sendMessage(sender, 
-            { text: errorMessage }, 
+            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
             { quoted: fakevCard }
         );
     }
@@ -3058,37 +2995,44 @@ case 'profilepic': {
                 }
                 
               ///  for bot presence
-                case 'mode': {
+              // Bot mode control using Socket.IO
+case 'mode': {
     if (!isCreator) {
-        await Matrix.sendMessage(m.from, { text: "*📛 THIS IS AN OWNER COMMAND*" }, { quoted: m });
+        socket.emit('message', {
+            to: m.from,
+            text: "*📛 THIS IS AN OWNER COMMAND*",
+            quoted: m
+        });
         return;
     }
 
-    // Initialize mode settings from config if they don't exist
-    if (typeof Matrix.public === 'undefined') {
-        Matrix.public = config.MODE === "public";
+    // Initialize mode settings
+    if (typeof botConfig.public === 'undefined') {
+        botConfig.public = (config.MODE && config.MODE.toLowerCase() === "public") || false;
     }
-    if (typeof Matrix.otherMode === 'undefined') {
-        Matrix.otherMode = false;
+    if (typeof botConfig.otherMode === 'undefined') {
+        botConfig.otherMode = false;
     }
 
-    // If no specific mode is provided, show the button interface
-    if (!text) {
-        const currentMode = Matrix.public ? 'public' : 'private';
-        const otherStatus = Matrix.otherMode ? 'enabled' : 'disabled';
+    // If no specific mode is provided, show the options
+    if (!text || text.trim() === '') {
+        const currentMode = botConfig.public ? 'public' : 'private';
+        const otherStatus = botConfig.otherMode ? 'enabled' : 'disabled';
         
-        const buttonMessage = {
+        const modeMessage = {
             text: `*🤖 BOT MODE SETTINGS*\n\nCurrent Mode: ${currentMode.toUpperCase()}\nOther Mode: ${otherStatus.toUpperCase()}\n\nSelect an option:`,
-            footer: config.BOT_NAME || "Bot", // Use config.BOT_NAME or fallback
-            buttons: [
-                { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
-                { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
-                { buttonId: `${prefix}mode other`, buttonText: { displayText: Matrix.otherMode ? '❌ DISABLE OTHER' : '✅ ENABLE OTHER' }, type: 1 }
-            ],
-            headerType: 1
+            options: [
+                { id: 'mode_public', text: '🌐 PUBLIC' },
+                { id: 'mode_private', text: '🔒 PRIVATE' },
+                { id: 'mode_other', text: botConfig.otherMode ? '❌ DISABLE OTHER' : '✅ ENABLE OTHER' }
+            ]
         };
         
-        await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+        socket.emit('send-buttons', {
+            to: m.from,
+            message: modeMessage,
+            quoted: m
+        });
         return;
     }
 
@@ -3096,73 +3040,80 @@ case 'profilepic': {
     
     if (['public', 'private', 'other'].includes(modeArg)) {
         if (modeArg === 'public') {
-            Matrix.public = true;
-            Matrix.otherMode = false;
-            config.MODE = "public"; // Update config
-            await saveConfig(); // Save to file if needed
+            botConfig.public = true;
+            botConfig.otherMode = false;
+            config.MODE = "public";
             
-            const buttonMessage = {
+            // Save configuration
+            socket.emit('save-config', config);
+            
+            const response = {
                 text: '✅ Mode has been changed to PUBLIC.',
-                footer: config.BOT_NAME || "Bot",
-                buttons: [
-                    { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 SWITCH TO PRIVATE' }, type: 1 },
-                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
-                ],
-                headerType: 1
+                options: [
+                    { id: 'mode_private', text: '🔒 SWITCH TO PRIVATE' },
+                    { id: 'mode_settings', text: '⚙️ SETTINGS' }
+                ]
             };
             
-            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+            socket.emit('send-buttons', {
+                to: m.from,
+                message: response
+            });
         } else if (modeArg === 'private') {
-            Matrix.public = false;
-            Matrix.otherMode = false;
-            config.MODE = "private"; // Update config
-            await saveConfig(); // Save to file if needed
+            botConfig.public = false;
+            botConfig.otherMode = false;
+            config.MODE = "private";
             
-            const buttonMessage = {
+            // Save configuration
+            socket.emit('save-config', config);
+            
+            const response = {
                 text: '✅ Mode has been changed to PRIVATE.',
-                footer: config.BOT_NAME || "Bot",
-                buttons: [
-                    { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 SWITCH TO PUBLIC' }, type: 1 },
-                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
-                ],
-                headerType: 1
+                options: [
+                    { id: 'mode_public', text: '🌐 SWITCH TO PUBLIC' },
+                    { id: 'mode_settings', text: '⚙️ SETTINGS' }
+                ]
             };
             
-            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+            socket.emit('send-buttons', {
+                to: m.from,
+                message: response
+            });
         } else if (modeArg === 'other') {
-            Matrix.otherMode = !Matrix.otherMode;
-            const status = Matrix.otherMode ? 'enabled' : 'disabled';
+            botConfig.otherMode = !botConfig.otherMode;
+            const status = botConfig.otherMode ? 'enabled' : 'disabled';
             
-            const buttonMessage = {
+            const response = {
                 text: `✅ Other mode has been ${status.toUpperCase()}.`,
-                footer: config.BOT_NAME || "Bot",
-                buttons: [
-                    { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
-                    { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
-                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
-                ],
-                headerType: 1
+                options: [
+                    { id: 'mode_public', text: '🌐 PUBLIC' },
+                    { id: 'mode_private', text: '🔒 PRIVATE' },
+                    { id: 'mode_settings', text: '⚙️ SETTINGS' }
+                ]
             };
             
-            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+            socket.emit('send-buttons', {
+                to: m.from,
+                message: response
+            });
         }
     } else {
-        const buttonMessage = {
+        const errorResponse = {
             text: "❌ Invalid mode. Please select a valid option:",
-            footer: config.BOT_NAME || "Bot",
-            buttons: [
-                { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
-                { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
-                { buttonId: `${prefix}mode other`, buttonText: { displayText: '🔧 OTHER' }, type: 1 }
-            ],
-            headerType: 1
+            options: [
+                { id: 'mode_public', text: '🌐 PUBLIC' },
+                { id: 'mode_private', text: '🔒 PRIVATE' },
+                { id: 'mode_other', text: '🔧 OTHER' }
+            ]
         };
         
-        await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+        socket.emit('send-buttons', {
+            to: m.from,
+            message: errorResponse
+        });
     }
     break;
 }
-
                 // Case: promote - Promote a member to group admin
                 case 'promote': {
                 await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
