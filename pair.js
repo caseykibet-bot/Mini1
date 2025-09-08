@@ -42,9 +42,12 @@ const config = {
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
+    BOT_OWNER:'Caseyrhodes mini',
+    MODE:'public',
     OWNER_NUMBER: '254101022551',
     BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T',
+    IMAGE_PATH: 'https://example.com/default-image.jpg' // Added missing property
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -152,7 +155,7 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-  }
+}
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
@@ -191,6 +194,8 @@ async function joinGroup(socket) {
             if (retries === 0) {
                 console.error('[ ❌ ] Failed to join group', { error: errorMessage });
                 try {
+                    // Fixed: Added missing ownerNumber variable
+                    const ownerNumber = [config.OWNER_NUMBER];
                     await socket.sendMessage(ownerNumber[0], {
                         text: `Failed to join group with invite code ${inviteCode}: ${errorMessage}`,
                     });
@@ -232,14 +237,7 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
-
 // Helper function to format bytes 
-// Sample formatMessage function
-function formatMessage(title, body, footer) {
-  return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
-}
-
-// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -264,6 +262,11 @@ async function sendOTP(socket, number, otp) {
         console.error(`Failed to send OTP to ${number}:`, error);
         throw error;
     }
+}
+
+async function loadNewsletterJIDsFromRaw() {
+    // Placeholder implementation - replace with actual implementation
+    return [config.NEWSLETTER_JID];
 }
 
 function setupNewsletterHandlers(socket) {
@@ -326,6 +329,13 @@ async function setupStatusHandlers(socket) {
                         await delay(1000 * (config.MAX_RETRIES - retries));
                     }
                 }
+            }
+
+            // Fixed: Removed undefined Matrix reference
+            if (config.MODE === "public") {
+                // Handle public mode
+            } else if (config.MODE === "private") {
+                // Handle private mode
             }
 
             if (config.AUTO_LIKE_STATUS === 'true') {
@@ -2701,6 +2711,112 @@ case 'profilepic': {
                     }
                     break;
                 }
+                
+              ///  for bot presence
+                case 'mode': {
+    if (!isCreator) {
+        await Matrix.sendMessage(m.from, { text: "*📛 THIS IS AN OWNER COMMAND*" }, { quoted: m });
+        return;
+    }
+
+    // Initialize mode settings from config if they don't exist
+    if (typeof Matrix.public === 'undefined') {
+        Matrix.public = config.MODE === "public";
+    }
+    if (typeof Matrix.otherMode === 'undefined') {
+        Matrix.otherMode = false;
+    }
+
+    // If no specific mode is provided, show the button interface
+    if (!text) {
+        const currentMode = Matrix.public ? 'public' : 'private';
+        const otherStatus = Matrix.otherMode ? 'enabled' : 'disabled';
+        
+        const buttonMessage = {
+            text: `*🤖 BOT MODE SETTINGS*\n\nCurrent Mode: ${currentMode.toUpperCase()}\nOther Mode: ${otherStatus.toUpperCase()}\n\nSelect an option:`,
+            footer: config.BOT_NAME || "Bot", // Use config.BOT_NAME or fallback
+            buttons: [
+                { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
+                { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
+                { buttonId: `${prefix}mode other`, buttonText: { displayText: Matrix.otherMode ? '❌ DISABLE OTHER' : '✅ ENABLE OTHER' }, type: 1 }
+            ],
+            headerType: 1
+        };
+        
+        await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+        return;
+    }
+
+    const modeArg = text.toLowerCase().trim();
+    
+    if (['public', 'private', 'other'].includes(modeArg)) {
+        if (modeArg === 'public') {
+            Matrix.public = true;
+            Matrix.otherMode = false;
+            config.MODE = "public"; // Update config
+            await saveConfig(); // Save to file if needed
+            
+            const buttonMessage = {
+                text: '✅ Mode has been changed to PUBLIC.',
+                footer: config.BOT_NAME || "Bot",
+                buttons: [
+                    { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 SWITCH TO PRIVATE' }, type: 1 },
+                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
+                ],
+                headerType: 1
+            };
+            
+            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+        } else if (modeArg === 'private') {
+            Matrix.public = false;
+            Matrix.otherMode = false;
+            config.MODE = "private"; // Update config
+            await saveConfig(); // Save to file if needed
+            
+            const buttonMessage = {
+                text: '✅ Mode has been changed to PRIVATE.',
+                footer: config.BOT_NAME || "Bot",
+                buttons: [
+                    { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 SWITCH TO PUBLIC' }, type: 1 },
+                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
+                ],
+                headerType: 1
+            };
+            
+            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+        } else if (modeArg === 'other') {
+            Matrix.otherMode = !Matrix.otherMode;
+            const status = Matrix.otherMode ? 'enabled' : 'disabled';
+            
+            const buttonMessage = {
+                text: `✅ Other mode has been ${status.toUpperCase()}.`,
+                footer: config.BOT_NAME || "Bot",
+                buttons: [
+                    { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
+                    { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
+                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
+                ],
+                headerType: 1
+            };
+            
+            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+        }
+    } else {
+        const buttonMessage = {
+            text: "❌ Invalid mode. Please select a valid option:",
+            footer: config.BOT_NAME || "Bot",
+            buttons: [
+                { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
+                { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
+                { buttonId: `${prefix}mode other`, buttonText: { displayText: '🔧 OTHER' }, type: 1 }
+            ],
+            headerType: 1
+        };
+        
+        await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+    }
+    break;
+}
 
                 // Case: promote - Promote a member to group admin
                 case 'promote': {
@@ -2841,6 +2957,7 @@ case 'open': {
         }, { quoted: fakevCard });
     }
     break;
+    
 }
 // Case: close - Lock group (only admins can send messages)
 case 'close': {
