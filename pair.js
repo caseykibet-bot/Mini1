@@ -1580,20 +1580,24 @@ case 'play':
 case 'song': {
     // Import dependencies
     const yts = require('yt-search');
-    const ddownr = require('denethdev-ytmp3');
+    const ytdl = require('ytdl-core');
     const fs = require('fs').promises;
     const path = require('path');
     const { exec } = require('child_process');
     const util = require('util');
     const execPromise = util.promisify(exec);
-    const { existsSync, mkdirSync } = require('fs');
+    const { existsSync, mkdirSync, createWriteStream } = require('fs');
     const stream = require('stream');
     const pipeline = util.promisify(stream.pipeline);
+    const axios = require('axios');
 
-    // Constants - REDUCED FOR FASTER DOWNLOADS
+    // Kaiz-API configuration
+    const KAIZ_API_KEY = 'cf2ca612-296f-45ba-abbc-473f18f991eb';
+    const KAIZ_API_URL = 'https://kaiz-apis.gleeze.com/api/ytdown-mp3';
+
+    // Constants
     const TEMP_DIR = './temp';
-    const MAX_FILE_SIZE_MB = 2; // Reduced from 4MB
-    const TARGET_SIZE_MB = 1.8; // Reduced from 3.8MB
+    const MAX_FILE_SIZE_MB = 16; // WhatsApp's limit for audio files
 
     // Ensure temp directory exists
     if (!existsSync(TEMP_DIR)) {
@@ -1618,25 +1622,79 @@ case 'song': {
         return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
-    async function compressAudio(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
+    async function getAudioDuration(filePath) {
         try {
-            const { stdout: durationOutput } = await execPromise(
-                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
+            const { stdout } = await execPromise(
+                `ffprobe -i "${filePath}" -show_entries format=duration -v quiet -of csv="p=0"`
             );
-            const duration = parseFloat(durationOutput) || 180;
-            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
+            return parseFloat(stdout) || 0;
+        } catch (error) {
+            console.error('Error getting audio duration:', error);
+            return 180; // Default to 3 minutes if unable to determine
+        }
+    }
+
+    async function optimizeAudioForWhatsApp(inputPath, outputPath) {
+        try {
+            // Get file size in MB
+            const stats = await fs.stat(inputPath);
+            const fileSizeMB = stats.size / (1024 * 1024);
             
-            // Use lower bitrate for smaller files (max 96kbps instead of 128kbps)
-            const constrainedBitrate = Math.min(Math.max(targetBitrate, 48), 96);
+            // If file is already under WhatsApp limit, just copy it
+            if (fileSizeMB <= MAX_FILE_SIZE_MB) {
+                await fs.copyFile(inputPath, outputPath);
+                return true;
+            }
             
-            // Faster compression with optimized settings
+            // Calculate target bitrate to fit within WhatsApp limits
+            const duration = await getAudioDuration(inputPath);
+            const targetBitrate = Math.floor((MAX_FILE_SIZE_MB * 8192) / duration) - 8; // Small buffer
+            
+            // Use higher quality settings while staying within limits
             await execPromise(
-                `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -ac 1 -ar 22050 -vn -threads 2 -y "${outputPath}"`
+                `ffmpeg -i "${inputPath}" -b:a ${Math.max(targetBitrate, 96)}k -ac 2 -ar 44100 -c:a libmp3lame -q:a 2 -vn -y "${outputPath}"`
             );
+            
             return true;
         } catch (error) {
-            console.error('Audio compression failed:', error);
+            console.error('Audio optimization failed:', error);
             return false;
+        }
+    }
+
+    async function downloadWithKaizAPI(videoUrl, outputPath) {
+        try {
+            console.log('Trying Kaiz API fallback for:', videoUrl);
+            
+            const response = await axios.post(
+                KAIZ_API_URL,
+                {
+                    url: videoUrl,
+                    quality: 'high'
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'API-Key': KAIZ_API_KEY
+                    },
+                    responseType: 'stream'
+                }
+            );
+
+            if (response.status !== 200) {
+                throw new Error(`Kaiz API returned status: ${response.status}`);
+            }
+
+            const writer = createWriteStream(outputPath);
+            response.data.pipe(writer);
+            
+            return new Promise((resolve, reject) => {
+                writer.on('finish', resolve);
+                writer.on('error', reject);
+            });
+        } catch (error) {
+            console.error('Kaiz API download failed:', error);
+            throw new Error(`Kaiz API download failed: ${error.message}`);
         }
     }
 
@@ -1646,7 +1704,7 @@ case 'song': {
                 try {
                     await fs.unlink(filePath);
                 } catch (err) {
-                    // Silent cleanup - no error reporting needed
+                    // Silent cleanup
                 }
             }
         }
@@ -1667,7 +1725,8 @@ case 'song': {
 
     const fixedQuery = convertYouTubeLink(q.trim());
     let tempFilePath = '';
-    let compressedFilePath = '';
+    let optimizedFilePath = '';
+    let downloadMethod = 'primary';
 
     try {
         // Send searching reaction
@@ -1683,7 +1742,6 @@ case 'song': {
         const videoInfo = search.videos[0];
         
         if (!videoInfo) {
-            // Update reaction to show failure
             await socket.sendMessage(sender, {
                 react: {
                     text: "❌", // Failure emoji
@@ -1708,27 +1766,27 @@ case 'song': {
         // Format duration
         const formattedDuration = formatDuration(videoInfo.seconds);
         
-        // Create description with Almenu button
+        // Create description
         const desc = `
-*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐌𝐔𝐒𝐈𝐂 🎀*
+*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐔𝐒𝐈𝐂 🎀*
 ╭───────────────┈  ⊷
 ├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
 ├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
 ├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
 ├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
 ├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
-├🎵 *Format:* Optimized MP3 (Small Size)
+├🎵 *Format:* High Quality MP3
 ╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌸
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
 
-        // Send video info with Almenu button
+        // Send video info
         await socket.sendMessage(sender, {
             image: { url: videoInfo.thumbnail },
             caption: desc,
             footer: "Type 'almenu' for more options",
             buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '🌸 ❯❯ ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
+                { buttonId: 'almenu', buttonText: { displayText: '📋 Almenu' }, type: 1 }
             ],
             contextInfo: {
                 forwardingScore: 1,
@@ -1741,40 +1799,56 @@ case 'song': {
             }
         }, { quoted: fakevCard });
 
-        // Download the audio
-        const result = await ddownr.download(videoInfo.url, 'mp3');
-        const downloadLink = result.downloadUrl;
-
         // Clean title for filename
         const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
         tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_original.mp3`);
-        compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp3`);
-
-        // Download the file with streaming for better performance
-        const response = await fetch(downloadLink);
-        if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+        optimizedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_optimized.mp3`);
         
-        const fileStream = fs.createWriteStream(tempFilePath);
-        await pipeline(response.body, fileStream);
-
-        // Always compress for smaller size and faster sending
-        const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
-        if (compressionSuccess) {
-            await cleanupFiles(tempFilePath);
-            tempFilePath = compressedFilePath;
-            compressedFilePath = '';
+        // Try primary download method first (ytdl-core)
+        try {
+            console.log('Trying primary download method...');
+            const audioStream = ytdl(videoInfo.url, {
+                filter: 'audioonly',
+                quality: 'highestaudio',
+            });
+            
+            const writeStream = createWriteStream(tempFilePath);
+            await new Promise((resolve, reject) => {
+                audioStream.pipe(writeStream);
+                audioStream.on('end', resolve);
+                audioStream.on('error', reject);
+            });
+            downloadMethod = 'primary';
+        } catch (primaryError) {
+            console.log('Primary download failed, trying Kaiz API fallback:', primaryError);
+            
+            // Try Kaiz API as fallback
+            try {
+                await downloadWithKaizAPI(videoInfo.url, tempFilePath);
+                downloadMethod = 'kaiz';
+                console.log('Kaiz API download successful');
+            } catch (kaizError) {
+                console.error('Both download methods failed:', kaizError);
+                throw new Error('All download methods failed');
+            }
         }
 
-        // Send success reaction
+        // Optimize for WhatsApp
+        const optimizationSuccess = await optimizeAudioForWhatsApp(tempFilePath, optimizedFilePath);
+        if (!optimizationSuccess) {
+            throw new Error('Audio optimization failed');
+        }
+
+        // Send success reaction with download method indicator
         await socket.sendMessage(sender, {
             react: {
-                text: "🎵", // Music note emoji for success
+                text: downloadMethod === 'kaiz' ? "🌐" : "🎵", // Globe for Kaiz, music note for primary
                 key: msg.key
             }
         });
 
-        // Send the optimized audio file (without caption or buttons)
-        const audioBuffer = await fs.readFile(tempFilePath);
+        // Send the optimized audio file
+        const audioBuffer = await fs.readFile(optimizedFilePath);
         await socket.sendMessage(sender, {
             audio: audioBuffer,
             mimetype: "audio/mpeg",
@@ -1783,7 +1857,7 @@ case 'song': {
         }, { quoted: fakevCard });
 
         // Cleanup
-        await cleanupFiles(tempFilePath, compressedFilePath);
+        await cleanupFiles(tempFilePath, optimizedFilePath);
         
     } catch (err) {
         console.error('Song command error:', err);
@@ -1796,9 +1870,15 @@ case 'song': {
             }
         });
         
-        await cleanupFiles(tempFilePath, compressedFilePath);
+        await cleanupFiles(tempFilePath, optimizedFilePath);
+        
+        let errorMessage = "*❌ Oh no, the music stopped, love! 😢 Try again?*";
+        if (err.message.includes('All download methods failed')) {
+            errorMessage = "*❌ All download methods failed! The song might be restricted. Try another?*";
+        }
+        
         await socket.sendMessage(sender, 
-            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
+            { text: errorMessage }, 
             { quoted: fakevCard }
         );
     }
