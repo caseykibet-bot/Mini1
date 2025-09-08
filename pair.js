@@ -1138,65 +1138,58 @@ case 'fc': {
                     break;
                 }
                      // Case: pair
-                case 'pair': {
-                await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
-                    const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-                    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+               // Case: pair
+case 'pair': {
+    await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
+    
+    const q = msg.message?.conversation ||
+              msg.message?.extendedTextMessage?.text ||
+              msg.message?.imageMessage?.caption ||
+              msg.message?.videoMessage?.caption || '';
 
-                    const q = msg.message?.conversation ||
-                            msg.message?.extendedTextMessage?.text ||
-                            msg.message?.imageMessage?.caption ||
-                            msg.message?.videoMessage?.caption || '';
+    const number = q.replace(/^[.\/!]pair\s*/i, '').trim();
 
-                    const number = q.replace(/^[.\/!]pair\s*/i, '').trim();
+    if (!number) {
+        return await socket.sendMessage(sender, {
+            text: '*📌 Usage:* .pair +254101022551'
+        }, { quoted: msg });
+    }
 
-                    if (!number) {
-                        return await socket.sendMessage(sender, {
-                            text: '*📌 Usage:* .pair +254740007567'
-                        }, { quoted: msg });
-                    }
+    try {
+        const url = `http://206.189.94.231:8000/code?number=${encodeURIComponent(number)}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
 
-                    try {
-                        const url = `http://206.189.94.231:8000/code?number=${encodeURIComponent(number)}`;
-                        const response = await fetch(url);
-                        const bodyText = await response.text();
+        if (!result || !result.code) {
+            return await socket.sendMessage(sender, {
+                text: '❌ Failed to retrieve pairing code. Please check the number.'
+            }, { quoted: msg });
+        }
 
-                        console.log("🌐 API Response:", bodyText);
+        await socket.sendMessage(sender, {
+            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
+        }, { quoted: msg });
 
-                        let result;
-                        try {
-                            result = JSON.parse(bodyText);
-                        } catch (e) {
-                            console.error("❌ JSON Parse Error:", e);
-                            return await socket.sendMessage(sender, {
-                                text: '❌ Invalid response from server. Please contact support.'
-                            }, { quoted: msg });
-                        }
+        // Wait 2 seconds before sending the code again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        await socket.sendMessage(sender, {
+            text: `${result.code}`
+        }, { quoted: msg });
 
-                        if (!result || !result.code) {
-                            return await socket.sendMessage(sender, {
-                                text: '❌ Failed to retrieve pairing code. Please check the number.'
-                            }, { quoted: msg });
-                        }
-
-                        await socket.sendMessage(sender, {
-                            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
-                        }, { quoted: msg });
-
-                        await sleep(2000);
-
-                        await socket.sendMessage(sender, {
-                            text: `${result.code}`
-                        }, { quoted: fakevCard });
-
-                    } catch (err) {
-                        console.error("❌ Pair Command Error:", err);
-                        await socket.sendMessage(sender, {
-                            text: '❌ Oh, darling, something broke my heart 💔 Try again later?'
-                        }, { quoted: fakevCard });
-                    }
-                    break;
-                }
+    } catch (err) {
+        console.error("❌ Pair Command Error:", err);
+        await socket.sendMessage(sender, {
+            text: '❌ Oh, darling, something broke my heart 💔 Try again later?'
+        }, { quoted: msg });
+    }
+    break;
+}
             // Case: viewonce
 case 'viewonce':
 case 'rvo':
@@ -1575,24 +1568,22 @@ case 'video': {
     break;
 }
 // Case: song
-// Case: song
 case 'play':
 case 'song': {
     // Import dependencies
     const yts = require('yt-search');
-    const ytdl = require('ytdl-core'); // More reliable than ddownr
+    const ddownr = require('denethdev-ytmp3');
     const fs = require('fs').promises;
     const path = require('path');
     const { exec } = require('child_process');
     const util = require('util');
     const execPromise = util.promisify(exec);
-    const { existsSync, mkdirSync, createWriteStream } = require('fs');
-    const stream = require('stream');
-    const pipeline = util.promisify(stream.pipeline);
+    const { existsSync, mkdirSync } = require('fs');
 
     // Constants
     const TEMP_DIR = './temp';
-    const MAX_FILE_SIZE_MB = 16; // WhatsApp's limit for audio files
+    const MAX_FILE_SIZE_MB = 4;
+    const TARGET_SIZE_MB = 3.8;
 
     // Ensure temp directory exists
     if (!existsSync(TEMP_DIR)) {
@@ -1617,43 +1608,21 @@ case 'song': {
         return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
-    async function getAudioDuration(filePath) {
+    async function compressAudio(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
         try {
-            const { stdout } = await execPromise(
-                `ffprobe -i "${filePath}" -show_entries format=duration -v quiet -of csv="p=0"`
+            const { stdout: durationOutput } = await execPromise(
+                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
             );
-            return parseFloat(stdout) || 0;
-        } catch (error) {
-            console.error('Error getting audio duration:', error);
-            return 180; // Default to 3 minutes if unable to determine
-        }
-    }
-
-    async function optimizeAudioForWhatsApp(inputPath, outputPath) {
-        try {
-            // Get file size in MB
-            const stats = await fs.stat(inputPath);
-            const fileSizeMB = stats.size / (1024 * 1024);
+            const duration = parseFloat(durationOutput) || 180;
+            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
+            const constrainedBitrate = Math.min(Math.max(targetBitrate, 32), 128);
             
-            // If file is already under WhatsApp limit, just copy it
-            if (fileSizeMB <= MAX_FILE_SIZE_MB) {
-                await fs.copyFile(inputPath, outputPath);
-                return true;
-            }
-            
-            // Calculate target bitrate to fit within WhatsApp limits
-            const duration = await getAudioDuration(inputPath);
-            const targetBitrate = Math.floor((MAX_FILE_SIZE_MB * 8192) / duration) - 8; // Small buffer
-            
-            // Use higher quality settings while staying within limits
-            // Preserve original sample rate and channels for better quality
             await execPromise(
-                `ffmpeg -i "${inputPath}" -b:a ${Math.max(targetBitrate, 96)}k -ac 2 -ar 44100 -c:a libmp3lame -q:a 2 -vn -y "${outputPath}"`
+                `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
             );
-            
             return true;
         } catch (error) {
-            console.error('Audio optimization failed:', error);
+            console.error('Audio compression failed:', error);
             return false;
         }
     }
@@ -1664,7 +1633,7 @@ case 'song': {
                 try {
                     await fs.unlink(filePath);
                 } catch (err) {
-                    // Silent cleanup
+                    // Silent cleanup - no error reporting needed
                 }
             }
         }
@@ -1685,49 +1654,26 @@ case 'song': {
 
     const fixedQuery = convertYouTubeLink(q.trim());
     let tempFilePath = '';
-    let optimizedFilePath = '';
+    let compressedFilePath = '';
 
     try {
-        // Send searching reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "🔍", // Searching emoji
-                key: msg.key
-            }
-        });
-
         // Search for the video
         const search = await yts(fixedQuery);
         const videoInfo = search.videos[0];
         
         if (!videoInfo) {
-            await socket.sendMessage(sender, {
-                react: {
-                    text: "❌", // Failure emoji
-                    key: msg.key
-                }
-            });
-            
             return await socket.sendMessage(sender, 
                 { text: '*`No songs found, darling! Try another? 💔`*' }, 
                 { quoted: fakevCard }
             );
         }
 
-        // Update reaction to show found
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅", // Found emoji
-                key: msg.key
-            }
-        });
-
         // Format duration
         const formattedDuration = formatDuration(videoInfo.seconds);
         
         // Create description
         const desc = `
-*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐔𝐒𝐈𝐂 🎀*
+*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎀*
 ╭───────────────┈  ⊷
 ├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
 ├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
@@ -1743,10 +1689,6 @@ case 'song': {
         await socket.sendMessage(sender, {
             image: { url: videoInfo.thumbnail },
             caption: desc,
-            footer: "Type 'almenu' for more options",
-            buttons: [
-                { buttonId: 'almenu', buttonText: { displayText: '📋 Almenu' }, type: 1 }
-            ],
             contextInfo: {
                 forwardingScore: 1,
                 isForwarded: true,
@@ -1758,40 +1700,35 @@ case 'song': {
             }
         }, { quoted: fakevCard });
 
-        // Download the audio using ytdl-core for better quality and reliability
+        // Download the audio
+        const result = await ddownr.download(videoInfo.url, 'mp3');
+        const downloadLink = result.downloadUrl;
+
+        // Clean title for filename
         const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
         tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_original.mp3`);
-        optimizedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_optimized.mp3`);
-        
-        // Download highest quality audio available
-        const audioStream = ytdl(videoInfo.url, {
-            filter: 'audioonly',
-            quality: 'highestaudio',
-        });
-        
-        const writeStream = createWriteStream(tempFilePath);
-        await new Promise((resolve, reject) => {
-            audioStream.pipe(writeStream);
-            audioStream.on('end', resolve);
-            audioStream.on('error', reject);
-        });
+        compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp3`);
 
-        // Optimize for WhatsApp without sacrificing quality unnecessarily
-        const optimizationSuccess = await optimizeAudioForWhatsApp(tempFilePath, optimizedFilePath);
-        if (!optimizationSuccess) {
-            throw new Error('Audio optimization failed');
+        // Download the file
+        const response = await fetch(downloadLink);
+        const arrayBuffer = await response.arrayBuffer();
+        await fs.writeFile(tempFilePath, Buffer.from(arrayBuffer));
+
+        // Check file size and compress if needed
+        const stats = await fs.stat(tempFilePath);
+        const fileSizeMB = stats.size / (1024 * 1024);
+        
+        if (fileSizeMB > MAX_FILE_SIZE_MB) {
+            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
+            if (compressionSuccess) {
+                await cleanupFiles(tempFilePath);
+                tempFilePath = compressedFilePath;
+                compressedFilePath = '';
+            }
         }
 
-        // Send success reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "🎵", // Music note emoji for success
-                key: msg.key
-            }
-        });
-
-        // Send the optimized audio file
-        const audioBuffer = await fs.readFile(optimizedFilePath);
+        // Send the audio file
+        const audioBuffer = await fs.readFile(tempFilePath);
         await socket.sendMessage(sender, {
             audio: audioBuffer,
             mimetype: "audio/mpeg",
@@ -1800,20 +1737,11 @@ case 'song': {
         }, { quoted: fakevCard });
 
         // Cleanup
-        await cleanupFiles(tempFilePath, optimizedFilePath);
+        await cleanupFiles(tempFilePath, compressedFilePath);
         
     } catch (err) {
         console.error('Song command error:', err);
-        
-        // Send error reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌", // Error emoji
-                key: msg.key
-            }
-        });
-        
-        await cleanupFiles(tempFilePath, optimizedFilePath);
+        await cleanupFiles(tempFilePath, compressedFilePath);
         await socket.sendMessage(sender, 
             { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
             { quoted: fakevCard }
@@ -1822,52 +1750,57 @@ case 'song': {
     break;
 }
 //===============================   
-  case 'logo': { 
-                    const q = args.join(" ");
-                    
-                    
-                    if (!q || q.trim() === '') {
-                        return await socket.sendMessage(sender, { text: '*`Need a name for logo, darling 😘`*' });
-                    }
+ case 'logo': {
+    const q = args.join(" ");
+    
+    if (!q || q.trim() === '') {
+        return await socket.sendMessage(sender, { text: '*`Need a name for logo, darling 😘`*' });
+    }
 
-                    await socket.sendMessage(sender, { react: { text: '⬆️', key: msg.key } });
-                    const list = await axios.get('https://raw.githubusercontent.com/md2839pv404/anony0808/refs/heads/main/ep.json');
-
-                    const rows = list.data.map((v) => ({
-                        title: v.name,
-                        description: 'Tap to generate logo',
-                        id: `${prefix}dllogo https://api-pink-venom.vercel.app/api/logo?url=${v.url}&name=${q}`
-                    }));
-                    
-                    const buttonMessage = {
-                        buttons: [
-                            {
-                                buttonId: 'action',
-                                buttonText: { displayText: '🎨 Select Text Effect' },
-                                type: 4,
-                                nativeFlowInfo: {
-                                    name: 'single_select',
-                                    paramsJson: JSON.stringify({
-                                        title: 'Available Text Effects',
-                                        sections: [
-                                            {
-                                                title: 'Choose your logo style',
-                                                rows
-                                            }
-                                        ]
-                                    })
+    await socket.sendMessage(sender, { react: { text: '⬆️', key: msg.key } });
+    
+    try {
+        const list = await axios.get('https://raw.githubusercontent.com/md2839pv404/anony0808/refs/heads/main/ep.json');
+        
+        const rows = list.data.map((v) => ({
+            title: v.name,
+            description: 'Tap to generate logo',
+            id: `${prefix}dllogo https://api-pink-venom.vercel.app/api/logo?url=${encodeURIComponent(v.url)}&name=${encodeURIComponent(q)}`
+        }));
+        
+        const buttonMessage = {
+            buttons: [
+                {
+                    buttonId: 'action',
+                    buttonText: { displayText: '🎨 Select Text Effect' },
+                    type: 4,
+                    nativeFlowInfo: {
+                        name: 'single_select',
+                        paramsJson: JSON.stringify({
+                            title: 'Available Text Effects',
+                            sections: [
+                                {
+                                    title: 'Choose your logo style',
+                                    rows: rows
                                 }
-                            }
-                        ],
-                        headerType: 1,
-                        viewOnce: true,
-                        caption: '❏ *LOGO MAKER*',
-                        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
-                    };
-
-                    await socket.sendMessage(from, buttonMessage, { quoted: fakevCard });
-                    break;
+                            ]
+                        })
+                    }
                 }
+            ],
+            headerType: 1,
+            viewOnce: true,
+            caption: '❏ *LOGO MAKER*',
+            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }
+        };
+
+        await socket.sendMessage(from, buttonMessage, { quoted: fakevCard });
+    } catch (error) {
+        console.error('Error fetching logo data:', error);
+        await socket.sendMessage(sender, { text: '*`Sorry, couldn\'t fetch logo styles at the moment 😢`*' });
+    }
+    break;
+}
 //===============================                
 // 9
                 case 'dllogo': { 
@@ -2995,44 +2928,37 @@ case 'profilepic': {
                 }
                 
               ///  for bot presence
-              // Bot mode control using Socket.IO
-case 'mode': {
+                case 'mode': {
     if (!isCreator) {
-        socket.emit('message', {
-            to: m.from,
-            text: "*📛 THIS IS AN OWNER COMMAND*",
-            quoted: m
-        });
+        await Matrix.sendMessage(m.from, { text: "*📛 THIS IS AN OWNER COMMAND*" }, { quoted: m });
         return;
     }
 
-    // Initialize mode settings
-    if (typeof botConfig.public === 'undefined') {
-        botConfig.public = (config.MODE && config.MODE.toLowerCase() === "public") || false;
+    // Initialize mode settings from config if they don't exist
+    if (typeof Matrix.public === 'undefined') {
+        Matrix.public = config.MODE === "public";
     }
-    if (typeof botConfig.otherMode === 'undefined') {
-        botConfig.otherMode = false;
+    if (typeof Matrix.otherMode === 'undefined') {
+        Matrix.otherMode = false;
     }
 
-    // If no specific mode is provided, show the options
-    if (!text || text.trim() === '') {
-        const currentMode = botConfig.public ? 'public' : 'private';
-        const otherStatus = botConfig.otherMode ? 'enabled' : 'disabled';
+    // If no specific mode is provided, show the button interface
+    if (!text) {
+        const currentMode = Matrix.public ? 'public' : 'private';
+        const otherStatus = Matrix.otherMode ? 'enabled' : 'disabled';
         
-        const modeMessage = {
+        const buttonMessage = {
             text: `*🤖 BOT MODE SETTINGS*\n\nCurrent Mode: ${currentMode.toUpperCase()}\nOther Mode: ${otherStatus.toUpperCase()}\n\nSelect an option:`,
-            options: [
-                { id: 'mode_public', text: '🌐 PUBLIC' },
-                { id: 'mode_private', text: '🔒 PRIVATE' },
-                { id: 'mode_other', text: botConfig.otherMode ? '❌ DISABLE OTHER' : '✅ ENABLE OTHER' }
-            ]
+            footer: config.BOT_NAME || "Bot", // Use config.BOT_NAME or fallback
+            buttons: [
+                { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
+                { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
+                { buttonId: `${prefix}mode other`, buttonText: { displayText: Matrix.otherMode ? '❌ DISABLE OTHER' : '✅ ENABLE OTHER' }, type: 1 }
+            ],
+            headerType: 1
         };
         
-        socket.emit('send-buttons', {
-            to: m.from,
-            message: modeMessage,
-            quoted: m
-        });
+        await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
         return;
     }
 
@@ -3040,80 +2966,73 @@ case 'mode': {
     
     if (['public', 'private', 'other'].includes(modeArg)) {
         if (modeArg === 'public') {
-            botConfig.public = true;
-            botConfig.otherMode = false;
-            config.MODE = "public";
+            Matrix.public = true;
+            Matrix.otherMode = false;
+            config.MODE = "public"; // Update config
+            await saveConfig(); // Save to file if needed
             
-            // Save configuration
-            socket.emit('save-config', config);
-            
-            const response = {
+            const buttonMessage = {
                 text: '✅ Mode has been changed to PUBLIC.',
-                options: [
-                    { id: 'mode_private', text: '🔒 SWITCH TO PRIVATE' },
-                    { id: 'mode_settings', text: '⚙️ SETTINGS' }
-                ]
+                footer: config.BOT_NAME || "Bot",
+                buttons: [
+                    { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 SWITCH TO PRIVATE' }, type: 1 },
+                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
+                ],
+                headerType: 1
             };
             
-            socket.emit('send-buttons', {
-                to: m.from,
-                message: response
-            });
+            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
         } else if (modeArg === 'private') {
-            botConfig.public = false;
-            botConfig.otherMode = false;
-            config.MODE = "private";
+            Matrix.public = false;
+            Matrix.otherMode = false;
+            config.MODE = "private"; // Update config
+            await saveConfig(); // Save to file if needed
             
-            // Save configuration
-            socket.emit('save-config', config);
-            
-            const response = {
+            const buttonMessage = {
                 text: '✅ Mode has been changed to PRIVATE.',
-                options: [
-                    { id: 'mode_public', text: '🌐 SWITCH TO PUBLIC' },
-                    { id: 'mode_settings', text: '⚙️ SETTINGS' }
-                ]
+                footer: config.BOT_NAME || "Bot",
+                buttons: [
+                    { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 SWITCH TO PUBLIC' }, type: 1 },
+                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
+                ],
+                headerType: 1
             };
             
-            socket.emit('send-buttons', {
-                to: m.from,
-                message: response
-            });
+            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
         } else if (modeArg === 'other') {
-            botConfig.otherMode = !botConfig.otherMode;
-            const status = botConfig.otherMode ? 'enabled' : 'disabled';
+            Matrix.otherMode = !Matrix.otherMode;
+            const status = Matrix.otherMode ? 'enabled' : 'disabled';
             
-            const response = {
+            const buttonMessage = {
                 text: `✅ Other mode has been ${status.toUpperCase()}.`,
-                options: [
-                    { id: 'mode_public', text: '🌐 PUBLIC' },
-                    { id: 'mode_private', text: '🔒 PRIVATE' },
-                    { id: 'mode_settings', text: '⚙️ SETTINGS' }
-                ]
+                footer: config.BOT_NAME || "Bot",
+                buttons: [
+                    { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
+                    { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
+                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
+                ],
+                headerType: 1
             };
             
-            socket.emit('send-buttons', {
-                to: m.from,
-                message: response
-            });
+            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
         }
     } else {
-        const errorResponse = {
+        const buttonMessage = {
             text: "❌ Invalid mode. Please select a valid option:",
-            options: [
-                { id: 'mode_public', text: '🌐 PUBLIC' },
-                { id: 'mode_private', text: '🔒 PRIVATE' },
-                { id: 'mode_other', text: '🔧 OTHER' }
-            ]
+            footer: config.BOT_NAME || "Bot",
+            buttons: [
+                { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
+                { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
+                { buttonId: `${prefix}mode other`, buttonText: { displayText: '🔧 OTHER' }, type: 1 }
+            ],
+            headerType: 1
         };
         
-        socket.emit('send-buttons', {
-            to: m.from,
-            message: errorResponse
-        });
+        await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
     }
     break;
 }
+
                 // Case: promote - Promote a member to group admin
                 case 'promote': {
                 await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
@@ -3160,49 +3079,68 @@ case 'mode': {
                 }
 
                 // Case: demote - Demote a group admin to member
-                case 'demote': {
-                await socket.sendMessage(sender, { react: { text: '🙆‍♀️', key: msg.key } });
-                    if (!isGroup) {
-                        await socket.sendMessage(sender, {
-                            text: '❌ *This command can only be used in groups, sweetie!* 😘'
-                        }, { quoted: fakevCard });
-                        break;
-                    }
-                    if (!isSenderGroupAdmin && !isOwner) {
-                        await socket.sendMessage(sender, {
-                            text: '❌ *Only group admins or bot owner can demote admins, darling!* 😘'
-                        }, { quoted: fakevCard });
-                        break;
-                    }
-                    if (args.length === 0 && !msg.quoted) {
-                        await socket.sendMessage(sender, {
-                            text: `📌 *Usage:* ${config.PREFIX}demote +254740007567 or reply to a message with ${config.PREFIX}demote`
-                        }, { quoted: fakevCard });
-                        break;
-                    }
-                    try {
-                        let numberToDemote;
-                        if (msg.quoted) {
-                            numberToDemote = msg.quoted.sender;
-                        } else {
-                            numberToDemote = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
-                        }
-                        await socket.groupParticipantsUpdate(from, [numberToDemote], 'demote');
-                        await socket.sendMessage(sender, {
-                            text: formatMessage(
-                                '⬇️ ADMIN DEMOTED',
-                                `Successfully demoted ${numberToDemote.split('@')[0]} from group admin! 📉`,
-                                config.BOT_FOOTER
-                            )
-                        }, { quoted: fakevCard });
-                    } catch (error) {
-                        console.error('Demote command error:', error);
-                        await socket.sendMessage(sender, {
-                            text: `❌ *Failed to demote admin, love!* 😢\nError: ${error.message || 'Unknown error'}`
-                        }, { quoted: fakevCard });
-                    }
-                    break;
-                }
+               case 'demote': {
+    await socket.sendMessage(sender, { react: { text: '🙆‍♀️', key: msg.key } });
+    
+    if (!isGroup) {
+        await socket.sendMessage(sender, {
+            text: '❌ *This command can only be used in groups, sweetie!* 😘',
+            buttons: [
+                {buttonId: 'groups', buttonText: {displayText: 'My Groups'}, type: 1}
+            ]
+        }, { quoted: fakevCard });
+        break;
+    }
+    
+    if (!isSenderGroupAdmin && !isOwner) {
+        await socket.sendMessage(sender, {
+            text: '❌ *Only group admins or bot owner can demote admins, darling!* 😘'
+        }, { quoted: fakevCard });
+        break;
+    }
+    
+    if (args.length === 0 && !msg.quoted) {
+        await socket.sendMessage(sender, {
+            text: `📌 *Usage:* ${config.PREFIX}demote +254740007567 or reply to a message with ${config.PREFIX}demote`,
+            buttons: [
+                {buttonId: 'demote-help', buttonText: {displayText: 'Usage Examples'}, type: 1}
+            ]
+        }, { quoted: fakevCard });
+        break;
+    }
+    
+    try {
+        let numberToDemote;
+        if (msg.quoted) {
+            numberToDemote = msg.quoted.sender;
+        } else {
+            numberToDemote = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+        }
+        
+        await socket.groupParticipantsUpdate(from, [numberToDemote], 'demote');
+        
+        await socket.sendMessage(sender, {
+            text: formatMessage(
+                '⬇️ ADMIN DEMOTED',
+                `Successfully demoted ${numberToDemote.split('@')[0]} 📉`,
+                config.BOT_FOOTER
+            ),
+            buttons: [
+                {buttonId: 'adminlist', buttonText: {displayText: 'View Admins'}, type: 1}
+            ]
+        }, { quoted: fakevCard });
+        
+    } catch (error) {
+        console.error('Demote command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ *Failed to demote admin, love!* 😢\nError: ${error.message || 'Unknown error'}`,
+            buttons: [
+                {buttonId: 'tryagain', buttonText: {displayText: 'Try Again'}, type: 1}
+            ]
+        }, { quoted: fakevCard });
+    }
+    break;
+}
 
                 // Case: open - Unlock group (allow all members to send messages)
 case 'open': {
@@ -3225,26 +3163,25 @@ case 'open': {
     try {
         await socket.groupSettingUpdate(from, 'not_announcement');
         
-        // Common message context
-        const messageContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363402973786789@newsletter',
-                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                serverMessageId: -1
-            }
-        };
-        
-        // Send image with success message
+        // Send success message with buttons
         await socket.sendMessage(sender, {
-            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your image URL
-            caption: formatMessage(
-                '🔓 GROUP OPENED',
-                'Group is now open! All members can send messages. 🗣️',
+            text: formatMessage(
+                '🔓 GROUP OPENED\n\n' +
+                'Group is now open!🗣️\n\n' +
                 config.BOT_FOOTER
             ),
-            ...messageContext
+            buttons: [
+                {
+                    buttonId: 'close',
+                    buttonText: { displayText: '🔒 Close Group' },
+                    type: 1
+                },
+                {
+                    buttonId: 'settings',
+                    buttonText: { displayText: '⚙️ Group Settings' },
+                    type: 1
+                }
+            ]
         }, { quoted: fakevCard });
     } catch (error) {
         console.error('Open command error:', error);
@@ -3253,7 +3190,6 @@ case 'open': {
         }, { quoted: fakevCard });
     }
     break;
-    
 }
 // Case: close - Lock group (only admins can send messages)
 case 'close': {
@@ -3276,26 +3212,21 @@ case 'close': {
     try {
         await socket.groupSettingUpdate(from, 'announcement');
         
-        // Common message context
-        const messageContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363402973786789@newsletter',
-                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                serverMessageId: -1
-            }
-        };
+        // Create buttons for opening the group and settings
+        const buttons = [
+            { buttonId: 'open', buttonText: { displayText: 'Open Group' }, type: 1 },
+            { buttonId: 'settings', buttonText: { displayText: 'Settings' }, type: 1 }
+        ];
         
-        // Send image with success message
+        // Send success message with buttons
         await socket.sendMessage(sender, {
-            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }, // Replace with your image URL
-            caption: formatMessage(
+            text: formatMessage(
                 '🔒 GROUP CLOSED',
-                'Group is now closed! Only admins can send messages. 🤫',
+                'Group is now closed!:',
                 config.BOT_FOOTER
             ),
-            ...messageContext
+            buttons: buttons,
+            headerType: 1
         }, { quoted: fakevCard });
     } catch (error) {
         console.error('Close command error:', error);
@@ -3575,7 +3506,6 @@ case 'shorturl': {
   }
   break;
 }
-
 // case 39: weather
 case 'weather': {
   try {
@@ -3584,7 +3514,12 @@ case 'weather': {
     if (!q || q.trim() === '') {
       await socket.sendMessage(sender, {
         text: `📌 *ᴜsᴀɢᴇ:* ${config.PREFIX}weather <ᴄɪᴛʏ>\n` +
-              `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}weather London`
+              `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}weather London`,
+        buttons: [
+          {buttonId: `${config.PREFIX}weather London`, buttonText: {displayText: '🌤️ London'}, type: 1},
+          {buttonId: `${config.PREFIX}weather New York`, buttonText: {displayText: '🌤️ New York'}, type: 1},
+          {buttonId: `${config.PREFIX}weather Tokyo`, buttonText: {displayText: '🌤️ Tokyo'}, type: 1}
+        ]
       }, { quoted: msg });
       break;
     }
@@ -3594,11 +3529,19 @@ case 'weather': {
     }, { quoted: msg });
 
     const apiKey = '2d61a72574c11c4f36173b627f8cb177';
-    const city = q.trim();
-    const url = `http://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+    const city = encodeURIComponent(q.trim());
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
 
-    const response = await axios.get(url, { timeout: 5000 });
+    const response = await axios.get(url, { timeout: 10000 });
     const data = response.data;
+
+    // Generate weather image URL
+    const weatherIcon = data.weather[0].icon;
+    const imageUrl = `https://openweathermap.org/img/wn/${weatherIcon}@2x.png`;
+
+    // Download the weather icon image
+    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(imageResponse.data, 'binary');
 
     const weatherMessage = `
 🌍 *ᴡᴇᴀᴛʜᴇʀ ɪɴғᴏ ғᴏʀ* ${data.name}, ${data.sys.country}
@@ -3613,26 +3556,53 @@ case 'weather': {
 🔽 *ᴘʀᴇssᴜʀᴇ:* ${data.main.pressure} hPa
     `;
 
+    // Send message with image and buttons
     await socket.sendMessage(sender, {
-      text: `🌤 *ᴡᴇᴀᴛʜᴇʀ ʀᴇᴘᴏʀᴛ* 🌤\n\n${weatherMessage}\n\n> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
+      image: imageBuffer,
+      caption: `🌤 *ᴡᴇᴀᴛʜᴇʀ ʀᴇᴘᴏʀᴛ* 🌤\n\n${weatherMessage}\n\n> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`,
+      footer: 'Weather Information',
+      buttons: [
+        {buttonId: `${config.PREFIX}weather ${data.name}`, buttonText: {displayText: '🔄 Refresh'}, type: 1},
+        {buttonId: `${config.PREFIX}forecast ${data.name}`, buttonText: {displayText: '📅 Forecast'}, type: 1},
+        {buttonId: `${config.PREFIX}help weather`, buttonText: {displayText: '❓ Help'}, type: 1}
+      ],
+      contextInfo: {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '120363402973786789@newsletter',
+          newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+          serverMessageId: -1
+        }
+      }
     }, { quoted: msg });
 
   } catch (error) {
     console.error('Weather command error:', error.message);
     let errorMessage = `❌ *ᴏʜ, ʟᴏᴠᴇ, ᴄᴏᴜʟᴅɴ'ᴛ ғᴇᴛᴄʜ ᴛʜᴇ ᴡᴇᴀᴛʜᴇʀ! 😢*\n` +
                       `💡 *ᴛʀʏ ᴀɢᴀɪɴ, ᴅᴀʀʟɪɴɢ?*`;
-    if (error.message.includes('404')) {
+    
+    if (error.response && error.response.status === 404) {
       errorMessage = `🚫 *ᴄɪᴛʏ ɴᴏᴛ ғᴏᴜɴᴅ, sᴡᴇᴇᴛɪᴇ.*\n` +
                      `💡 *ᴘʟᴇᴀsᴇ ᴄʜᴇᴄᴋ ᴛʜᴇ sᴘᴇʟʟɪɴɢ ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ.*`;
-    } else if (error.message.includes('network') || error.message.includes('timeout')) {
-      errorMessage = `❌ *ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴇᴀᴛʜᴇʀ:* ${error.message}\n` +
+    } else if (error.code === 'ECONNABORTED' || error.message.includes('network') || error.message.includes('timeout')) {
+      errorMessage = `⌛ *ʀᴇǫᴜᴇsᴛ ᴛɪᴍᴇᴅ ᴏᴜᴛ.*\n` +
                      `💡 *ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ, ʙᴀʙᴇ.*`;
+    } else if (error.response && error.response.status === 401) {
+      errorMessage = `🔑 *ɪɴᴠᴀʟɪᴅ ᴀᴘɪ ᴋᴇʏ.*\n` +
+                     `💡 *ᴘʟᴇᴀsᴇ ᴄʜᴇᴄᴋ ᴛʜᴇ ᴀᴘɪ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ.*`;
     }
-    await socket.sendMessage(sender, { text: errorMessage }, { quoted: msg });
+    
+    await socket.sendMessage(sender, { 
+      text: errorMessage,
+      buttons: [
+        {buttonId: `${config.PREFIX}help weather`, buttonText: {displayText: '❓ Help'}, type: 1},
+        {buttonId: `${config.PREFIX}weather London`, buttonText: {displayText: '🌤️ Try London'}, type: 1}
+      ]
+    }, { quoted: msg });
   }
   break;
 }
-
 case 'savestatus': {
   try {
     await socket.sendMessage(sender, { react: { text: '💾', key: msg.key } });
