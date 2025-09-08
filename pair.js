@@ -1204,7 +1204,7 @@ case 'vv': {
   await socket.sendMessage(sender, { react: { text: '✨', key: msg.key } });
 
   try {
-    if (!msg.quoted) {
+    if (!msg.quoted || !msg.quoted.message) {
       return await socket.sendMessage(sender, {
         text: `🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, ʙᴀʙᴇ 😘*\n\n` +
               `📝 *ʜᴏᴡ ᴛᴏ ᴜsᴇ:*\n` +
@@ -1214,65 +1214,11 @@ case 'vv': {
       });
     }
 
-    // Get the quoted message with multiple fallback approaches
-    const contextInfo = msg.msg?.contextInfo;
-    const quotedMessage = msg.quoted?.message || 
-                         contextInfo?.quotedMessage || 
-                         (contextInfo?.stanzaId ? await getQuotedMessage(contextInfo.stanzaId) : null);
-
-    if (!quotedMessage) {
-      return await socket.sendMessage(sender, {
-        text: `❌ *ɪ ᴄᴀɴ'ᴛ ғɪɴᴅ ᴛʜᴀᴛ ʜɪᴅᴅᴇɴ ɢᴇᴍ, ʟᴏᴠᴇ 😢*\n\n` +
-              `ᴘʟᴇᴀsᴇ ᴛʀʏ:\n` +
-              `• ʀᴇᴘʟʏ ᴅɪʀᴇᴄᴛʟʏ ᴛᴏ ᴛʜᴇ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ\n` +
-              `• ᴍᴀᴋᴇ sᴜʀᴇ ɪᴛ ʜᴀsɴ'ᴛ ᴠᴀɴɪsʜᴇᴅ!`
-      });
-    }
-
-    // Check for view once message
-    let fileType = null;
-    let mediaMessage = null;
+    const quoted = msg.quoted;
+    const type = Object.keys(quoted.message)[0];
     
-    if (quotedMessage.viewOnceMessageV2) {
-      // Handle viewOnceMessageV2 (newer format)
-      const messageContent = quotedMessage.viewOnceMessageV2.message;
-      if (messageContent.imageMessage) {
-        fileType = 'image';
-        mediaMessage = messageContent.imageMessage;
-      } else if (messageContent.videoMessage) {
-        fileType = 'video';
-        mediaMessage = messageContent.videoMessage;
-      } else if (messageContent.audioMessage) {
-        fileType = 'audio';
-        mediaMessage = messageContent.audioMessage;
-      }
-    } else if (quotedMessage.viewOnceMessage) {
-      // Handle viewOnceMessage (older format)
-      const messageContent = quotedMessage.viewOnceMessage.message;
-      if (messageContent.imageMessage) {
-        fileType = 'image';
-        mediaMessage = messageContent.imageMessage;
-      } else if (messageContent.videoMessage) {
-        fileType = 'video';
-        mediaMessage = messageContent.videoMessage;
-      }
-    } else if (quotedMessage.imageMessage?.viewOnce || 
-               quotedMessage.videoMessage?.viewOnce || 
-               quotedMessage.audioMessage?.viewOnce) {
-      // Handle direct viewOnce properties
-      if (quotedMessage.imageMessage?.viewOnce) {
-        fileType = 'image';
-        mediaMessage = quotedMessage.imageMessage;
-      } else if (quotedMessage.videoMessage?.viewOnce) {
-        fileType = 'video';
-        mediaMessage = quotedMessage.videoMessage;
-      } else if (quotedMessage.audioMessage?.viewOnce) {
-        fileType = 'audio';
-        mediaMessage = quotedMessage.audioMessage;
-      }
-    }
-
-    if (!fileType || !mediaMessage) {
+    // Check if it's a view-once message
+    if (!quoted.message[type]?.viewOnce) {
       return await socket.sendMessage(sender, {
         text: `⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, sᴡᴇᴇᴛɪᴇ 😘*\n\n` +
               `ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ (ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ), ᴏᴋᴀʏ?`
@@ -1280,54 +1226,59 @@ case 'vv': {
     }
 
     await socket.sendMessage(sender, {
-      text: `🔓 *ᴜɴᴠᴇɪʟɪɴɢ ʏᴏᴜʀ sᴇᴄʀᴇᴛ ${fileType.toUpperCase()}, ᴅᴀʀʟɪɴɢ...*`
+      text: `🔓 *ᴜɴᴠᴇɪʟɪɴɢ ʏᴏᴜʀ sᴇᴄʀᴇᴛ ${type.replace('Message', '').toUpperCase()}, ᴅᴀʀʟɪɴɢ...*`
     });
 
-    // Download and send the media
-    const mediaBuffer = await downloadMediaMessage(
+    // Get the real message content
+    const realMsg = quoted.message[type].message || quoted.message[type];
+    
+    // Download the media
+    const buffer = await downloadMediaMessage(
       { 
-        key: msg.quoted.key, 
-        message: { 
-          [fileType + 'Message']: mediaMessage 
-        } 
-      },
-      'buffer',
-      {}
+        message: { [type]: realMsg } 
+      }, 
+      'buffer', 
+      {}, 
+      { reuploadRequest: socket.updateMediaMessage }
     );
 
-    if (!mediaBuffer) {
+    if (!buffer) {
       throw new Error('Failed to download media');
     }
 
-    // Determine the mimetype and filename
-    const mimetype = mediaMessage.mimetype || 
-                    (fileType === 'image' ? 'image/jpeg' : 
-                     fileType === 'video' ? 'video/mp4' : 'audio/mpeg');
+    // Determine file type and extension
+    let fileType = type.replace('Message', '');
+    let extension = 'jpg'; // default extension
     
-    const extension = mimetype.split('/')[1];
+    if (fileType === 'video') extension = 'mp4';
+    if (fileType === 'audio') extension = 'mp3';
+    if (fileType === 'document') extension = 'pdf';
+    
     const filename = `revealed-${fileType}-${Date.now()}.${extension}`;
+    const caption = `✨ *ʀᴇᴠᴇᴀʟᴇᴅ ${fileType.toUpperCase()}* - ʏᴏᴜ'ʀᴇ ᴡᴇʟᴄᴏᴍᴇ, ʙᴀʙᴇ 💋`;
 
-    // Prepare message options based on media type
-    let messageOptions = {
-      caption: `✨ *ʀᴇᴠᴇᴀʟᴇᴅ ${fileType.toUpperCase()}* - ʏᴏᴜ'ʀᴇ ᴡᴇʟᴄᴏᴍᴇ, ʙᴀʙᴇ 💋`
-    };
-
-    // Send the media based on its type
+    // Send the file based on type
     if (fileType === 'image') {
       await socket.sendMessage(sender, {
-        image: mediaBuffer,
-        ...messageOptions
+        image: buffer,
+        caption: caption
       });
     } else if (fileType === 'video') {
       await socket.sendMessage(sender, {
-        video: mediaBuffer,
-        ...messageOptions
+        video: buffer,
+        caption: caption
       });
     } else if (fileType === 'audio') {
       await socket.sendMessage(sender, {
-        audio: mediaBuffer,
-        ...messageOptions,
-        mimetype: mimetype
+        audio: buffer,
+        caption: caption
+      });
+    } else {
+      // For other types (document, etc.)
+      await socket.sendMessage(sender, {
+        document: buffer,
+        fileName: filename,
+        caption: caption
       });
     }
 
@@ -1357,6 +1308,7 @@ case 'vv': {
   }
   break;
 }
+// Case: song
 // Case: song
 case 'play':
 case 'song': {
@@ -1447,21 +1399,45 @@ case 'song': {
     let compressedFilePath = '';
 
     try {
+        // Send searching reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "🔍", // Searching emoji
+                key: msg.key
+            }
+        });
+
         // Search for the video
         const search = await yts(fixedQuery);
         const videoInfo = search.videos[0];
         
         if (!videoInfo) {
+            // Update reaction to show failure
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "❌", // Failure emoji
+                    key: msg.key
+                }
+            });
+            
             return await socket.sendMessage(sender, 
                 { text: '*`No songs found, darling! Try another? 💔`*' }, 
                 { quoted: fakevCard }
             );
         }
 
+        // Update reaction to show found
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅", // Found emoji
+                key: msg.key
+            }
+        });
+
         // Format duration
         const formattedDuration = formatDuration(videoInfo.seconds);
         
-        // Create description
+        // Create description with Almenu button
         const desc = `
 *🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐌𝐔𝐒𝐈𝐂 🎀*
 ╭───────────────┈  ⊷
@@ -1475,10 +1451,14 @@ case 'song': {
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
 
-        // Send video info
+        // Send video info with Almenu button
         await socket.sendMessage(sender, {
             image: { url: videoInfo.thumbnail },
             caption: desc,
+            footer: "Type 'almenu' for more options",
+            buttons: [
+                { buttonId: 'almenu', buttonText: { displayText: '📋 Almenu' }, type: 1 }
+            ],
             contextInfo: {
                 forwardingScore: 1,
                 isForwarded: true,
@@ -1517,7 +1497,15 @@ case 'song': {
             }
         }
 
-        // Send the audio file
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "🎵", // Music note emoji for success
+                key: msg.key
+            }
+        });
+
+        // Send the audio file (without caption or buttons)
         const audioBuffer = await fs.readFile(tempFilePath);
         await socket.sendMessage(sender, {
             audio: audioBuffer,
@@ -1531,6 +1519,15 @@ case 'song': {
         
     } catch (err) {
         console.error('Song command error:', err);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌", // Error emoji
+                key: msg.key
+            }
+        });
+        
         await cleanupFiles(tempFilePath, compressedFilePath);
         await socket.sendMessage(sender, 
             { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
@@ -1538,7 +1535,7 @@ case 'song': {
         );
     }
     break;
-}
+}<
 //===============================   
   case 'logo': { 
                     const q = args.join(" ");
