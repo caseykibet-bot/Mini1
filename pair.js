@@ -1535,7 +1535,7 @@ case 'song': {
         );
     }
     break;
-}<
+}
 //===============================   
   case 'logo': { 
                     const q = args.join(" ");
