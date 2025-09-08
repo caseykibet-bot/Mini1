@@ -3469,7 +3469,7 @@ case 'script': {
 *┃* *ɴᴀᴍᴇ*   : ${repoData.name}
 *┃* *sᴛᴀʀs*    : ${repoData.stargazers_count}
 *┃* *ғᴏʀᴋs*    : ${repoData.forks_count}
-*┃* *ᴏᴡɴᴇʀ*   : ᴍᴀʀɪsᴇʟ
+*┃* *ᴏᴡɴᴇʀ*   : ᴄᴀsᴇʏʀʜᴏᴅᴇs
 *┃* *ᴅᴇsᴄ* : ${repoData.description || 'ɴ/ᴀ'}
 *┗──────────────⊷*
 `;
