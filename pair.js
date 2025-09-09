@@ -1289,272 +1289,6 @@ case 'vv': {
   }
   break;
 }
-// Case: video
-case 'playvideo':
-case 'video': {
-    // Import dependencies
-    const yts = require('yt-search');
-    const fs = require('fs').promises;
-    const path = require('path');
-    const { exec } = require('child_process');
-    const util = require('util');
-    const execPromise = util.promisify(exec);
-    const { existsSync, mkdirSync } = require('fs');
-    const stream = require('stream');
-    const pipeline = util.promisify(stream.pipeline);
-    const ytdl = require('ytdl-core'); // Using ytdl-core for better video handling
-
-    // Constants - OPTIMIZED FOR VIDEO
-    const TEMP_DIR = './temp_video';
-    const MAX_FILE_SIZE_MB = 8; // Increased for video
-    const TARGET_SIZE_MB = 7; // Target size for video
-
-    // Ensure temp directory exists
-    if (!existsSync(TEMP_DIR)) {
-        mkdirSync(TEMP_DIR, { recursive: true });
-    }
-
-    // Utility functions
-    function extractYouTubeId(url) {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-        const match = url.match(regex);
-        return match ? match[1] : null;
-    }
-
-    function convertYouTubeLink(input) {
-        const videoId = extractYouTubeId(input);
-        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
-    }
-
-    function formatDuration(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-
-    async function compressVideo(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
-        try {
-            const { stdout: durationOutput } = await execPromise(
-                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
-            );
-            const duration = parseFloat(durationOutput) || 180;
-            
-            // Calculate target bitrate (in kbps)
-            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
-            
-            // Constrain bitrate for reasonable quality
-            const constrainedBitrate = Math.min(Math.max(targetBitrate, 500), 1500);
-            
-            // Fast video compression with optimized settings
-            await execPromise(
-                `ffmpeg -i "${inputPath}" -c:v libx264 -preset fast -crf 28 -b:v ${constrainedBitrate}k -maxrate ${constrainedBitrate}k -bufsize ${constrainedBitrate * 2}k -c:a aac -b:a 64k -movflags +faststart -threads 2 -y "${outputPath}"`
-            );
-            return true;
-        } catch (error) {
-            console.error('Video compression failed:', error);
-            return false;
-        }
-    }
-
-    async function getBestFormat(videoInfo) {
-        try {
-            // Prefer formats that are MP4 and have both audio and video
-            const formats = videoInfo.formats
-                .filter(format => 
-                    format.container === 'mp4' && 
-                    format.hasVideo && 
-                    format.hasAudio &&
-                    format.qualityLabel &&
-                    parseInt(format.qualityLabel) <= 360 // Limit to 360p for faster download
-                )
-                .sort((a, b) => {
-                    // Prioritize smaller files with both audio and video
-                    if (a.hasAudio && a.hasVideo && !(b.hasAudio && b.hasVideo)) return -1;
-                    if (b.hasAudio && b.hasVideo && !(a.hasAudio && a.hasVideo)) return 1;
-                    return parseInt(a.qualityLabel) - parseInt(b.qualityLabel);
-                });
-
-            return formats[0] || null;
-        } catch (error) {
-            console.error('Error getting best format:', error);
-            return null;
-        }
-    }
-
-    async function cleanupFiles(...filePaths) {
-        for (const filePath of filePaths) {
-            if (filePath) {
-                try {
-                    await fs.unlink(filePath);
-                } catch (err) {
-                    // Silent cleanup - no error reporting needed
-                }
-            }
-        }
-    }
-
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
-
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, 
-            { text: '*`Give me a video title or YouTube link, love 😘`*' }, 
-            { quoted: fakevCard }
-        );
-    }
-
-    const fixedQuery = convertYouTubeLink(q.trim());
-    let tempFilePath = '';
-    let compressedFilePath = '';
-
-    try {
-        // Send searching reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "🔍", // Searching emoji
-                key: msg.key
-            }
-        });
-
-        // Search for the video
-        const search = await yts(fixedQuery);
-        const videoInfo = search.videos[0];
-        
-        if (!videoInfo) {
-            // Update reaction to show failure
-            await socket.sendMessage(sender, {
-                react: {
-                    text: "❌", // Failure emoji
-                    key: msg.key
-                }
-            });
-            
-            return await socket.sendMessage(sender, 
-                { text: '*`No videos found, darling! Try another? 💔`*' }, 
-                { quoted: fakevCard }
-            );
-        }
-
-        // Update reaction to show found
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅", // Found emoji
-                key: msg.key
-            }
-        });
-
-        // Format duration
-        const formattedDuration = formatDuration(videoInfo.seconds);
-        
-        // Create description with Almenu button
-        const desc = `
-*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐕𝐈𝐃𝐄𝐎 🎀*
-╭───────────────┈  ⊷
-├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
-├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
-├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
-├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
-├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
-├🎬 *Format:* Optimized MP4 (Fast Download)
-╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
-`;
-
-        // Send video info with Almenu button
-        await socket.sendMessage(sender, {
-            image: { url: videoInfo.thumbnail },
-            caption: desc,
-            footer: "Type 'almenu' for more options",
-            buttons: [
-                { buttonId: 'almenu', buttonText: { displayText: '📋 Almenu' }, type: 1 }
-            ],
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363402973786789@newsletter',
-                    newsletterName: 'POWERED BY CASEYRHODES TECH',
-                    serverMessageId: -1
-                }
-            }
-        }, { quoted: fakevCard });
-
-        // Get video info for best format selection
-        const ytInfo = await ytdl.getInfo(videoInfo.videoId);
-        const bestFormat = await getBestFormat(ytInfo);
-
-        if (!bestFormat) {
-            throw new Error('No suitable video format found');
-        }
-
-        // Clean title for filename
-        const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
-        tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_original.mp4`);
-        compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp4`);
-
-        // Download the video with ytdl-core for better streaming
-        const videoStream = ytdl(videoInfo.url, {
-            format: bestFormat,
-            quality: 'lowest', // Fastest download
-        });
-
-        const fileStream = fs.createWriteStream(tempFilePath);
-        await pipeline(videoStream, fileStream);
-
-        // Compress video for smaller size
-        const compressionSuccess = await compressVideo(tempFilePath, compressedFilePath);
-        if (compressionSuccess) {
-            await cleanupFiles(tempFilePath);
-            tempFilePath = compressedFilePath;
-            compressedFilePath = '';
-        }
-
-        // Send success reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "🎬", // Video camera emoji for success
-                key: msg.key
-            }
-        });
-
-        // Get file stats to check size
-        const stats = await fs.stat(tempFilePath);
-        const fileSizeMB = stats.size / (1024 * 1024);
-
-        // Send the optimized video file
-        const videoBuffer = await fs.readFile(tempFilePath);
-        await socket.sendMessage(sender, {
-            video: videoBuffer,
-            mimetype: "video/mp4",
-            fileName: `${cleanTitle}.mp4`,
-            caption: fileSizeMB > 5 ? `📁 Size: ${fileSizeMB.toFixed(1)}MB` : undefined
-        }, { quoted: fakevCard });
-
-        // Cleanup
-        await cleanupFiles(tempFilePath, compressedFilePath);
-        
-    } catch (err) {
-        console.error('Video command error:', err);
-        
-        // Send error reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌", // Error emoji
-                key: msg.key
-            }
-        });
-        
-        await cleanupFiles(tempFilePath, compressedFilePath);
-        await socket.sendMessage(sender, 
-            { text: "*❌ Video download failed, love! 😢 Try a shorter video?*" }, 
-            { quoted: fakevCard }
-        );
-    }
-    break;
-}
 // Case: song
 case 'play':
 case 'song': {
@@ -1676,16 +1410,7 @@ case 'song': {
         // Send video info immediately
         await socket.sendMessage(sender, {
             image: { url: videoInfo.thumbnail },
-            caption: desc,
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363402973786789@newsletter',
-                    newsletterName: '🎵 POWERED BY CASEYRHODES TECH',
-                    serverMessageId: -1
-                }
-            }
+            caption: desc
         }, { quoted: fakevCard });
 
         // Download the audio
@@ -3160,12 +2885,12 @@ case 'open': {
             ),
             buttons: [
                 {
-                    buttonId: 'close',
+                    buttonId: '.close',
                     buttonText: { displayText: '🔒 Close Group' },
                     type: 1
                 },
                 {
-                    buttonId: 'settings',
+                    buttonId: '.settings',
                     buttonText: { displayText: '⚙️ Group Settings' },
                     type: 1
                 }
@@ -3202,8 +2927,8 @@ case 'close': {
         
         // Create buttons for opening the group and settings
         const buttons = [
-            { buttonId: 'open', buttonText: { displayText: 'Open Group' }, type: 1 },
-            { buttonId: 'settings', buttonText: { displayText: 'Settings' }, type: 1 }
+            { buttonId: '.open', buttonText: { displayText: 'Open Group' }, type: 1 },
+            { buttonId: '.settings', buttonText: { displayText: 'Settings' }, type: 1 }
         ];
         
         // Send success message with buttons
@@ -3468,14 +3193,7 @@ case 'shorturl': {
             `🔍 *sʜᴏʀᴛᴇɴᴇᴅ:* ${shortUrl}\n\n` +
             `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
     }, { 
-      quoted: msg,
-      forwardingScore: 1,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: '120363402973786789@newsletter',
-        newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-        serverMessageId: -1
-      }
+      quoted: msg
     });
 
     // Send clean URL after 2-second delay
