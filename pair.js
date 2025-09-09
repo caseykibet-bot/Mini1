@@ -661,17 +661,16 @@ function setupCommandHandlers(socket, number) {
    case 'autoread':
 case 'read':
 case 'toggleautoread':
-case 'autoreadmode':
+case 'autoreadmode': {
     if (!isOwner) {
-        await socket.sendMessage(sender, {
-            text: '❌ *This command is only for bot owner!*',
-            mentions: [nowsender]
-        });
+        await socket.sendMessage(m.chat, {
+            text: '❌ *This command is only for bot owner!*'
+        }, { quoted: m });
         return;
     }
 
     try {
-        let action = args[0] ? args[0].toLowerCase() : 'toggle';
+        let action = body ? body.toLowerCase() : 'toggle';
         let newState;
         let statusEmoji;
         let statusText;
@@ -706,17 +705,15 @@ case 'autoreadmode':
             case 'status':
             case 'check':
             case 'info':
-                await socket.sendMessage(sender, {
-                    text: `📖 *AUTO-READ STATUS*\n\nCurrent state: ${config.AUTO_READ === 'true' ? '✅ ENABLED' : '❌ DISABLED'}\n\nUse: ${prefix}autoread on/off/toggle`,
-                    mentions: [nowsender]
-                });
+                await socket.sendMessage(m.chat, {
+                    text: `📖 *AUTO-READ STATUS*\n\nCurrent state: ${config.AUTO_READ === 'true' ? '✅ ENABLED' : '❌ DISABLED'}\n\nUse: ${prefix}autoread on/off/toggle`
+                }, { quoted: m });
                 return;
             
             default:
-                await socket.sendMessage(sender, {
-                    text: `❌ *Invalid option!*\n\nUsage: ${prefix}autoread [on|off|toggle|status]\nCurrent status: ${config.AUTO_READ === 'true' ? '✅ ON' : '❌ OFF'}`,
-                    mentions: [nowsender]
-                });
+                await socket.sendMessage(m.chat, {
+                    text: `❌ *Invalid option!*\n\nUsage: ${prefix}autoread [on|off|toggle|status]\nCurrent status: ${config.AUTO_READ === 'true' ? '✅ ON' : '❌ OFF'}`
+                }, { quoted: m });
                 return;
         }
 
@@ -725,15 +722,16 @@ case 'autoreadmode':
 
         // Save to config file
         try {
-            const configPath = './config.json';
-            let configData = {};
+            const configPath = './config.js';
+            let configContent = fs.readFileSync(configPath, 'utf8');
             
-            if (fs.existsSync(configPath)) {
-                configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            }
+            // Update the AUTO_READ value in config file
+            configContent = configContent.replace(
+                /AUTO_READ:\s*['"`]?[^'`"]*['"`]?/,
+                `AUTO_READ: '${newState}'`
+            );
             
-            configData.AUTO_READ = newState;
-            await fs.writeFile(configPath, JSON.stringify(configData, null, 2));
+            fs.writeFileSync(configPath, configContent);
         } catch (configError) {
             console.error('Error saving config:', configError);
         }
@@ -754,23 +752,20 @@ ${newState === 'true' ?
 Use: ${prefix}autoread status to check current state
         `.trim();
 
-        await socket.sendMessage(sender, {
-            text: successMessage,
-            mentions: [nowsender]
-        });
+        await socket.sendMessage(m.chat, {
+            text: successMessage
+        }, { quoted: m });
 
-        console.log(`Auto-read feature ${newState === 'true' ? 'enabled' : 'disabled'} by ${senderNumber}`);
+        console.log(`Auto-read feature ${newState === 'true' ? 'enabled' : 'disabled'} by ${m.sender.split('@')[0]}`);
 
     } catch (error) {
         console.error('Error in autoread command:', error);
-        await socket.sendMessage(sender, {
-            text: `❌ *Failed to update auto-read settings!*\n\nError: ${error.message}`,
-            mentions: [nowsender]
-        });
+        await socket.sendMessage(m.chat, {
+            text: `❌ *Failed to update auto-read settings!*\n\nError: ${error.message}`
+        }, { quoted: m });
     }
     break;
-    }
-
+}
 // Case: bot_stats
 case 'session': {
     try {
