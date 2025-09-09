@@ -12,11 +12,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const FormData = require("form-data");
 const os = require('os'); 
-const FileType = require('file-type'); // Added missing import
-
-// Fixed the msg import - assuming it's a local file
 const { sms, downloadMediaMessage } = require("./msg");
-
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -46,13 +42,9 @@ const config = {
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    BOT_OWNER:'Caseyrhodes mini',
-    MODE:'public',
     OWNER_NUMBER: '254101022551',
     BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T',
-    IMAGE_PATH: 'https://example.com/default-image.jpg',
-    READ_MESSAGE: 'true' // Added missing property
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -160,7 +152,7 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-}
+  }
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
@@ -199,8 +191,7 @@ async function joinGroup(socket) {
             if (retries === 0) {
                 console.error('[ ❌ ] Failed to join group', { error: errorMessage });
                 try {
-                    const ownerNumber = config.OWNER_NUMBER;
-                    await socket.sendMessage(ownerNumber + '@s.whatsapp.net', {
+                    await socket.sendMessage(ownerNumber[0], {
                         text: `Failed to join group with invite code ${inviteCode}: ${errorMessage}`,
                     });
                 } catch (sendError) {
@@ -241,7 +232,14 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
+
 // Helper function to format bytes 
+// Sample formatMessage function
+function formatMessage(title, body, footer) {
+  return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
+}
+
+// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -268,11 +266,6 @@ async function sendOTP(socket, number, otp) {
     }
 }
 
-async function loadNewsletterJIDsFromRaw() {
-    // Placeholder implementation - replace with actual implementation
-    return [config.NEWSLETTER_JID];
-}
-
 function setupNewsletterHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
@@ -284,7 +277,7 @@ function setupNewsletterHandlers(socket) {
         if (!allNewsletterJIDs.includes(jid)) return;
 
         try {
-            const emojis = ['🥹', '🌸', '🌟', '🎉', '🤗'];
+            const emojis = ['🥹', '🌸', '👻','💫', '🎉', '🌟'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const messageId = message.newsletterServerId;
 
@@ -332,22 +325,6 @@ async function setupStatusHandlers(socket) {
                         if (retries === 0) throw error;
                         await delay(1000 * (config.MAX_RETRIES - retries));
                     }
-                }
-            }
-
-            // Handle public/private mode
-            if (config.MODE === "public") {
-                // Handle public mode
-            } else if (config.MODE === "private") {
-                // Handle private mode
-            }
-            
-            // Fast auto-read messages
-            if (config.READ_MESSAGE === 'true' && !message.key.fromMe) {
-                try {
-                    await socket.readMessages([message.key]);
-                } catch (error) {
-                    // Silent error handling for read messages
                 }
             }
 
@@ -402,7 +379,6 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
-
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -416,7 +392,6 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
-
 async function oneViewmeg(socket, isOwner, msg, sender) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
@@ -657,115 +632,6 @@ function setupCommandHandlers(socket, number) {
                     }
                     break;
                 }
-   //  autoread toggle on off
-   case 'autoread':
-case 'read':
-case 'toggleautoread':
-case 'autoreadmode': {
-    if (!isOwner) {
-        await socket.sendMessage(m.chat, {
-            text: '❌ *This command is only for bot owner!*'
-        }, { quoted: m });
-        return;
-    }
-
-    try {
-        let action = body ? body.toLowerCase() : 'toggle';
-        let newState;
-        let statusEmoji;
-        let statusText;
-
-        switch(action) {
-            case 'on':
-            case 'enable':
-            case 'true':
-            case '1':
-                newState = 'true';
-                statusEmoji = '✅';
-                statusText = 'ENABLED';
-                break;
-            
-            case 'off':
-            case 'disable':
-            case 'false':
-            case '0':
-                newState = 'false';
-                statusEmoji = '❌';
-                statusText = 'DISABLED';
-                break;
-            
-            case 'toggle':
-            case 'switch':
-            case '':
-                newState = config.AUTO_READ === 'true' ? 'false' : 'true';
-                statusEmoji = newState === 'true' ? '✅' : '❌';
-                statusText = newState === 'true' ? 'ENABLED' : 'DISABLED';
-                break;
-            
-            case 'status':
-            case 'check':
-            case 'info':
-                await socket.sendMessage(m.chat, {
-                    text: `📖 *AUTO-READ STATUS*\n\nCurrent state: ${config.AUTO_READ === 'true' ? '✅ ENABLED' : '❌ DISABLED'}\n\nUse: ${prefix}autoread on/off/toggle`
-                }, { quoted: m });
-                return;
-            
-            default:
-                await socket.sendMessage(m.chat, {
-                    text: `❌ *Invalid option!*\n\nUsage: ${prefix}autoread [on|off|toggle|status]\nCurrent status: ${config.AUTO_READ === 'true' ? '✅ ON' : '❌ OFF'}`
-                }, { quoted: m });
-                return;
-        }
-
-        // Update config
-        config.AUTO_READ = newState;
-
-        // Save to config file
-        try {
-            const configPath = './config.js';
-            let configContent = fs.readFileSync(configPath, 'utf8');
-            
-            // Update the AUTO_READ value in config file
-            configContent = configContent.replace(
-                /AUTO_READ:\s*['"`]?[^'`"]*['"`]?/,
-                `AUTO_READ: '${newState}'`
-            );
-            
-            fs.writeFileSync(configPath, configContent);
-        } catch (configError) {
-            console.error('Error saving config:', configError);
-        }
-
-        // Send success message
-        const successMessage = `
-${statusEmoji} *AUTO-READ ${statusText}*
-
-📖 *Status:* ${newState === 'true' ? 'ENABLED' : 'DISABLED'}
-⚡ *Action:* ${action === 'toggle' ? 'Toggled' : 'Set to'} ${newState === 'true' ? 'ON' : 'OFF'}
-⏰ *Time:* ${new Date().toLocaleString()}
-
-${newState === 'true' ? 
-'📩 Messages will now be automatically marked as read' : 
-'📩 Messages will no longer be automatically marked as read'
-}
-
-Use: ${prefix}autoread status to check current state
-        `.trim();
-
-        await socket.sendMessage(m.chat, {
-            text: successMessage
-        }, { quoted: m });
-
-        console.log(`Auto-read feature ${newState === 'true' ? 'enabled' : 'disabled'} by ${m.sender.split('@')[0]}`);
-
-    } catch (error) {
-        console.error('Error in autoread command:', error);
-        await socket.sendMessage(m.chat, {
-            text: `❌ *Failed to update auto-read settings!*\n\nError: ${error.message}`
-        }, { quoted: m });
-    }
-    break;
-}
 // Case: bot_stats
 case 'session': {
     try {
