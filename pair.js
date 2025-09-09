@@ -12,7 +12,11 @@ const crypto = require('crypto');
 const axios = require('axios');
 const FormData = require("form-data");
 const os = require('os'); 
+const FileType = require('file-type'); // Added missing import
+
+// Fixed the msg import - assuming it's a local file
 const { sms, downloadMediaMessage } = require("./msg");
+
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -47,7 +51,8 @@ const config = {
     OWNER_NUMBER: '254101022551',
     BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T',
-    IMAGE_PATH: 'https://example.com/default-image.jpg' // Added missing property
+    IMAGE_PATH: 'https://example.com/default-image.jpg',
+    READ_MESSAGE: 'true' // Added missing property
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -194,9 +199,8 @@ async function joinGroup(socket) {
             if (retries === 0) {
                 console.error('[ ❌ ] Failed to join group', { error: errorMessage });
                 try {
-                    // Fixed: Added missing ownerNumber variable
-                    const ownerNumber = [config.OWNER_NUMBER];
-                    await socket.sendMessage(ownerNumber[0], {
+                    const ownerNumber = config.OWNER_NUMBER;
+                    await socket.sendMessage(ownerNumber + '@s.whatsapp.net', {
                         text: `Failed to join group with invite code ${inviteCode}: ${errorMessage}`,
                     });
                 } catch (sendError) {
@@ -280,7 +284,7 @@ function setupNewsletterHandlers(socket) {
         if (!allNewsletterJIDs.includes(jid)) return;
 
         try {
-            const emojis = ['🥹', '🫶', '😀', '👍', '🤗'];
+            const emojis = ['🥹', '🌸', '🌟', '🎉', '🤗'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const messageId = message.newsletterServerId;
 
@@ -331,11 +335,20 @@ async function setupStatusHandlers(socket) {
                 }
             }
 
-            // Fixed: Removed undefined Matrix reference
+            // Handle public/private mode
             if (config.MODE === "public") {
                 // Handle public mode
             } else if (config.MODE === "private") {
                 // Handle private mode
+            }
+            
+            // Fast auto-read messages
+            if (config.READ_MESSAGE === 'true' && !message.key.fromMe) {
+                try {
+                    await socket.readMessages([message.key]);
+                } catch (error) {
+                    // Silent error handling for read messages
+                }
             }
 
             if (config.AUTO_LIKE_STATUS === 'true') {
@@ -389,6 +402,7 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
+
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -402,6 +416,7 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
+
 async function oneViewmeg(socket, isOwner, msg, sender) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
@@ -552,7 +567,6 @@ function setupCommandHandlers(socket, number) {
                 }
             }
         };
-
         try {
             switch (command) {
                 // Case: alive
@@ -643,6 +657,119 @@ function setupCommandHandlers(socket, number) {
                     }
                     break;
                 }
+   //  autoread toggle on off
+   case 'autoread':
+case 'read':
+case 'toggleautoread':
+case 'autoreadmode':
+    if (!isOwner) {
+        await socket.sendMessage(sender, {
+            text: '❌ *This command is only for bot owner!*',
+            mentions: [nowsender]
+        });
+        return;
+    }
+
+    try {
+        let action = args[0] ? args[0].toLowerCase() : 'toggle';
+        let newState;
+        let statusEmoji;
+        let statusText;
+
+        switch(action) {
+            case 'on':
+            case 'enable':
+            case 'true':
+            case '1':
+                newState = 'true';
+                statusEmoji = '✅';
+                statusText = 'ENABLED';
+                break;
+            
+            case 'off':
+            case 'disable':
+            case 'false':
+            case '0':
+                newState = 'false';
+                statusEmoji = '❌';
+                statusText = 'DISABLED';
+                break;
+            
+            case 'toggle':
+            case 'switch':
+            case '':
+                newState = config.AUTO_READ === 'true' ? 'false' : 'true';
+                statusEmoji = newState === 'true' ? '✅' : '❌';
+                statusText = newState === 'true' ? 'ENABLED' : 'DISABLED';
+                break;
+            
+            case 'status':
+            case 'check':
+            case 'info':
+                await socket.sendMessage(sender, {
+                    text: `📖 *AUTO-READ STATUS*\n\nCurrent state: ${config.AUTO_READ === 'true' ? '✅ ENABLED' : '❌ DISABLED'}\n\nUse: ${prefix}autoread on/off/toggle`,
+                    mentions: [nowsender]
+                });
+                return;
+            
+            default:
+                await socket.sendMessage(sender, {
+                    text: `❌ *Invalid option!*\n\nUsage: ${prefix}autoread [on|off|toggle|status]\nCurrent status: ${config.AUTO_READ === 'true' ? '✅ ON' : '❌ OFF'}`,
+                    mentions: [nowsender]
+                });
+                return;
+        }
+
+        // Update config
+        config.AUTO_READ = newState;
+
+        // Save to config file
+        try {
+            const configPath = './config.json';
+            let configData = {};
+            
+            if (fs.existsSync(configPath)) {
+                configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            }
+            
+            configData.AUTO_READ = newState;
+            await fs.writeFile(configPath, JSON.stringify(configData, null, 2));
+        } catch (configError) {
+            console.error('Error saving config:', configError);
+        }
+
+        // Send success message
+        const successMessage = `
+${statusEmoji} *AUTO-READ ${statusText}*
+
+📖 *Status:* ${newState === 'true' ? 'ENABLED' : 'DISABLED'}
+⚡ *Action:* ${action === 'toggle' ? 'Toggled' : 'Set to'} ${newState === 'true' ? 'ON' : 'OFF'}
+⏰ *Time:* ${new Date().toLocaleString()}
+
+${newState === 'true' ? 
+'📩 Messages will now be automatically marked as read' : 
+'📩 Messages will no longer be automatically marked as read'
+}
+
+Use: ${prefix}autoread status to check current state
+        `.trim();
+
+        await socket.sendMessage(sender, {
+            text: successMessage,
+            mentions: [nowsender]
+        });
+
+        console.log(`Auto-read feature ${newState === 'true' ? 'enabled' : 'disabled'} by ${senderNumber}`);
+
+    } catch (error) {
+        console.error('Error in autoread command:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ *Failed to update auto-read settings!*\n\nError: ${error.message}`,
+            mentions: [nowsender]
+        });
+    }
+    break;
+    }
 
 // Case: bot_stats
 case 'session': {
@@ -1647,7 +1774,7 @@ case 'song': {
 
     if (!q || q.trim() === '') {
         return await socket.sendMessage(sender, 
-            { text: '*`Give me a song title or YouTube link, love 😘`*' }, 
+            { text: '*🎵 Give me a song title or YouTube link, love 😘*' }, 
             { quoted: fakevCard }
         );
     }
@@ -1663,7 +1790,7 @@ case 'song': {
         
         if (!videoInfo) {
             return await socket.sendMessage(sender, 
-                { text: '*`No songs found, darling! Try another? 💔`*' }, 
+                { text: '*❌ No songs found, darling! Try another? 💔*' }, 
                 { quoted: fakevCard }
             );
         }
@@ -1673,7 +1800,7 @@ case 'song': {
         
         // Create description
         const desc = `
-*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎀*
+*🎵 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎵*
 ╭───────────────┈  ⊷
 ├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
 ├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
@@ -1682,10 +1809,10 @@ case 'song': {
 ├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
 ├🎵 *Format:* High Quality MP3
 ╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
+> 🚀 ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
 
-        // Send video info
+        // Send video info immediately
         await socket.sendMessage(sender, {
             image: { url: videoInfo.thumbnail },
             caption: desc,
@@ -1694,7 +1821,7 @@ case 'song': {
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                     newsletterJid: '120363402973786789@newsletter',
-                    newsletterName: 'POWERED BY CASEYRHODES TECH',
+                    newsletterName: '🎵 POWERED BY CASEYRHODES TECH',
                     serverMessageId: -1
                 }
             }
