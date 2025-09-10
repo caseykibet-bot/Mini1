@@ -1371,7 +1371,6 @@ case 'view2': {
     break;
 }
 // Case: song
-// Case: song
 case 'play':
 case 'song': {
     // Import dependencies
@@ -1459,12 +1458,12 @@ case 'song': {
     const fixedQuery = convertYouTubeLink(q.trim());
     let tempFilePath = '';
     let compressedFilePath = '';
-    let downloadOption = ''; // Will store user's choice: 'audio' or 'document'
+    let videoInfo = null;
 
     try {
         // Search for the video
         const search = await yts(fixedQuery);
-        const videoInfo = search.videos[0];
+        videoInfo = search.videos[0];
         
         if (!videoInfo) {
             return await socket.sendMessage(sender, 
@@ -1495,63 +1494,91 @@ case 'song': {
             caption: desc + '\n\n*📥 How would you like to download this audio?*',
             footer: 'Select a download option',
             buttons: [
-                { buttonId: 'audio', buttonText: { displayText: '🎵 As Audio' }, type: 1 },
-                { buttonId: 'document', buttonText: { displayText: '📁 As Document' }, type: 1 },
-                { buttonId: 'allmenu', buttonText: { displayText: '📋 All Menu' }, type: 1 }
+                { 
+                    buttonId: `${config.PREFIX}audio ${videoInfo.url}`, 
+                    buttonText: { displayText: '🎵 As Audio' }, 
+                    type: 1 
+                },
+                { 
+                    buttonId: `${config.PREFIX}document ${videoInfo.url}`, 
+                    buttonText: { displayText: '📁 As Document' }, 
+                    type: 1 
+                },
+                { 
+                    buttonId: `${config.PREFIX}allmenu`, 
+                    buttonText: { displayText: '📋 All Menu' }, 
+                    type: 1 
+                }
             ],
             headerType: 4
         };
 
-        // Send the options first
+        // Send the options
         await socket.sendMessage(sender, buttonMessage, { quoted: fakevCard });
+
+        // Cleanup
+        await cleanupFiles(tempFilePath, compressedFilePath);
         
-        // Function to wait for user response with timeout
-        const waitForOption = () => {
-            return new Promise((resolve, reject) => {
-                // Set a timeout for response
-                const timeout = setTimeout(() => {
-                    resolve(null);
-                }, 30000); // 30 seconds timeout
-                
-                // Create a one-time listener for the response
-                const responseListener = async (response) => {
-                    if (response.key.remoteJid === sender && 
-                        (response.message.conversation === 'audio' || 
-                         response.message.conversation === 'document' ||
-                         response.message.conversation === 'allmenu')) {
-                        clearTimeout(timeout);
-                        resolve(response.message.conversation);
-                    }
-                };
-                
-                // Add the listener
-                socket.ev.on('messages.upsert', responseListener);
-                
-                // Cleanup after timeout or response
-                setTimeout(() => {
-                    socket.ev.off('messages.upsert', responseListener);
-                }, 30000);
-            });
-        };
+    } catch (err) {
+        console.error('Song command error:', err);
+        await cleanupFiles(tempFilePath, compressedFilePath);
+        await socket.sendMessage(sender, 
+            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
+            { quoted: fakevCard }
+        );
+    }
+    break;
+}
+
+// New cases to handle the button responses
+case 'audio': {
+    // Handle audio download from button
+    const url = body.slice(config.PREFIX.length + 6).trim(); // Remove "!audio " prefix
+    await downloadAndSendAudio(socket, sender, url, 'audio');
+    break;
+}
+
+case 'document': {
+    // Handle document download from button
+    const url = body.slice(config.PREFIX.length + 9).trim(); // Remove "!document " prefix
+    await downloadAndSendAudio(socket, sender, url, 'document');
+    break;
+}
+
+// Helper function to download and send audio
+async function downloadAndSendAudio(socket, sender, url, format = 'audio') {
+    const yts = require('yt-search');
+    const ddownr = require('denethdev-ytmp3');
+    const fs = require('fs').promises;
+    const path = require('path');
+    const { exec } = require('child_process');
+    const util = require('util');
+    const execPromise = util.promisify(exec);
+    const { existsSync, mkdirSync } = require('fs');
+    const TEMP_DIR = './temp';
+    const MAX_FILE_SIZE_MB = 4;
+    const TARGET_SIZE_MB = 3.8;
+    
+    // Ensure temp directory exists
+    if (!existsSync(TEMP_DIR)) {
+        mkdirSync(TEMP_DIR, { recursive: true });
+    }
+    
+    let tempFilePath = '';
+    let compressedFilePath = '';
+    
+    try {
+        // Search for the video to get info
+        const search = await yts(url);
+        const videoInfo = search.videos[0];
         
-        // Wait for user to choose an option
-        downloadOption = await waitForOption();
-        
-        if (!downloadOption) {
+        if (!videoInfo) {
             return await socket.sendMessage(sender, 
-                { text: '*⏰ Download request timed out. Please try again.*' }, 
+                { text: '*❌ Video not found!*' }, 
                 { quoted: fakevCard }
             );
         }
-        
-        if (downloadOption === 'allmenu') {
-            // Handle allmenu option here or let the main handler catch it
-            return await socket.sendMessage(sender, 
-                { text: '*📋 Opening main menu...*' }, 
-                { quoted: fakevCard }
-            );
-        }
-        
+
         // Download the audio
         const result = await ddownr.download(videoInfo.url, 'mp3');
         const downloadLink = result.downloadUrl;
@@ -1573,16 +1600,16 @@ case 'song': {
         if (fileSizeMB > MAX_FILE_SIZE_MB) {
             const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
             if (compressionSuccess) {
-                await cleanupFiles(tempFilePath);
+                await fs.unlink(tempFilePath);
                 tempFilePath = compressedFilePath;
                 compressedFilePath = '';
             }
         }
 
-        // Send the file based on user's choice
+        // Send the file based on format
         const audioBuffer = await fs.readFile(tempFilePath);
         
-        if (downloadOption === 'document') {
+        if (format === 'document') {
             // Send as document
             await socket.sendMessage(sender, {
                 document: audioBuffer,
@@ -1600,17 +1627,41 @@ case 'song': {
         }
 
         // Cleanup
-        await cleanupFiles(tempFilePath, compressedFilePath);
+        await fs.unlink(tempFilePath);
+        if (compressedFilePath) await fs.unlink(compressedFilePath);
         
     } catch (err) {
-        console.error('Song command error:', err);
-        await cleanupFiles(tempFilePath, compressedFilePath);
+        console.error('Download error:', err);
+        try {
+            if (tempFilePath) await fs.unlink(tempFilePath);
+            if (compressedFilePath) await fs.unlink(compressedFilePath);
+        } catch (e) {}
+        
         await socket.sendMessage(sender, 
-            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
+            { text: "*❌ Download failed! Please try again.*" }, 
             { quoted: fakevCard }
         );
     }
-    break;
+}
+
+// Helper function for audio compression (reuse from above)
+async function compressAudio(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
+    try {
+        const { stdout: durationOutput } = await execPromise(
+            `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
+        );
+        const duration = parseFloat(durationOutput) || 180;
+        const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
+        const constrainedBitrate = Math.min(Math.max(targetBitrate, 32), 128);
+        
+        await execPromise(
+            `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
+        );
+        return true;
+    } catch (error) {
+        console.error('Audio compression failed:', error);
+        return false;
+    }
 }
 //===============================   
  case 'logo': {
