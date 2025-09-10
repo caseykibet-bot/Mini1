@@ -730,7 +730,7 @@ case 'menu': {
     
     let menuText = `*╭─────────────────⊷*  
 *┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ : ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
-*┃* 🎉ᴜsᴇʀ: ɢᴜᴇsᴛ
+*┃* 🌸ᴜsᴇʀ: ɢᴜᴇsᴛ
 *┃* 📍ᴘʀᴇғɪx: .
 *┃* ⏰ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
 *┃* 📂sᴛᴏʀᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
@@ -1109,8 +1109,8 @@ case 'fc': {
                                 `*┃*    ᴄᴏɴɴᴇᴄᴛɪᴏɴ sᴛᴀᴛᴜs  \n` +
                                 `*┗──────────────⊷.`,
                             buttons: [
-                                { buttonId: `${prefix}bot_info`, buttonText: { displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' }, type: 1 },
-                                { buttonId: `${prefix}bot_stats`, buttonText: { displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' }, type: 1 }
+                                { buttonId: `${prefix}active`, buttonText: { displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' }, type: 1 },
+                                { buttonId: `${prefix}session`, buttonText: { displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' }, type: 1 }
                             ],
                             headerType: 1
                         };
@@ -1178,197 +1178,116 @@ case 'pair': {
     }
     break;
 }
+            // Case: viewonce
 case 'viewonce':
 case 'rvo':
-case 'vv':
-case 'hans-open':
-case 'open': {
-    try {
-        await socket.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
-        
-        if (!m.quoted) {
-            return reply(`🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*\n\n` +
-                `📝 *ʜᴏᴡ ᴛᴏ ᴜsᴇ:*\n` +
-                `• ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ\n` +
-                `• ᴜsᴇ: ${prefix}vv\n` +
-                `• ɪ'ʟʟ ʀᴇᴠᴇᴀʟ ᴛʜᴇ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ`);
-        }
+case 'vv': {
+  await socket.sendMessage(sender, { react: { text: '✨', key: msg.key } });
 
-        const quoted = m.quoted;
-        const messageType = Object.keys(quoted.message)[0];
-        
-        // Check if it's a view-once message
-        const isViewOnce = quoted.message[messageType]?.viewOnce || 
-                          quoted.message[messageType]?.viewOnceMessageV2 ||
-                          quoted.message?.viewOnceMessageV2;
-        
-        if (!isViewOnce) {
-            return reply(`⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*\n\n` +
-                `ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ (ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ)`);
-        }
-
-        // Extract the actual media message from viewOnce
-        let mediaMessage = quoted.message[messageType];
-        if (mediaMessage.viewOnceMessageV2) {
-            mediaMessage = mediaMessage.viewOnceMessageV2.message;
-        } else if (mediaMessage.viewOnce) {
-            mediaMessage = mediaMessage.message;
-        }
-
-        // Get the actual media type
-        const mediaType = Object.keys(mediaMessage)[0];
-        const mediaContent = mediaMessage[mediaType];
-        
-        // Download the media
-        const buffer = await downloadMediaMessage(
-            { 
-                key: quoted.key, 
-                message: { [mediaType]: mediaContent } 
-            }, 
-            'buffer', 
-            {}, 
-            { reuploadRequest: socket.updateMediaMessage }
-        );
-
-        if (!buffer) {
-            throw new Error('Failed to download media');
-        }
-
-        const mime = mediaContent.mimetype || '';
-        let caption = quoted.text || quoted.caption || '';
-        
-        // Determine file type and send
-        if (mime.includes('image')) {
-            await socket.sendMessage(m.chat, { 
-                image: buffer, 
-                caption: `ʜᴀɴs-xᴍᴅ\n> Here is your Image 🔥.\n\n${caption}` 
-            }, { quoted: m });
-        } else if (mime.includes('video')) {
-            await socket.sendMessage(m.chat, { 
-                video: buffer, 
-                caption: `ʜᴀɴs-xᴍᴅ\n> Here is your Video 🔥.\n\n${caption}` 
-            }, { quoted: m });
-        } else if (mime.includes('audio')) {
-            await socket.sendMessage(m.chat, { 
-                audio: buffer, 
-                mimetype: 'audio/mp4', 
-                caption: `ʜᴀɴs-xᴍᴅ\n> Here is Your Voice 🔥.\n\n${caption}` 
-            }, { quoted: m });
-        } else {
-            // For documents or other types
-            await socket.sendMessage(m.chat, { 
-                document: buffer, 
-                mimetype: mime,
-                caption: `ʜᴀɴs-xᴍᴅ\n> Here is your Media 🔥.\n\n${caption}` 
-            }, { quoted: m });
-        }
-
-    } catch (error) {
-        console.error("ViewOnce Error:", error);
-        let errorMessage = `❌ *Failed to reveal media*\n\n`;
-
-        if (error.message?.includes('decrypt') || error.message?.includes('protocol')) {
-            errorMessage += `🔒 *Decryption failed* - The media couldn't be decrypted`;
-        } else if (error.message?.includes('download') || error.message?.includes('buffer')) {
-            errorMessage += `📥 *Download failed* - Could not download the media`;
-        } else if (error.message?.includes('expired') || error.message?.includes('old')) {
-            errorMessage += `⏰ *Message expired* - The view-once media has expired`;
-        } else if (error.message?.includes('viewOnce')) {
-            errorMessage += `👀 *Not a view-once message* - Please reply to a view-once media`;
-        } else {
-            errorMessage += `🐛 *Error:* ${error.message || 'Something went wrong'}`;
-        }
-
-        errorMessage += `\n\n💡 *Try:*\n• Using a fresh view-once message\n• Make sure it's a valid view-once media`;
-
-        reply(errorMessage);
+  try {
+    if (!msg.quoted || !msg.quoted.message) {
+      return await socket.sendMessage(sender, {
+        text: `🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, ʙᴀʙᴇ 😘*\n\n` +
+              `📝 *ʜᴏᴡ ᴛᴏ ᴜsᴇ:*\n` +
+              `• ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ\n` +
+              `• ᴜsᴇ: ${config.PREFIX}vv\n` +
+              `• ɪ'ʟʟ ʀᴇᴠᴇᴀʟ ᴛʜᴇ ʜɪᴅᴅᴇɴ ᴛʀᴇᴀsᴜʀᴇ ғᴏʀ ʏᴏᴜ 💋`
+      });
     }
-    break;
-}
 
-case 'hans-open2':
-case 'vv2':
-case 'view2': {
-    if (!isCreator) return reply(`This command is only for the bot owner`);
+    const quoted = msg.quoted;
+    const type = Object.keys(quoted.message)[0];
     
-    try {
-        await socket.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
-        
-        if (!m.quoted) return reply(`🚩 *Please reply to a view-once message*`);
-
-        const quoted = m.quoted;
-        const messageType = Object.keys(quoted.message)[0];
-        
-        // Check if it's a view-once message
-        const isViewOnce = quoted.message[messageType]?.viewOnce || 
-                          quoted.message[messageType]?.viewOnceMessageV2 ||
-                          quoted.message?.viewOnceMessageV2;
-        
-        if (!isViewOnce) {
-            return reply(`⚠️ *This isn't a view-once message*`);
-        }
-
-        // Extract the actual media message from viewOnce
-        let mediaMessage = quoted.message[messageType];
-        if (mediaMessage.viewOnceMessageV2) {
-            mediaMessage = mediaMessage.viewOnceMessageV2.message;
-        } else if (mediaMessage.viewOnce) {
-            mediaMessage = mediaMessage.message;
-        }
-
-        // Get the actual media type
-        const mediaType = Object.keys(mediaMessage)[0];
-        const mediaContent = mediaMessage[mediaType];
-        
-        // Download the media
-        const buffer = await downloadMediaMessage(
-            { 
-                key: quoted.key, 
-                message: { [mediaType]: mediaContent } 
-            }, 
-            'buffer', 
-            {}, 
-            { reuploadRequest: socket.updateMediaMessage }
-        );
-
-        if (!buffer) {
-            throw new Error('Failed to download media');
-        }
-
-        const mime = mediaContent.mimetype || '';
-        let caption = quoted.text || quoted.caption || '';
-        
-        // Determine file type and send
-        if (mime.includes('image')) {
-            await socket.sendMessage(m.chat, { 
-                image: buffer, 
-                caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
-            }, { quoted: m });
-        } else if (mime.includes('video')) {
-            await socket.sendMessage(m.chat, { 
-                video: buffer, 
-                caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
-            }, { quoted: m });
-        } else if (mime.includes('audio')) {
-            await socket.sendMessage(m.chat, { 
-                audio: buffer, 
-                mimetype: 'audio/mp4', 
-                caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
-            }, { quoted: m });
-        } else {
-            // For documents or other types
-            await socket.sendMessage(m.chat, { 
-                document: buffer, 
-                mimetype: mime,
-                caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
-            }, { quoted: m });
-        }
-
-    } catch (error) {
-        console.error("ViewOnce Error (Owner):", error);
-        reply(`❌ *Failed to reveal media:* ${error.message || 'Unknown error'}`);
+    // Check if it's a view-once message
+    if (!quoted.message[type]?.viewOnce) {
+      return await socket.sendMessage(sender, {
+        text: `⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, sᴡᴇᴇᴛɪᴇ 😘*\n\n` +
+              `ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ (ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ), ᴏᴋᴀʏ?`
+      });
     }
-    break;
+
+    await socket.sendMessage(sender, {
+      text: `🔓 *ᴜɴᴠᴇɪʟɪɴɢ ʏᴏᴜʀ sᴇᴄʀᴇᴛ ${type.replace('Message', '').toUpperCase()}, ᴅᴀʀʟɪɴɢ...*`
+    });
+
+    // Get the real message content
+    const realMsg = quoted.message[type].message || quoted.message[type];
+    
+    // Download the media
+    const buffer = await downloadMediaMessage(
+      { 
+        message: { [type]: realMsg } 
+      }, 
+      'buffer', 
+      {}, 
+      { reuploadRequest: socket.updateMediaMessage }
+    );
+
+    if (!buffer) {
+      throw new Error('Failed to download media');
+    }
+
+    // Determine file type and extension
+    let fileType = type.replace('Message', '');
+    let extension = 'jpg'; // default extension
+    
+    if (fileType === 'video') extension = 'mp4';
+    if (fileType === 'audio') extension = 'mp3';
+    if (fileType === 'document') extension = 'pdf';
+    
+    const filename = `revealed-${fileType}-${Date.now()}.${extension}`;
+    const caption = `✨ *ʀᴇᴠᴇᴀʟᴇᴅ ${fileType.toUpperCase()}* - ʏᴏᴜ'ʀᴇ ᴡᴇʟᴄᴏᴍᴇ, ʙᴀʙᴇ 💋`;
+
+    // Send the file based on type
+    if (fileType === 'image') {
+      await socket.sendMessage(sender, {
+        image: buffer,
+        caption: caption
+      });
+    } else if (fileType === 'video') {
+      await socket.sendMessage(sender, {
+        video: buffer,
+        caption: caption
+      });
+    } else if (fileType === 'audio') {
+      await socket.sendMessage(sender, {
+        audio: buffer,
+        caption: caption
+      });
+    } else {
+      // For other types (document, etc.)
+      await socket.sendMessage(sender, {
+        document: buffer,
+        fileName: filename,
+        caption: caption
+      });
+    }
+
+    await socket.sendMessage(sender, {
+      react: { text: '✅', key: msg.key }
+    });
+  } catch (error) {
+    console.error('ViewOnce command error:', error);
+    let errorMessage = `❌ *ᴏʜ ɴᴏ, ɪ ᴄᴏᴜʟᴅɴ'ᴛ ᴜɴᴠᴇɪʟ ɪᴛ, ʙᴀʙᴇ 💔*\n\n`;
+
+    if (error.message?.includes('decrypt') || error.message?.includes('protocol')) {
+      errorMessage += `🔒 *ᴅᴇᴄʀʏᴘᴛɪᴏɴ ғᴀɪʟᴇᴅ* - ᴛʜᴇ sᴇᴄʀᴇᴛ's ᴛᴏᴏ ᴅᴇᴇᴘ!`;
+    } else if (error.message?.includes('download') || error.message?.includes('buffer')) {
+      errorMessage += `📥 *ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ* - ᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴄᴏɴɴᴇᴄᴛɪᴏɴ, ʟᴏᴠᴇ.`;
+    } else if (error.message?.includes('expired') || error.message?.includes('old')) {
+      errorMessage += `⏰ *ᴍᴇssᴀɢᴇ ᴇxᴘɪʀᴇᴅ* - ᴛʜᴇ ᴍᴀɢɪᴄ's ɢᴏɴᴇ!`;
+    } else {
+      errorMessage += `🐛 *ᴇʀʀᴏʀ:* ${error.message || 'sᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ'}`;
+    }
+
+    errorMessage += `\n\n💡 *ᴛʀʏ:*\n• ᴜsɪɴɢ ᴀ ғʀᴇsʜ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ\n• ᴄʜᴇᴄᴋɪɴɢ ʏᴏᴜʀ ɪɴᴛᴇʀɴᴇᴛ ᴄᴏɴɴᴇᴄᴛɪᴏɴ`;
+
+    await socket.sendMessage(sender, { text: errorMessage });
+    await socket.sendMessage(sender, {
+      react: { text: '❌', key: msg.key }
+    });
+  }
+  break;
 }
 // Case: song
 case 'play':
@@ -1458,12 +1377,11 @@ case 'song': {
     const fixedQuery = convertYouTubeLink(q.trim());
     let tempFilePath = '';
     let compressedFilePath = '';
-    let videoInfo = null;
 
     try {
         // Search for the video
         const search = await yts(fixedQuery);
-        videoInfo = search.videos[0];
+        const videoInfo = search.videos[0];
         
         if (!videoInfo) {
             return await socket.sendMessage(sender, 
@@ -1476,108 +1394,23 @@ case 'song': {
         const formattedDuration = formatDuration(videoInfo.seconds);
         
         // Create description
-        const desc = `
-*🎵 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎵*
+        const desc = `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
 ╭───────────────┈  ⊷
 ├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
 ├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
 ├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
 ├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
 ├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
+├🎵 *Format:* High Quality MP3
 ╰───────────────┈ ⊷
-> 🚀 ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟
 `;
 
-        // Send video info with download options
-        const buttonMessage = {
+        // Send video info immediately
+        await socket.sendMessage(sender, {
             image: { url: videoInfo.thumbnail },
-            caption: desc + '\n\n*📥 How would you like to download this audio?*',
-            footer: 'Select a download option',
-            buttons: [
-                { 
-                    buttonId: `${config.PREFIX}audio ${videoInfo.url}`, 
-                    buttonText: { displayText: '🎵 As Audio' }, 
-                    type: 1 
-                },
-                { 
-                    buttonId: `${config.PREFIX}document ${videoInfo.url}`, 
-                    buttonText: { displayText: '📁 As Document' }, 
-                    type: 1 
-                },
-                { 
-                    buttonId: `${config.PREFIX}allmenu`, 
-                    buttonText: { displayText: '📋 All Menu' }, 
-                    type: 1 
-                }
-            ],
-            headerType: 4
-        };
-
-        // Send the options
-        await socket.sendMessage(sender, buttonMessage, { quoted: fakevCard });
-
-        // Cleanup
-        await cleanupFiles(tempFilePath, compressedFilePath);
-        
-    } catch (err) {
-        console.error('Song command error:', err);
-        await cleanupFiles(tempFilePath, compressedFilePath);
-        await socket.sendMessage(sender, 
-            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
-            { quoted: fakevCard }
-        );
-    }
-    break;
-}
-
-// New cases to handle the button responses
-case 'audio': {
-    // Handle audio download from button
-    const url = body.slice(config.PREFIX.length + 6).trim(); // Remove "!audio " prefix
-    await downloadAndSendAudio(socket, sender, url, 'audio');
-    break;
-}
-
-case 'document': {
-    // Handle document download from button
-    const url = body.slice(config.PREFIX.length + 9).trim(); // Remove "!document " prefix
-    await downloadAndSendAudio(socket, sender, url, 'document');
-    break;
-}
-
-// Helper function to download and send audio
-async function downloadAndSendAudio(socket, sender, url, format = 'audio') {
-    const yts = require('yt-search');
-    const ddownr = require('denethdev-ytmp3');
-    const fs = require('fs').promises;
-    const path = require('path');
-    const { exec } = require('child_process');
-    const util = require('util');
-    const execPromise = util.promisify(exec);
-    const { existsSync, mkdirSync } = require('fs');
-    const TEMP_DIR = './temp';
-    const MAX_FILE_SIZE_MB = 4;
-    const TARGET_SIZE_MB = 3.8;
-    
-    // Ensure temp directory exists
-    if (!existsSync(TEMP_DIR)) {
-        mkdirSync(TEMP_DIR, { recursive: true });
-    }
-    
-    let tempFilePath = '';
-    let compressedFilePath = '';
-    
-    try {
-        // Search for the video to get info
-        const search = await yts(url);
-        const videoInfo = search.videos[0];
-        
-        if (!videoInfo) {
-            return await socket.sendMessage(sender, 
-                { text: '*❌ Video not found!*' }, 
-                { quoted: fakevCard }
-            );
-        }
+            caption: desc
+        }, { quoted: fakevCard });
 
         // Download the audio
         const result = await ddownr.download(videoInfo.url, 'mp3');
@@ -1600,68 +1433,33 @@ async function downloadAndSendAudio(socket, sender, url, format = 'audio') {
         if (fileSizeMB > MAX_FILE_SIZE_MB) {
             const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
             if (compressionSuccess) {
-                await fs.unlink(tempFilePath);
+                await cleanupFiles(tempFilePath);
                 tempFilePath = compressedFilePath;
                 compressedFilePath = '';
             }
         }
 
-        // Send the file based on format
+        // Send the audio file
         const audioBuffer = await fs.readFile(tempFilePath);
-        
-        if (format === 'document') {
-            // Send as document
-            await socket.sendMessage(sender, {
-                document: audioBuffer,
-                mimetype: "audio/mpeg",
-                fileName: `${cleanTitle}.mp3`
-            }, { quoted: fakevCard });
-        } else {
-            // Send as audio
-            await socket.sendMessage(sender, {
-                audio: audioBuffer,
-                mimetype: "audio/mpeg",
-                fileName: `${cleanTitle}.mp3`,
-                ptt: false
-            }, { quoted: fakevCard });
-        }
+        await socket.sendMessage(sender, {
+            audio: audioBuffer,
+            mimetype: "audio/mpeg",
+            fileName: `${cleanTitle}.mp3`,
+            ptt: false
+        }, { quoted: fakevCard });
 
         // Cleanup
-        await fs.unlink(tempFilePath);
-        if (compressedFilePath) await fs.unlink(compressedFilePath);
+        await cleanupFiles(tempFilePath, compressedFilePath);
         
     } catch (err) {
-        console.error('Download error:', err);
-        try {
-            if (tempFilePath) await fs.unlink(tempFilePath);
-            if (compressedFilePath) await fs.unlink(compressedFilePath);
-        } catch (e) {}
-        
+        console.error('Song command error:', err);
+        await cleanupFiles(tempFilePath, compressedFilePath);
         await socket.sendMessage(sender, 
-            { text: "*❌ Download failed! Please try again.*" }, 
+            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
             { quoted: fakevCard }
         );
     }
-}
-
-// Helper function for audio compression (reuse from above)
-async function compressAudio(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
-    try {
-        const { stdout: durationOutput } = await execPromise(
-            `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
-        );
-        const duration = parseFloat(durationOutput) || 180;
-        const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
-        const constrainedBitrate = Math.min(Math.max(targetBitrate, 32), 128);
-        
-        await execPromise(
-            `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
-        );
-        return true;
-    } catch (error) {
-        console.error('Audio compression failed:', error);
-        return false;
-    }
+    break;
 }
 //===============================   
  case 'logo': {
