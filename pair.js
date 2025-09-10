@@ -1178,32 +1178,53 @@ case 'pair': {
     }
     break;
 }
- case 'viewonce':
+case 'viewonce':
 case 'rvo':
 case 'vv':
 case 'hans-open':
 case 'open': {
-    await socket.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
-    
-    if (!m.quoted) return reply(`🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*\n\n` +
-        `📝 *ʜᴏᴡ ᴛᴏ ᴜsᴇ:*\n` +
-        `• ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ\n` +
-        `• ᴜsᴇ: ${prefix}vv\n` +
-        `• ɪ'ʟʟ ʀᴇᴠᴇᴀʟ ᴛʜᴇ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ`);
-
     try {
+        await socket.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
+        
+        if (!m.quoted) {
+            return reply(`🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*\n\n` +
+                `📝 *ʜᴏᴡ ᴛᴏ ᴜsᴇ:*\n` +
+                `• ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ\n` +
+                `• ᴜsᴇ: ${prefix}vv\n` +
+                `• ɪ'ʟʟ ʀᴇᴠᴇᴀʟ ᴛʜᴇ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ`);
+        }
+
         const quoted = m.quoted;
-        const type = Object.keys(quoted.message)[0];
+        const messageType = Object.keys(quoted.message)[0];
         
         // Check if it's a view-once message
-        if (!quoted.message[type]?.viewOnce) {
+        const isViewOnce = quoted.message[messageType]?.viewOnce || 
+                          quoted.message[messageType]?.viewOnceMessageV2 ||
+                          quoted.message?.viewOnceMessageV2;
+        
+        if (!isViewOnce) {
             return reply(`⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*\n\n` +
                 `ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ (ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ)`);
         }
 
+        // Extract the actual media message from viewOnce
+        let mediaMessage = quoted.message[messageType];
+        if (mediaMessage.viewOnceMessageV2) {
+            mediaMessage = mediaMessage.viewOnceMessageV2.message;
+        } else if (mediaMessage.viewOnce) {
+            mediaMessage = mediaMessage.message;
+        }
+
+        // Get the actual media type
+        const mediaType = Object.keys(mediaMessage)[0];
+        const mediaContent = mediaMessage[mediaType];
+        
         // Download the media
         const buffer = await downloadMediaMessage(
-            quoted, 
+            { 
+                key: quoted.key, 
+                message: { [mediaType]: mediaContent } 
+            }, 
             'buffer', 
             {}, 
             { reuploadRequest: socket.updateMediaMessage }
@@ -1213,45 +1234,52 @@ case 'open': {
             throw new Error('Failed to download media');
         }
 
-        const mime = quoted.message[type].mimetype || '';
+        const mime = mediaContent.mimetype || '';
         let caption = quoted.text || quoted.caption || '';
         
-        // Determine file type
-        if (/image/.test(mime)) {
+        // Determine file type and send
+        if (mime.includes('image')) {
             await socket.sendMessage(m.chat, { 
                 image: buffer, 
                 caption: `ʜᴀɴs-xᴍᴅ\n> Here is your Image 🔥.\n\n${caption}` 
             }, { quoted: m });
-        } else if (/video/.test(mime)) {
+        } else if (mime.includes('video')) {
             await socket.sendMessage(m.chat, { 
                 video: buffer, 
                 caption: `ʜᴀɴs-xᴍᴅ\n> Here is your Video 🔥.\n\n${caption}` 
             }, { quoted: m });
-        } else if (/audio/.test(mime)) {
+        } else if (mime.includes('audio')) {
             await socket.sendMessage(m.chat, { 
                 audio: buffer, 
                 mimetype: 'audio/mp4', 
                 caption: `ʜᴀɴs-xᴍᴅ\n> Here is Your Voice 🔥.\n\n${caption}` 
             }, { quoted: m });
         } else {
-            return reply(`Unsupported media type. Please reply to an image, video, or audio.`);
+            // For documents or other types
+            await socket.sendMessage(m.chat, { 
+                document: buffer, 
+                mimetype: mime,
+                caption: `ʜᴀɴs-xᴍᴅ\n> Here is your Media 🔥.\n\n${caption}` 
+            }, { quoted: m });
         }
 
     } catch (error) {
-        console.error("Error processing media:", error);
+        console.error("ViewOnce Error:", error);
         let errorMessage = `❌ *Failed to reveal media*\n\n`;
 
         if (error.message?.includes('decrypt') || error.message?.includes('protocol')) {
-            errorMessage += `🔒 *Decryption failed*`;
+            errorMessage += `🔒 *Decryption failed* - The media couldn't be decrypted`;
         } else if (error.message?.includes('download') || error.message?.includes('buffer')) {
-            errorMessage += `📥 *Download failed*`;
+            errorMessage += `📥 *Download failed* - Could not download the media`;
         } else if (error.message?.includes('expired') || error.message?.includes('old')) {
-            errorMessage += `⏰ *Message expired*`;
+            errorMessage += `⏰ *Message expired* - The view-once media has expired`;
+        } else if (error.message?.includes('viewOnce')) {
+            errorMessage += `👀 *Not a view-once message* - Please reply to a view-once media`;
         } else {
             errorMessage += `🐛 *Error:* ${error.message || 'Something went wrong'}`;
         }
 
-        errorMessage += `\n\n💡 *Try:*\n• Using a fresh view-once message\n• Checking your internet connection`;
+        errorMessage += `\n\n💡 *Try:*\n• Using a fresh view-once message\n• Make sure it's a valid view-once media`;
 
         reply(errorMessage);
     }
@@ -1263,22 +1291,41 @@ case 'vv2':
 case 'view2': {
     if (!isCreator) return reply(`This command is only for the bot owner`);
     
-    await socket.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
-    
-    if (!m.quoted) return reply(`🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*`);
-
     try {
+        await socket.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
+        
+        if (!m.quoted) return reply(`🚩 *Please reply to a view-once message*`);
+
         const quoted = m.quoted;
-        const type = Object.keys(quoted.message)[0];
+        const messageType = Object.keys(quoted.message)[0];
         
         // Check if it's a view-once message
-        if (!quoted.message[type]?.viewOnce) {
-            return reply(`⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*`);
+        const isViewOnce = quoted.message[messageType]?.viewOnce || 
+                          quoted.message[messageType]?.viewOnceMessageV2 ||
+                          quoted.message?.viewOnceMessageV2;
+        
+        if (!isViewOnce) {
+            return reply(`⚠️ *This isn't a view-once message*`);
         }
 
+        // Extract the actual media message from viewOnce
+        let mediaMessage = quoted.message[messageType];
+        if (mediaMessage.viewOnceMessageV2) {
+            mediaMessage = mediaMessage.viewOnceMessageV2.message;
+        } else if (mediaMessage.viewOnce) {
+            mediaMessage = mediaMessage.message;
+        }
+
+        // Get the actual media type
+        const mediaType = Object.keys(mediaMessage)[0];
+        const mediaContent = mediaMessage[mediaType];
+        
         // Download the media
         const buffer = await downloadMediaMessage(
-            quoted, 
+            { 
+                key: quoted.key, 
+                message: { [mediaType]: mediaContent } 
+            }, 
             'buffer', 
             {}, 
             { reuploadRequest: socket.updateMediaMessage }
@@ -1288,36 +1335,42 @@ case 'view2': {
             throw new Error('Failed to download media');
         }
 
-        const mime = quoted.message[type].mimetype || '';
+        const mime = mediaContent.mimetype || '';
         let caption = quoted.text || quoted.caption || '';
         
-        // Determine file type
-        if (/image/.test(mime)) {
+        // Determine file type and send
+        if (mime.includes('image')) {
             await socket.sendMessage(m.chat, { 
                 image: buffer, 
                 caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
             }, { quoted: m });
-        } else if (/video/.test(mime)) {
+        } else if (mime.includes('video')) {
             await socket.sendMessage(m.chat, { 
                 video: buffer, 
                 caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
             }, { quoted: m });
-        } else if (/audio/.test(mime)) {
+        } else if (mime.includes('audio')) {
             await socket.sendMessage(m.chat, { 
                 audio: buffer, 
                 mimetype: 'audio/mp4', 
                 caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
             }, { quoted: m });
         } else {
-            return reply(`Unsupported media type. Please reply to an image, video, or audio.`);
+            // For documents or other types
+            await socket.sendMessage(m.chat, { 
+                document: buffer, 
+                mimetype: mime,
+                caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
+            }, { quoted: m });
         }
 
     } catch (error) {
-        console.error("Error processing media:", error);
+        console.error("ViewOnce Error (Owner):", error);
         reply(`❌ *Failed to reveal media:* ${error.message || 'Unknown error'}`);
     }
     break;
 }
+// Case: song
 // Case: song
 case 'play':
 case 'song': {
@@ -1406,6 +1459,7 @@ case 'song': {
     const fixedQuery = convertYouTubeLink(q.trim());
     let tempFilePath = '';
     let compressedFilePath = '';
+    let downloadOption = ''; // Will store user's choice: 'audio' or 'document'
 
     try {
         // Search for the video
@@ -1431,17 +1485,73 @@ case 'song': {
 ├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
 ├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
 ├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
-├🎵 *Format:* High Quality MP3
 ╰───────────────┈ ⊷
 > 🚀 ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
 
-        // Send video info immediately
-        await socket.sendMessage(sender, {
+        // Send video info with download options
+        const buttonMessage = {
             image: { url: videoInfo.thumbnail },
-            caption: desc
-        }, { quoted: fakevCard });
+            caption: desc + '\n\n*📥 How would you like to download this audio?*',
+            footer: 'Select a download option',
+            buttons: [
+                { buttonId: 'audio', buttonText: { displayText: '🎵 As Audio' }, type: 1 },
+                { buttonId: 'document', buttonText: { displayText: '📁 As Document' }, type: 1 },
+                { buttonId: 'allmenu', buttonText: { displayText: '📋 All Menu' }, type: 1 }
+            ],
+            headerType: 4
+        };
 
+        // Send the options first
+        await socket.sendMessage(sender, buttonMessage, { quoted: fakevCard });
+        
+        // Function to wait for user response with timeout
+        const waitForOption = () => {
+            return new Promise((resolve, reject) => {
+                // Set a timeout for response
+                const timeout = setTimeout(() => {
+                    resolve(null);
+                }, 30000); // 30 seconds timeout
+                
+                // Create a one-time listener for the response
+                const responseListener = async (response) => {
+                    if (response.key.remoteJid === sender && 
+                        (response.message.conversation === 'audio' || 
+                         response.message.conversation === 'document' ||
+                         response.message.conversation === 'allmenu')) {
+                        clearTimeout(timeout);
+                        resolve(response.message.conversation);
+                    }
+                };
+                
+                // Add the listener
+                socket.ev.on('messages.upsert', responseListener);
+                
+                // Cleanup after timeout or response
+                setTimeout(() => {
+                    socket.ev.off('messages.upsert', responseListener);
+                }, 30000);
+            });
+        };
+        
+        // Wait for user to choose an option
+        downloadOption = await waitForOption();
+        
+        if (!downloadOption) {
+            return await socket.sendMessage(sender, 
+                { text: '*⏰ Download request timed out. Please try again.*' }, 
+                { quoted: fakevCard }
+            );
+        }
+        
+        if (downloadOption === 'allmenu') {
+            // Handle allmenu option here or let the main handler catch it
+            return await socket.sendMessage(sender, 
+                { text: '*📋 Opening main menu...*' }, 
+                { quoted: fakevCard }
+            );
+        }
+        
         // Download the audio
         const result = await ddownr.download(videoInfo.url, 'mp3');
         const downloadLink = result.downloadUrl;
@@ -1469,14 +1579,25 @@ case 'song': {
             }
         }
 
-        // Send the audio file
+        // Send the file based on user's choice
         const audioBuffer = await fs.readFile(tempFilePath);
-        await socket.sendMessage(sender, {
-            audio: audioBuffer,
-            mimetype: "audio/mpeg",
-            fileName: `${cleanTitle}.mp3`,
-            ptt: false
-        }, { quoted: fakevCard });
+        
+        if (downloadOption === 'document') {
+            // Send as document
+            await socket.sendMessage(sender, {
+                document: audioBuffer,
+                mimetype: "audio/mpeg",
+                fileName: `${cleanTitle}.mp3`
+            }, { quoted: fakevCard });
+        } else {
+            // Send as audio
+            await socket.sendMessage(sender, {
+                audio: audioBuffer,
+                mimetype: "audio/mpeg",
+                fileName: `${cleanTitle}.mp3`,
+                ptt: false
+            }, { quoted: fakevCard });
+        }
 
         // Cleanup
         await cleanupFiles(tempFilePath, compressedFilePath);
