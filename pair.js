@@ -37,6 +37,7 @@ const config = {
     AUTO_READ: 'true',
     AUTO_LIKE_EMOJI: ['💋', '😶', '🫆', '💗', '🎈', '🎉', '🥳', '❤️', '🧫', '🐭'],
     PREFIX: '.',
+    MODE:'public',
     MAX_RETRIES: 3,
     GROUP_INVITE_LINK: '',
     ADMIN_LIST_PATH: './admin.json',
@@ -157,7 +158,6 @@ let totalcmds = async () => {
         return 0; // Return 0 on error to avoid breaking the bot
     }
 }
-
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
     let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH'; // Hardcoded default
@@ -195,7 +195,7 @@ async function joinGroup(socket) {
             if (retries === 0) {
                 console.error('[ ❌ ] Failed to join group', { error: errorMessage });
                 try {
-                    await socket.sendMessage(config.OWNER_NUMBER + '@s.whatsapp.net', {
+                    await socket.sendMessage(ownerNumber[0], {
                         text: `Failed to join group with invite code ${inviteCode}: ${errorMessage}`,
                     });
                 } catch (sendError) {
@@ -225,7 +225,7 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
             await socket.sendMessage(
                 `${admin}@s.whatsapp.net`,
                 {
-                    image: { url: config.RCD_IMAGE_PATH },
+                    image: { url: config.IMAGE_PATH },
                     caption
                 }
             );
@@ -235,7 +235,6 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
         }
     }
 }
-
 // Helper function to format bytes
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
@@ -799,7 +798,10 @@ case 'menu': {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
-                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },    
+                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },  
+                     { title: "⚔️setting🌸", description: "Configure settings ", id: `${config.PREFIX}setting` },  
+                      { title: "👾Autorecord", description: "toggle on/off", id: `${config.PREFIX}autorecording` },
+                       { title: "💫Mode", description: "enable privacy", id: `${config.PREFIX}mode` },
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
@@ -2805,6 +2807,11 @@ case 'setmode': {
       await socket.sendMessage(from, {
         image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
         caption: `📌 Current mode: *${config.MODE}*\n\nUsage: .mode private OR .mode public`,
+        buttons: [
+          { buttonId: '.mode private', buttonText: { displayText: '🔒 Private' }, type: 1 },
+          { buttonId: '.mode public', buttonText: { displayText: '🌐 Public' }, type: 1 },
+          { buttonId: '.menu', buttonText: { displayText: '📋 Menu' }, type: 1 }
+        ],
         contextInfo: {
           forwardingScore: 999,
           isForwarded: true,
@@ -2824,6 +2831,10 @@ case 'setmode': {
       await socket.sendMessage(from, {
         image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
         caption: "✅ Bot mode is now set to *PRIVATE*.",
+        buttons: [
+          { buttonId: '.mode public', buttonText: { displayText: '🌐 Switch to Public' }, type: 1 },
+          { buttonId: '.settings', buttonText: { displayText: '⚙️ Settings' }, type: 1 }
+        ],
         contextInfo: {
           forwardingScore: 999,
           isForwarded: true,
@@ -2839,6 +2850,10 @@ case 'setmode': {
       await socket.sendMessage(from, {
         image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
         caption: "✅ Bot mode is now set to *PUBLIC*.",
+        buttons: [
+          { buttonId: '.mode private', buttonText: { displayText: '🔒 Switch to Private' }, type: 1 },
+          { buttonId: '.settings', buttonText: { displayText: '⚙️ Settings' }, type: 1 }
+        ],
         contextInfo: {
           forwardingScore: 999,
           isForwarded: true,
@@ -2853,6 +2868,11 @@ case 'setmode': {
       await socket.sendMessage(from, {
         image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
         caption: "❌ Invalid mode. Please use `.mode private` or `.mode public`.",
+        buttons: [
+          { buttonId: '.mode private', buttonText: { displayText: '🔒 Private' }, type: 1 },
+          { buttonId: '.mode public', buttonText: { displayText: '🌐 Public' }, type: 1 },
+          { buttonId: '.help mode', buttonText: { displayText: '❓ Help' }, type: 1 }
+        ],
         contextInfo: {
           forwardingScore: 999,
           isForwarded: true,
@@ -2870,7 +2890,11 @@ case 'setmode': {
   } catch (error) {
     console.error('Mode command error:', error);
     await socket.sendMessage(from, {
-      text: "❌ An error occurred while setting the mode."
+      text: "❌ An error occurred while setting the mode.",
+      buttons: [
+        { buttonId: '.support', buttonText: { displayText: '🛟 Support' }, type: 1 },
+        { buttonId: '.menu', buttonText: { displayText: '📋 Menu' }, type: 1 }
+      ]
     }, { quoted: msg });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
@@ -2886,6 +2910,11 @@ case 'autorecoding': {
       await socket.sendMessage(from, {
         image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
         caption: "*🫟 Example: .autorecording on*",
+        buttons: [
+          { buttonId: '.autorecording on', buttonText: { displayText: '🎙️ Enable' }, type: 1 },
+          { buttonId: '.autorecording off', buttonText: { displayText: '🔇 Disable' }, type: 1 },
+          { buttonId: '.help autorecording', buttonText: { displayText: '❓ Help' }, type: 1 }
+        ],
         contextInfo: {
           forwardingScore: 999,
           isForwarded: true,
@@ -2907,6 +2936,10 @@ case 'autorecoding': {
       await socket.sendMessage(from, {
         image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
         caption: "✅ Auto recording is now enabled. Bot is recording...",
+        buttons: [
+          { buttonId: '.autorecording off', buttonText: { displayText: '🔇 Disable' }, type: 1 },
+          { buttonId: '.status', buttonText: { displayText: '📊 Bot Status' }, type: 1 }
+        ],
         contextInfo: {
           forwardingScore: 999,
           isForwarded: true,
@@ -2922,6 +2955,10 @@ case 'autorecoding': {
       await socket.sendMessage(from, {
         image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
         caption: "✅ Auto recording has been disabled.",
+        buttons: [
+          { buttonId: '.autorecording on', buttonText: { displayText: '🎙️ Enable' }, type: 1 },
+          { buttonId: '.status', buttonText: { displayText: '📊 Bot Status' }, type: 1 }
+        ],
         contextInfo: {
           forwardingScore: 999,
           isForwarded: true,
@@ -2939,7 +2976,11 @@ case 'autorecoding': {
   } catch (error) {
     console.error('Autorecording command error:', error);
     await socket.sendMessage(from, {
-      text: "❌ An error occurred while setting auto recording."
+      text: "❌ An error occurred while setting auto recording.",
+      buttons: [
+        { buttonId: '.support', buttonText: { displayText: '🛟 Support' }, type: 1 },
+        { buttonId: '.menu', buttonText: { displayText: '📋 Menu' }, type: 1 }
+      ]
     }, { quoted: msg });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
@@ -2969,7 +3010,8 @@ case 'profilepic': {
                 mentions: [targetUser],
                 buttons: [
                     { buttonId: '.menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
-                    { buttonId: '.<alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
+                    { buttonId: '.alive', buttonText: { displayText: '🤖 Status' }, type: 1 },
+                    { buttonId: '.getpp', buttonText: { displayText: '🔄 Refresh' }, type: 1 }
                 ],
                 footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
             });
@@ -2979,7 +3021,8 @@ case 'profilepic': {
                 mentions: [targetUser],
                 buttons: [
                     { buttonId: '.menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
-                    { buttonId: '.alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
+                    { buttonId: '.alive', buttonText: { displayText: '🤖 Status' }, type: 1 },
+                    { buttonId: '.getpp', buttonText: { displayText: '🔄 Try Again' }, type: 1 }
                 ],
                 footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
             });
@@ -2988,12 +3031,14 @@ case 'profilepic': {
         await socket.sendMessage(msg.key.remoteJid, {
             text: "Error fetching profile picture.",
             buttons: [
-                { buttonId: 'menu', buttonText: { displayText: '📋 Menu' }, type: 1 }
+                { buttonId: '.menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
+                { buttonId: '.support', buttonText: { displayText: '🛟 Support' }, type: 1 }
             ]
         });
     }
     break;
 }
+
 //===============================
                   case 'aiimg': { 
                   await socket.sendMessage(sender, { react: { text: '🔮', key: msg.key } });
