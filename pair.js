@@ -1179,116 +1179,324 @@ case 'pair': {
     break;
 }
             // Case: viewonce
-case 'viewonce':
-case 'rvo':
-case 'vv': {
-  await socket.sendMessage(sender, { react: { text: '✨', key: msg.key } });
+// Import dependencies at the top of your file
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const fs = require("fs-extra");
+const path = require("path");
+const jimp = require("jimp");
 
-  try {
-    if (!msg.quoted || !msg.quoted.message) {
-      return await socket.sendMessage(sender, {
-        text: `🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, ʙᴀʙᴇ 😘*\n\n` +
-              `📝 *ʜᴏᴡ ᴛᴏ ᴜsᴇ:*\n` +
-              `• ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ\n` +
-              `• ᴜsᴇ: ${config.PREFIX}vv\n` +
-              `• ɪ'ʟʟ ʀᴇᴠᴇᴀʟ ᴛʜᴇ ʜɪᴅᴅᴇɴ ᴛʀᴇᴀsᴜʀᴇ ғᴏʀ ʏᴏᴜ 💋`
-      });
-    }
-
-    const quoted = msg.quoted;
-    const type = Object.keys(quoted.message)[0];
-    
-    // Check if it's a view-once message
-    if (!quoted.message[type]?.viewOnce) {
-      return await socket.sendMessage(sender, {
-        text: `⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, sᴡᴇᴇᴛɪᴇ 😘*\n\n` +
-              `ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ (ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ), ᴏᴋᴀʏ?`
-      });
-    }
-
-    await socket.sendMessage(sender, {
-      text: `🔓 *ᴜɴᴠᴇɪʟɪɴɢ ʏᴏᴜʀ sᴇᴄʀᴇᴛ ${type.replace('Message', '').toUpperCase()}, ᴅᴀʀʟɪɴɢ...*`
-    });
-
-    // Get the real message content
-    const realMsg = quoted.message[type].message || quoted.message[type];
-    
-    // Download the media
-    const buffer = await downloadMediaMessage(
-      { 
-        message: { [type]: realMsg } 
-      }, 
-      'buffer', 
-      {}, 
-      { reuploadRequest: socket.updateMediaMessage }
-    );
-
-    if (!buffer) {
-      throw new Error('Failed to download media');
-    }
-
-    // Determine file type and extension
-    let fileType = type.replace('Message', '');
-    let extension = 'jpg'; // default extension
-    
-    if (fileType === 'video') extension = 'mp4';
-    if (fileType === 'audio') extension = 'mp3';
-    if (fileType === 'document') extension = 'pdf';
-    
-    const filename = `revealed-${fileType}-${Date.now()}.${extension}`;
-    const caption = `✨ *ʀᴇᴠᴇᴀʟᴇᴅ ${fileType.toUpperCase()}* - ʏᴏᴜ'ʀᴇ ᴡᴇʟᴄᴏᴍᴇ, ʙᴀʙᴇ 💋`;
-
-    // Send the file based on type
-    if (fileType === 'image') {
-      await socket.sendMessage(sender, {
-        image: buffer,
-        caption: caption
-      });
-    } else if (fileType === 'video') {
-      await socket.sendMessage(sender, {
-        video: buffer,
-        caption: caption
-      });
-    } else if (fileType === 'audio') {
-      await socket.sendMessage(sender, {
-        audio: buffer,
-        caption: caption
-      });
-    } else {
-      // For other types (document, etc.)
-      await socket.sendMessage(sender, {
-        document: buffer,
-        fileName: filename,
-        caption: caption
-      });
-    }
-
-    await socket.sendMessage(sender, {
-      react: { text: '✅', key: msg.key }
-    });
-  } catch (error) {
-    console.error('ViewOnce command error:', error);
-    let errorMessage = `❌ *ᴏʜ ɴᴏ, ɪ ᴄᴏᴜʟᴅɴ'ᴛ ᴜɴᴠᴇɪʟ ɪᴛ, ʙᴀʙᴇ 💔*\n\n`;
-
-    if (error.message?.includes('decrypt') || error.message?.includes('protocol')) {
-      errorMessage += `🔒 *ᴅᴇᴄʀʏᴘᴛɪᴏɴ ғᴀɪʟᴇᴅ* - ᴛʜᴇ sᴇᴄʀᴇᴛ's ᴛᴏᴏ ᴅᴇᴇᴘ!`;
-    } else if (error.message?.includes('download') || error.message?.includes('buffer')) {
-      errorMessage += `📥 *ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ* - ᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴄᴏɴɴᴇᴄᴛɪᴏɴ, ʟᴏᴠᴇ.`;
-    } else if (error.message?.includes('expired') || error.message?.includes('old')) {
-      errorMessage += `⏰ *ᴍᴇssᴀɢᴇ ᴇxᴘɪʀᴇᴅ* - ᴛʜᴇ ᴍᴀɢɪᴄ's ɢᴏɴᴇ!`;
-    } else {
-      errorMessage += `🐛 *ᴇʀʀᴏʀ:* ${error.message || 'sᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ'}`;
-    }
-
-    errorMessage += `\n\n💡 *ᴛʀʏ:*\n• ᴜsɪɴɢ ᴀ ғʀᴇsʜ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ\n• ᴄʜᴇᴄᴋɪɴɢ ʏᴏᴜʀ ɪɴᴛᴇʀɴᴇᴛ ᴄᴏɴɴᴇᴄᴛɪᴏɴ`;
-
-    await socket.sendMessage(sender, { text: errorMessage });
-    await socket.sendMessage(sender, {
-      react: { text: '❌', key: msg.key }
-    });
-  }
-  break;
+// Helper function to get buffer from message
+async function getBuffer(message, type) {
+    const stream = await downloadContentFromMessage(message, type);
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+    return Buffer.concat(chunks);
 }
+
+// Case: vv (View Once Reveal)
+case 'vv': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "👁️", // Eye emoji
+            key: msg.key
+        }
+    });
+
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    
+    if (!quoted) {
+        return await socket.sendMessage(sender, {
+            text: '👁️ *Please reply to a view-once message!*\n\n' +
+                  'How to use:\n' +
+                  '1. Find a view-once image/video/audio\n' +
+                  '2. Reply to it with *.vv*\n' +
+                  '3. I\'ll reveal the hidden content'
+        }, { quoted: fakevCard });
+    }
+
+    const viewOnceMedia = quoted.imageMessage?.viewOnce || quoted.videoMessage?.viewOnce || quoted.audioMessage?.viewOnce;
+    
+    if (!viewOnceMedia) {
+        return await socket.sendMessage(sender, {
+            text: '❌ *This is not a view-once message!*\n\n' +
+                  'Please reply to a message with the "view once" icon.'
+        }, { quoted: fakevCard });
+    }
+
+    try {
+        let sendMsg;
+        if (quoted.imageMessage) {
+            const buffer = await getBuffer(quoted.imageMessage, 'image');
+            sendMsg = {
+                image: buffer,
+                caption: quoted.imageMessage.caption || '*👁️ Revealed by CaseyRhodes Tech* 🌟'
+            };
+        } else if (quoted.videoMessage) {
+            const buffer = await getBuffer(quoted.videoMessage, 'video');
+            sendMsg = {
+                video: buffer,
+                caption: quoted.videoMessage.caption || '*👁️ Revealed by CaseyRhodes Tech* 🌟'
+            };
+        } else if (quoted.audioMessage) {
+            const buffer = await getBuffer(quoted.audioMessage, 'audio');
+            sendMsg = {
+                audio: buffer,
+                mimetype: 'audio/mp4',
+                caption: '*👁️ Revealed by CaseyRhodes Tech* 🌟'
+            };
+        }
+
+        if (sendMsg) {
+            await socket.sendMessage(sender, sendMsg, { quoted: fakevCard });
+        }
+    } catch (err) {
+        console.error('vv command error:', err);
+        await socket.sendMessage(sender, {
+            text: '❌ *Failed to reveal the view-once content!*\n\n' +
+                  'The message may have expired or there was an error processing it.'
+        }, { quoted: fakevCard });
+    }
+    break;
+}
+
+// Case: vv2 (View Once to Bot)
+case 'vv2': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🤖", // Robot emoji
+            key: msg.key
+        }
+    });
+
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    
+    if (!quoted) {
+        return await socket.sendMessage(sender, {
+            text: '🤖 *Please reply to a view-once message!*\n\n' +
+                  'This command will send the content to the bot itself.'
+        }, { quoted: fakevCard });
+    }
+
+    const viewOnceMedia = quoted.imageMessage?.viewOnce || quoted.videoMessage?.viewOnce || quoted.audioMessage?.viewOnce;
+    
+    if (!viewOnceMedia) {
+        return await socket.sendMessage(sender, {
+            text: '❌ *This is not a view-once message!*'
+        }, { quoted: fakevCard });
+    }
+
+    try {
+        let sendMsg;
+        if (quoted.imageMessage) {
+            const buffer = await getBuffer(quoted.imageMessage, 'image');
+            sendMsg = {
+                image: buffer,
+                caption: quoted.imageMessage.caption || '*🤖 Sent to bot by CaseyRhodes Tech* 🌟'
+            };
+        } else if (quoted.videoMessage) {
+            const buffer = await getBuffer(quoted.videoMessage, 'video');
+            sendMsg = {
+                video: buffer,
+                caption: quoted.videoMessage.caption || '*🤖 Sent to bot by CaseyRhodes Tech* 🌟'
+            };
+        } else if (quoted.audioMessage) {
+            const buffer = await getBuffer(quoted.audioMessage, 'audio');
+            sendMsg = {
+                audio: buffer,
+                mimetype: 'audio/mp4',
+                caption: '*🤖 Sent to bot by CaseyRhodes Tech* 🌟'
+            };
+        }
+
+        if (sendMsg) {
+            // Send to the bot's own JID
+            const botJid = socket.user?.id;
+            await socket.sendMessage(botJid, sendMsg);
+            await socket.sendMessage(sender, {
+                text: '✅ *View-once content has been sent to the bot!* 🌟'
+            }, { quoted: fakevCard });
+        }
+    } catch (error) {
+        console.error('vv2Command error:', error);
+        await socket.sendMessage(sender, {
+            text: '❌ *Failed to process the view-once content!*'
+        }, { quoted: fakevCard });
+    }
+    break;
+}
+
+// Case: details (Message Details)
+case 'details': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "📋", // Clipboard emoji
+            key: msg.key
+        }
+    });
+
+    const context = msg.message?.extendedTextMessage?.contextInfo;
+    const quoted = context?.quotedMessage;
+
+    if (!quoted) {
+        return await socket.sendMessage(sender, {
+            text: '📋 *Please reply to a message to view its raw details!*\n\n' +
+                  'This command shows the complete message structure.'
+        }, { quoted: fakevCard });
+    }
+
+    try {
+        const json = JSON.stringify(quoted, null, 2);
+        const parts = json.match(/[\s\S]{1,3500}/g) || [];
+
+        if (parts.length === 0) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *No details available for this message.*'
+            }, { quoted: fakevCard });
+        }
+
+        await socket.sendMessage(sender, {
+            text: `📋 *CaseyRhodes Message Details:*\n\n*Part 1/${parts.length}*`
+        }, { quoted: fakevCard });
+
+        for (let i = 0; i < parts.length; i++) {
+            await socket.sendMessage(sender, {
+                text: `\`\`\`json\n${parts[i]}\n\`\`\``
+            });
+            
+            // Add small delay between messages to avoid rate limiting
+            if (i < parts.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+    } catch (error) {
+        console.error('Details command error:', error);
+        await socket.sendMessage(sender, {
+            text: '❌ *Failed to read quoted message details!*'
+        }, { quoted: fakevCard });
+    }
+    break;
+}
+
+// Case: blocklist (Blocked Users)
+case 'blocklist':
+case 'blocked': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🚫", // No entry emoji
+            key: msg.key
+        }
+    });
+
+    try {
+        const blockedJids = await socket.fetchBlocklist();
+        
+        if (!blockedJids || blockedJids.length === 0) {
+            return await socket.sendMessage(sender, {
+                text: '✅ *Your block list is empty!* 🌟\n\n' +
+                      'No users are currently blocked.'
+            }, { quoted: fakevCard });
+        }
+
+        const formattedList = blockedJids.map((b, i) => 
+            `${i + 1}. ${b.replace('@s.whatsapp.net', '')}`
+        ).join('\n');
+
+        await socket.sendMessage(sender, {
+            text: `🚫 *Blocked Contacts:*\n\n${formattedList}\n\n` +
+                  `*Total blocked:* ${blockedJids.length}\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: fakevCard });
+
+    } catch (error) {
+        console.error('Error fetching block list:', error);
+        await socket.sendMessage(sender, {
+            text: '❌ *An error occurred while retrieving the block list!*\n\n' +
+                  'This command may require admin privileges.'
+        }, { quoted: fakevCard });
+    }
+    break;
+}
+///fixed lyrics 😀
+case 'lyrics': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🎶", // Music note emoji
+            key: msg.key
+        }
+    });
+
+    const axios = require('axios');
+    
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+    
+    const args = q.trim().split(' ').slice(1); // Remove the command itself
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: '🎶 *Please provide a song name and artist...*\n\n' +
+                  'Example: *.lyrics not afraid Eminem*\n' +
+                  'Example: *.lyrics shape of you Ed Sheeran*'
+        }, { quoted: fakevCard });
+    }
+
+    try {
+        const apiURL = `https://lyricsapi.fly.dev/api/lyrics?q=${encodeURIComponent(query)}`;
+        const res = await axios.get(apiURL);
+        const data = res.data;
+
+        if (!data.success || !data.result || !data.result.lyrics) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Lyrics not found for the provided query.*\n\n' +
+                      'Please check the song name and artist spelling.'
+            }, { quoted: fakevCard });
+        }
+
+        const { title, artist, image, link, lyrics } = data.result;
+        const shortLyrics = lyrics.length > 4096 ? lyrics.slice(0, 4093) + '...' : lyrics;
+
+        const caption =
+            `🎶 *🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐋𝐘𝐑𝐈𝐂𝐒 🌸*\n\n` +
+            `*🎵 Title:* ${title}\n` +
+            `*👤 Artist:* ${artist}\n` +
+            `*🔗 Link:* ${link}\n\n` +
+            `📜 *Lyrics:*\n\n` +
+            `${shortLyrics}\n\n` +
+            `> _Powered by CaseyRhodes Tech_ 🌟`;
+
+        await socket.sendMessage(sender, {
+            image: { url: image },
+            caption: caption,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363402973786789@newsletter',
+                    newsletterName: 'CASEYRHODES-MINI🌸',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: fakevCard });
+
+    } catch (err) {
+        console.error('[LYRICS ERROR]', err);
+        await socket.sendMessage(sender, {
+            text: '❌ *An error occurred while fetching lyrics!*\n\n' +
+                  'Please try again later or check your internet connection.'
+        }, { quoted: fakevCard });
+    }
+    break;
+}
+//play command 
 case 'play':
 case 'song': {
     // React to the command first
@@ -1910,6 +2118,155 @@ const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // F
     }
   }
   break;
+}
+//shazam ooh 
+case 'shazam':
+case 'whatsong':
+case 'findsong': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🎵", // Music note emoji
+            key: msg.key
+        }
+    });
+
+    // Import dependencies
+    const acrcloud = require("acrcloud");
+    const yts = require("yt-search");
+    const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+    const fs = require("fs");
+    const ffmpeg = require("fluent-ffmpeg");
+    const ffmpegPath = require("ffmpeg-static");
+    const path = require("path");
+
+    ffmpeg.setFfmpegPath(ffmpegPath);
+
+    // Function to trim audio/video to 15 seconds
+    function trimTo15Seconds(inputBuffer, outputPath) {
+        return new Promise((resolve, reject) => {
+            const tempDir = path.join(__dirname, '..', 'temp');
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+            const inputFile = path.join(tempDir, `input-${Date.now()}.mp4`);
+            const outputFile = outputPath;
+
+            fs.writeFileSync(inputFile, inputBuffer);
+
+            ffmpeg(inputFile)
+                .setStartTime(0)
+                .duration(15)
+                .output(outputFile)
+                .on('end', () => {
+                    const trimmed = fs.readFileSync(outputFile);
+                    fs.unlinkSync(inputFile);
+                    fs.unlinkSync(outputFile);
+                    resolve(trimmed);
+                })
+                .on('error', (err) => reject(err))
+                .run();
+        });
+    }
+
+    try {
+        // Check if message is a reply to audio or video
+        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+
+        if (!quoted || (!quoted.audioMessage && !quoted.videoMessage)) {
+            return await socket.sendMessage(sender, {
+                text: '🎵 *Reply to a short audio or video (10-15s) to identify the song!*\n\n' +
+                      'How to use:\n' +
+                      '1. Play the song you want to identify\n' +
+                      '2. Reply to this message with *.shazam*\n' +
+                      '3. Make sure the audio is clear and 10-15 seconds long'
+            }, { quoted: fakevCard });
+        }
+
+        // Download and process the media
+        const buffer = await downloadMediaMessage(
+            { message: quoted },
+            'buffer',
+            {},
+            { logger: console }
+        );
+
+        const tempDir = path.join(__dirname, '..', 'temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+        
+        const trimmedBuffer = await trimTo15Seconds(buffer, path.join(tempDir, `trimmed-${Date.now()}.mp4`));
+
+        // Initialize ACRCloud
+        const acr = new acrcloud({
+            host: 'identify-ap-southeast-1.acrcloud.com',
+            access_key: '26afd4eec96b0f5e5ab16a7e6e05ab37',
+            access_secret: 'wXOZIqdMNZmaHJP1YDWVyeQLg579uK2CfY6hWMN8'
+        });
+
+        // Identify the song
+        const { status, metadata } = await acr.identify(trimmedBuffer);
+
+        if (status.code !== 0 || !metadata?.music?.length) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Could not recognize the song!*\n\n' +
+                      'Please try again with:\n' +
+                      '• A clearer audio clip\n' +
+                      '• 10-15 seconds duration\n' +
+                      '• Less background noise'
+            }, { quoted: fakevCard });
+        }
+
+        const music = metadata.music[0];
+        const { title, artists, album, genres, release_date } = music;
+
+        // Search for YouTube video
+        const query = `${title} ${artists?.[0]?.name || ''}`;
+        const search = await yts(query);
+        const youtubeUrl = search?.videos?.[0]?.url || 'Not available';
+
+        // Build result message
+        let result = `🎶 *🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐒𝐎𝐍𝐆 𝐈𝐃𝐄𝐍𝐓𝐈𝐅𝐈𝐄𝐑 🌸*\n\n`;
+        result += `🎧 *Title:* ${title || 'Unknown'}\n`;
+        if (artists && artists.length > 0) {
+            result += `👤 *Artist(s):* ${artists.map(a => a.name).join(', ')}\n`;
+        }
+        if (album?.name) {
+            result += `💿 *Album:* ${album.name}\n`;
+        }
+        if (genres && genres.length > 0) {
+            result += `🎼 *Genre:* ${genres.map(g => g.name).join(', ')}\n`;
+        }
+        if (release_date) {
+            result += `📅 *Released:* ${release_date}\n`;
+        }
+        result += `🔗 *YouTube:* ${youtubeUrl}\n\n`;
+        result += `_Powered by CaseyRhodes Tech_ 🌟`;
+
+        // Send the result
+        await socket.sendMessage(sender, {
+            text: result,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363238139244263@newsletter',
+                    newsletterName: 'CASEYRHODES-MD',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: fakevCard });
+
+    } catch (err) {
+        console.error('[SHZ ERROR]', err);
+        await socket.sendMessage(sender, {
+            text: '❌ *Song not recognizable!*\n\n' +
+                  'Please try again with:\n' +
+                  '• A clearer audio clip\n' +
+                  '• Shorter duration (10-15s)\n' +
+                  '• Less background noise\n\n' +
+                  'Error: ' + err.message
+        }, { quoted: fakevCard });
+    }
+    break;
 }
 //===============================
 // 12
@@ -3401,101 +3758,91 @@ END:VCARD
     break;
 }
 // case 39: weather
-case 'weather': {
-  try {
-    await socket.sendMessage(sender, { react: { text: '🌦️', key: msg.key } });
-
-    if (!q || q.trim() === '') {
-      await socket.sendMessage(sender, {
-        text: `📌 *ᴜsᴀɢᴇ:* ${config.PREFIX}weather <ᴄɪᴛʏ>\n` +
-              `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}weather London`,
-        buttons: [
-          {buttonId: `${config.PREFIX}weather London`, buttonText: {displayText: '🌤️ London'}, type: 1},
-          {buttonId: `${config.PREFIX}weather New York`, buttonText: {displayText: '🌤️ New York'}, type: 1},
-          {buttonId: `${config.PREFIX}weather Tokyo`, buttonText: {displayText: '🌤️ Tokyo'}, type: 1}
-        ]
-      }, { quoted: msg });
-      break;
-    }
-
+case 'weather':
+case 'climate': {
+    // React to the command first
     await socket.sendMessage(sender, {
-      text: `⏳ *ғᴇᴛᴄʜɪɴɢ ᴡᴇᴀᴛʜᴇʀ ᴅᴀᴛᴀ, ʙᴀʙᴇ...* 😘`
-    }, { quoted: msg });
-
-    const apiKey = '2d61a72574c11c4f36173b627f8cb177';
-    const city = encodeURIComponent(q.trim());
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
-
-    const response = await axios.get(url, { timeout: 10000 });
-    const data = response.data;
-
-    // Generate weather image URL
-    const weatherIcon = data.weather[0].icon;
-    const imageUrl = `https://openweathermap.org/img/wn/${weatherIcon}@2x.png`;
-
-    // Download the weather icon image
-    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    const imageBuffer = Buffer.from(imageResponse.data, 'binary');
-
-    const weatherMessage = `
-🌍 *ᴡᴇᴀᴛʜᴇʀ ɪɴғᴏ ғᴏʀ* ${data.name}, ${data.sys.country}
-🌡️ *ᴛᴇᴍᴘᴇʀᴀᴛᴜʀᴇ:* ${data.main.temp}°C
-🌡️ *ғᴇᴇʟs ʟɪᴋᴇ:* ${data.main.feels_like}°C
-🌡️ *ᴍɪɴ ᴛᴇᴍᴘ:* ${data.main.temp_min}°C
-🌡️ *ᴍᴀx ᴛᴇᴍᴘ:* ${data.main.temp_max}°C
-💧 *ʜᴜᴍɪᴅɪᴛʏ:* ${data.main.humidity}%
-☁️ *ᴡᴇᴀᴛʜᴇʀ:* ${data.weather[0].main}
-🌫️ *ᴅᴇsᴄʀɪᴘᴛɪᴏɴ:* ${data.weather[0].description}
-💨 *ᴡɪɴᴅ sᴘᴇᴇᴅ:* ${data.wind.speed} m/s
-🔽 *ᴘʀᴇssᴜʀᴇ:* ${data.main.pressure} hPa
-    `;
-
-    // Send message with image and buttons
-    await socket.sendMessage(sender, {
-      image: imageBuffer,
-      caption: `🌤 *ᴡᴇᴀᴛʜᴇʀ ʀᴇᴘᴏʀᴛ* 🌤\n\n${weatherMessage}\n\n> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`,
-      footer: 'Weather Information',
-      buttons: [
-        {buttonId: `${config.PREFIX}weather ${data.name}`, buttonText: {displayText: '🔄 Refresh'}, type: 1},
-        {buttonId: `${config.PREFIX}forecast ${data.name}`, buttonText: {displayText: '📅 Forecast'}, type: 1},
-        {buttonId: `${config.PREFIX}help weather`, buttonText: {displayText: '❓ Help'}, type: 1}
-      ],
-      contextInfo: {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363402973786789@newsletter',
-          newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-          serverMessageId: -1
+        react: {
+            text: "❄️", // Snowflake emoji for weather
+            key: msg.key
         }
-      }
-    }, { quoted: msg });
+    });
 
-  } catch (error) {
-    console.error('Weather command error:', error.message);
-    let errorMessage = `❌ *ᴏʜ, ʟᴏᴠᴇ, ᴄᴏᴜʟᴅɴ'ᴛ ғᴇᴛᴄʜ ᴛʜᴇ ᴡᴇᴀᴛʜᴇʀ! 😢*\n` +
-                      `💡 *ᴛʀʏ ᴀɢᴀɪɴ, ᴅᴀʀʟɪɴɢ?*`;
+    const axios = require('axios');
+
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
     
-    if (error.response && error.response.status === 404) {
-      errorMessage = `🚫 *ᴄɪᴛʏ ɴᴏᴛ ғᴏᴜɴᴅ, sᴡᴇᴇᴛɪᴇ.*\n` +
-                     `💡 *ᴘʟᴇᴀsᴇ ᴄʜᴇᴄᴋ ᴛʜᴇ sᴘᴇʟʟɪɴɢ ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ.*`;
-    } else if (error.code === 'ECONNABORTED' || error.message.includes('network') || error.message.includes('timeout')) {
-      errorMessage = `⌛ *ʀᴇǫᴜᴇsᴛ ᴛɪᴍᴇᴅ ᴏᴜᴛ.*\n` +
-                     `💡 *ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ, ʙᴀʙᴇ.*`;
-    } else if (error.response && error.response.status === 401) {
-      errorMessage = `🔑 *ɪɴᴠᴀʟɪᴅ ᴀᴘɪ ᴋᴇʏ.*\n` +
-                     `💡 *ᴘʟᴇᴀsᴇ ᴄʜᴇᴄᴋ ᴛʜᴇ ᴀᴘɪ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ.*`;
+    const args = q.trim().split(' ').slice(1); // Remove the command itself
+    const location = args.join(' ');
+
+    if (!location) {
+        return await socket.sendMessage(sender, {
+            text: '❄️ *Please provide a location to check the weather!*\n\n' +
+                  'Example: *.weather London*\n' +
+                  'Example: *.weather New York*\n' +
+                  'Example: *.weather Tokyo, Japan*'
+        }, { quoted: fakevCard });
     }
-    
-    await socket.sendMessage(sender, { 
-      text: errorMessage,
-      buttons: [
-        {buttonId: `${config.PREFIX}help weather`, buttonText: {displayText: '❓ Help'}, type: 1},
-        {buttonId: `${config.PREFIX}weather London`, buttonText: {displayText: '🌤️ Try London'}, type: 1}
-      ]
-    }, { quoted: msg });
-  }
-  break;
+
+    try {
+        const res = await axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
+            params: {
+                q: location,
+                units: 'metric',
+                appid: '060a6bcfa19809c2cd4d97a212b19273',
+                language: 'en'
+            }
+        });
+
+        const data = res.data;
+        const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString();
+        const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString();
+        const rain = data.rain ? data.rain['1h'] : 0;
+
+        const text = `❄️ *🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐖𝐄𝐀𝐓𝐇𝐄𝐑 🌸*\n\n` +
+                     `*📍 Location:* ${data.name}, ${data.sys.country}\n\n` +
+                     `🌡️ *Temperature:* ${data.main.temp}°C\n` +
+                     `🤔 *Feels like:* ${data.main.feels_like}°C\n` +
+                     `📉 *Min:* ${data.main.temp_min}°C  📈 *Max:* ${data.main.temp_max}°C\n` +
+                     `📝 *Condition:* ${data.weather[0].description}\n` +
+                     `💧 *Humidity:* ${data.main.humidity}%\n` +
+                     `🌬️ *Wind:* ${data.wind.speed} m/s\n` +
+                     `☁️ *Cloudiness:* ${data.clouds.all}%\n` +
+                     `🌧️ *Rain (last hour):* ${rain} mm\n` +
+                     `🌄 *Sunrise:* ${sunrise}\n` +
+                     `🌅 *Sunset:* ${sunset}\n` +
+                     `🧭 *Coordinates:* ${data.coord.lat}, ${data.coord.lon}\n\n` +
+                     `_Powered by CaseyRhodes Tech_ 🌟`;
+
+        await socket.sendMessage(sender, {
+            text: text,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363238139244263@newsletter',
+                    newsletterName: 'CASEYRHODES-MD',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: fakevCard });
+
+    } catch (error) {
+        console.error('[WEATHER ERROR]', error);
+        await socket.sendMessage(sender, {
+            text: '❌ *Failed to fetch weather data!*\n\n' +
+                  'Please check:\n' +
+                  '• Location spelling\n' +
+                  '• Internet connection\n' +
+                  '• Try a different location\n\n' +
+                  'Example: *.weather Paris* or *.weather Mumbai*'
+        }, { quoted: fakevCard });
+    }
+    break;
 }
 case 'savestatus': {
   try {
