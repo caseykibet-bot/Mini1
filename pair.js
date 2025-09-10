@@ -1178,13 +1178,12 @@ case 'pair': {
     }
     break;
 }
-            // Case: viewonce
+// Case: viewonce
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
-case 'hans-open':
+// Assuming this is inside a switch statement or if-else chain
 case 'open':
 case 'vv':
-case 'hans-open2':
 case 'vv2':
 case 'view2': {
     await socket.sender.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
@@ -1203,9 +1202,9 @@ case 'view2': {
         let messageCaption = '';
         
         if (isCreatorCommand) {
-            messageCaption = `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}`;
+            messageCaption = `Caseyrhodes\n> CASEYRHODES ✅.\n\n${caption}`;
         } else {
-            messageCaption = `ʜᴀɴs-xᴍᴅ\n> Here is your media 🔥.\n\n${caption}`;
+            messageCaption = `CASEYRHODES\n> Here is your media 🔥.\n\n${caption}`;
         }
 
         const messageOptions = { 
@@ -1231,8 +1230,8 @@ case 'view2': {
         console.error("Error processing media:", error);
         reply(`Failed to process the media. Please try again.`);
     }
-}
-break;
+
+    break;
 }
 // Case: song
 case 'play':
