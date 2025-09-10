@@ -730,13 +730,13 @@ case 'menu': {
     
     let menuText = `*╭─────────────────⊷*  
 *┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ : ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
-*┃* 🌸ᴜsᴇʀ: ɢᴜᴇsᴛ
+*┃* 🎉ᴜsᴇʀ: ɢᴜᴇsᴛ
 *┃* 📍ᴘʀᴇғɪx: .
 *┃* ⏰ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
 *┃* 📂sᴛᴏʀᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
 *┃* 🎭ᴅᴇᴠ: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
 *╰──────────────────⊷*
-*Ξ Select a category below:* 
+*Ξ Select a category below:*
 
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
@@ -1178,59 +1178,144 @@ case 'pair': {
     }
     break;
 }
-// Case: viewonce
-const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-
-// Assuming this is inside a switch statement or if-else chain
-case 'open':
+ case 'viewonce':
+case 'rvo':
 case 'vv':
-case 'vv2':
-case 'view2': {
-    await socket.sender.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
+case 'hans-open':
+case 'open': {
+    await socket.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
     
-    if (!m.quoted) return reply(`Reply to a view-once image, video, or audio.`);
-    
-    // Check if it's creator-only command
-    const isCreatorCommand = ['hans-open2', 'vv2', 'view2'].includes(command);
-    if (isCreatorCommand && !isCreator) return reply(`This command is for creator only.`);
+    if (!m.quoted) return reply(`🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*\n\n` +
+        `📝 *ʜᴏᴡ ᴛᴏ ᴜsᴇ:*\n` +
+        `• ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ\n` +
+        `• ᴜsᴇ: ${prefix}vv\n` +
+        `• ɪ'ʟʟ ʀᴇᴠᴇᴀʟ ᴛʜᴇ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ`);
 
     try {
-        const media = await downloadMediaMessage(m.quoted, "buffer", {});
-        const mime = m.quoted.mimetype || '';
-        const caption = m.quoted.text || m.quoted.caption || '';
+        const quoted = m.quoted;
+        const type = Object.keys(quoted.message)[0];
         
-        let messageCaption = '';
-        
-        if (isCreatorCommand) {
-            messageCaption = `Caseyrhodes\n> CASEYRHODES ✅.\n\n${caption}`;
-        } else {
-            messageCaption = `CASEYRHODES\n> Here is your media 🔥.\n\n${caption}`;
+        // Check if it's a view-once message
+        if (!quoted.message[type]?.viewOnce) {
+            return reply(`⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*\n\n` +
+                `ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ (ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ)`);
         }
 
-        const messageOptions = { 
-            caption: messageCaption,
-            quoted: m 
-        };
+        // Download the media
+        const buffer = await downloadMediaMessage(
+            quoted, 
+            'buffer', 
+            {}, 
+            { reuploadRequest: socket.updateMediaMessage }
+        );
 
-        if (mime.includes('image')) {
-            messageOptions.image = media;
-            await socket.sender.sendMessage(m.chat, messageOptions);
-        } else if (mime.includes('video')) {
-            messageOptions.video = media;
-            await socket.sender.sendMessage(m.chat, messageOptions);
-        } else if (mime.includes('audio')) {
-            messageOptions.audio = media;
-            messageOptions.mimetype = 'audio/mp4';
-            await socket.sender.sendMessage(m.chat, messageOptions);
+        if (!buffer) {
+            throw new Error('Failed to download media');
+        }
+
+        const mime = quoted.message[type].mimetype || '';
+        let caption = quoted.text || quoted.caption || '';
+        
+        // Determine file type
+        if (/image/.test(mime)) {
+            await socket.sendMessage(m.chat, { 
+                image: buffer, 
+                caption: `ʜᴀɴs-xᴍᴅ\n> Here is your Image 🔥.\n\n${caption}` 
+            }, { quoted: m });
+        } else if (/video/.test(mime)) {
+            await socket.sendMessage(m.chat, { 
+                video: buffer, 
+                caption: `ʜᴀɴs-xᴍᴅ\n> Here is your Video 🔥.\n\n${caption}` 
+            }, { quoted: m });
+        } else if (/audio/.test(mime)) {
+            await socket.sendMessage(m.chat, { 
+                audio: buffer, 
+                mimetype: 'audio/mp4', 
+                caption: `ʜᴀɴs-xᴍᴅ\n> Here is Your Voice 🔥.\n\n${caption}` 
+            }, { quoted: m });
         } else {
             return reply(`Unsupported media type. Please reply to an image, video, or audio.`);
         }
 
     } catch (error) {
         console.error("Error processing media:", error);
-        reply(`Failed to process the media. Please try again.`);
-    }
+        let errorMessage = `❌ *Failed to reveal media*\n\n`;
 
+        if (error.message?.includes('decrypt') || error.message?.includes('protocol')) {
+            errorMessage += `🔒 *Decryption failed*`;
+        } else if (error.message?.includes('download') || error.message?.includes('buffer')) {
+            errorMessage += `📥 *Download failed*`;
+        } else if (error.message?.includes('expired') || error.message?.includes('old')) {
+            errorMessage += `⏰ *Message expired*`;
+        } else {
+            errorMessage += `🐛 *Error:* ${error.message || 'Something went wrong'}`;
+        }
+
+        errorMessage += `\n\n💡 *Try:*\n• Using a fresh view-once message\n• Checking your internet connection`;
+
+        reply(errorMessage);
+    }
+    break;
+}
+
+case 'hans-open2':
+case 'vv2':
+case 'view2': {
+    if (!isCreator) return reply(`This command is only for the bot owner`);
+    
+    await socket.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
+    
+    if (!m.quoted) return reply(`🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*`);
+
+    try {
+        const quoted = m.quoted;
+        const type = Object.keys(quoted.message)[0];
+        
+        // Check if it's a view-once message
+        if (!quoted.message[type]?.viewOnce) {
+            return reply(`⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ*`);
+        }
+
+        // Download the media
+        const buffer = await downloadMediaMessage(
+            quoted, 
+            'buffer', 
+            {}, 
+            { reuploadRequest: socket.updateMediaMessage }
+        );
+
+        if (!buffer) {
+            throw new Error('Failed to download media');
+        }
+
+        const mime = quoted.message[type].mimetype || '';
+        let caption = quoted.text || quoted.caption || '';
+        
+        // Determine file type
+        if (/image/.test(mime)) {
+            await socket.sendMessage(m.chat, { 
+                image: buffer, 
+                caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
+            }, { quoted: m });
+        } else if (/video/.test(mime)) {
+            await socket.sendMessage(m.chat, { 
+                video: buffer, 
+                caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
+            }, { quoted: m });
+        } else if (/audio/.test(mime)) {
+            await socket.sendMessage(m.chat, { 
+                audio: buffer, 
+                mimetype: 'audio/mp4', 
+                caption: `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}` 
+            }, { quoted: m });
+        } else {
+            return reply(`Unsupported media type. Please reply to an image, video, or audio.`);
+        }
+
+    } catch (error) {
+        console.error("Error processing media:", error);
+        reply(`❌ *Failed to reveal media:* ${error.message || 'Unknown error'}`);
+    }
     break;
 }
 // Case: song
