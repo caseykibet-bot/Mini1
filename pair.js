@@ -43,7 +43,7 @@ const config = {
     OTP_EXPIRY: 300000,
     version: '1.0.0',
     OWNER_NUMBER: '254101022551',
-    BOT_FOOTER: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
+    BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
 
@@ -1289,9 +1289,16 @@ case 'vv': {
   }
   break;
 }
-// Case: song
 case 'play':
 case 'song': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🎵", // Music note emoji
+            key: msg.key
+        }
+    });
+
     // Import dependencies
     const yts = require('yt-search');
     const ddownr = require('denethdev-ytmp3');
@@ -1462,7 +1469,7 @@ case 'song': {
     break;
 }
 // Case: video
-case 'play':
+case 'mp4':
 case 'video': {
     // Import dependencies
     const yts = require('yt-search');
@@ -1488,6 +1495,14 @@ case 'video': {
         const remainingSeconds = Math.floor(seconds % 60);
         return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
+
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🎬", // Video camera emoji
+            key: msg.key
+        }
+    });
 
     // Extract query from message
     const q = msg.message?.conversation || 
@@ -3344,6 +3359,46 @@ case 'shorturl': {
     await socket.sendMessage(sender, { text: errorMessage }, { quoted: msg });
   }
   break;
+}
+///ᴏᴡɴᴇʀ ᴅᴇᴀᴛᴀɪʟs
+case 'owner':
+case 'creator':
+case 'developer': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "👑", // Crown emoji for owner
+            key: msg.key
+        }
+    });
+
+    const botOwner = "ᴄᴀsᴇʏʀʜᴏᴅᴇs"; // Owner name
+    const ownerNumber = "254101022551"; // Hardcoded owner number
+
+    const vcard = `
+BEGIN:VCARD
+VERSION:3.0
+FN:${botOwner}
+TEL;waid=${ownerNumber}:${ownerNumber}
+END:VCARD
+`;
+
+    await socket.sendMessage(sender, {
+        contacts: {
+            displayName: botOwner,
+            contacts: [{ vcard }]
+        }
+    }, { quoted: fakevCard });
+
+    // Optional: Send additional info message
+    await socket.sendMessage(sender, {
+        text: `*👑 Bot Owner Details*\n\n` +
+              `*Name:* ${botOwner}\n` +
+              `*Contact:* ${ownerNumber}\n\n` +
+              `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ🌟`
+    }, { quoted: fakevCard });
+    
+    break;
 }
 // case 39: weather
 case 'weather': {
