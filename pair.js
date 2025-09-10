@@ -736,7 +736,7 @@ case 'menu': {
 *┃* 📂sᴛᴏʀᴀɢᴇ: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
 *┃* 🎭ᴅᴇᴠ: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
 *╰──────────────────⊷*
-*Ξ Select a category below:*
+*Ξ Select a category below:* 
 
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
@@ -1179,115 +1179,60 @@ case 'pair': {
     break;
 }
             // Case: viewonce
-case 'viewonce':
-case 'rvo':
-case 'vv': {
-  await socket.sendMessage(sender, { react: { text: '✨', key: msg.key } });
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
-  try {
-    if (!msg.quoted || !msg.quoted.message) {
-      return await socket.sendMessage(sender, {
-        text: `🚩 *ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, ʙᴀʙᴇ 😘*\n\n` +
-              `📝 *ʜᴏᴡ ᴛᴏ ᴜsᴇ:*\n` +
-              `• ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ\n` +
-              `• ᴜsᴇ: ${config.PREFIX}vv\n` +
-              `• ɪ'ʟʟ ʀᴇᴠᴇᴀʟ ᴛʜᴇ ʜɪᴅᴅᴇɴ ᴛʀᴇᴀsᴜʀᴇ ғᴏʀ ʏᴏᴜ 💋`
-      });
-    }
-
-    const quoted = msg.quoted;
-    const type = Object.keys(quoted.message)[0];
+case 'hans-open':
+case 'open':
+case 'vv':
+case 'hans-open2':
+case 'vv2':
+case 'view2': {
+    await socket.sender.sendMessage(m.chat, { react: { text: "🔥", key: m.key } });
     
-    // Check if it's a view-once message
-    if (!quoted.message[type]?.viewOnce) {
-      return await socket.sendMessage(sender, {
-        text: `⚠️ *ᴛʜɪs ɪsɴ'ᴛ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ, sᴡᴇᴇᴛɪᴇ 😘*\n\n` +
-              `ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ʜɪᴅᴅᴇɴ ᴍᴇᴅɪᴀ (ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ), ᴏᴋᴀʏ?`
-      });
-    }
-
-    await socket.sendMessage(sender, {
-      text: `🔓 *ᴜɴᴠᴇɪʟɪɴɢ ʏᴏᴜʀ sᴇᴄʀᴇᴛ ${type.replace('Message', '').toUpperCase()}, ᴅᴀʀʟɪɴɢ...*`
-    });
-
-    // Get the real message content
-    const realMsg = quoted.message[type].message || quoted.message[type];
+    if (!m.quoted) return reply(`Reply to a view-once image, video, or audio.`);
     
-    // Download the media
-    const buffer = await downloadMediaMessage(
-      { 
-        message: { [type]: realMsg } 
-      }, 
-      'buffer', 
-      {}, 
-      { reuploadRequest: socket.updateMediaMessage }
-    );
+    // Check if it's creator-only command
+    const isCreatorCommand = ['hans-open2', 'vv2', 'view2'].includes(command);
+    if (isCreatorCommand && !isCreator) return reply(`This command is for creator only.`);
 
-    if (!buffer) {
-      throw new Error('Failed to download media');
+    try {
+        const media = await downloadMediaMessage(m.quoted, "buffer", {});
+        const mime = m.quoted.mimetype || '';
+        const caption = m.quoted.text || m.quoted.caption || '';
+        
+        let messageCaption = '';
+        
+        if (isCreatorCommand) {
+            messageCaption = `𝚮𝚫𝚴𝐒-𝚾𝚳𝐃\n> ʜᴀɴs-xᴍᴅ ✅.\n\n${caption}`;
+        } else {
+            messageCaption = `ʜᴀɴs-xᴍᴅ\n> Here is your media 🔥.\n\n${caption}`;
+        }
+
+        const messageOptions = { 
+            caption: messageCaption,
+            quoted: m 
+        };
+
+        if (mime.includes('image')) {
+            messageOptions.image = media;
+            await socket.sender.sendMessage(m.chat, messageOptions);
+        } else if (mime.includes('video')) {
+            messageOptions.video = media;
+            await socket.sender.sendMessage(m.chat, messageOptions);
+        } else if (mime.includes('audio')) {
+            messageOptions.audio = media;
+            messageOptions.mimetype = 'audio/mp4';
+            await socket.sender.sendMessage(m.chat, messageOptions);
+        } else {
+            return reply(`Unsupported media type. Please reply to an image, video, or audio.`);
+        }
+
+    } catch (error) {
+        console.error("Error processing media:", error);
+        reply(`Failed to process the media. Please try again.`);
     }
-
-    // Determine file type and extension
-    let fileType = type.replace('Message', '');
-    let extension = 'jpg'; // default extension
-    
-    if (fileType === 'video') extension = 'mp4';
-    if (fileType === 'audio') extension = 'mp3';
-    if (fileType === 'document') extension = 'pdf';
-    
-    const filename = `revealed-${fileType}-${Date.now()}.${extension}`;
-    const caption = `✨ *ʀᴇᴠᴇᴀʟᴇᴅ ${fileType.toUpperCase()}* - ʏᴏᴜ'ʀᴇ ᴡᴇʟᴄᴏᴍᴇ, ʙᴀʙᴇ 💋`;
-
-    // Send the file based on type
-    if (fileType === 'image') {
-      await socket.sendMessage(sender, {
-        image: buffer,
-        caption: caption
-      });
-    } else if (fileType === 'video') {
-      await socket.sendMessage(sender, {
-        video: buffer,
-        caption: caption
-      });
-    } else if (fileType === 'audio') {
-      await socket.sendMessage(sender, {
-        audio: buffer,
-        caption: caption
-      });
-    } else {
-      // For other types (document, etc.)
-      await socket.sendMessage(sender, {
-        document: buffer,
-        fileName: filename,
-        caption: caption
-      });
-    }
-
-    await socket.sendMessage(sender, {
-      react: { text: '✅', key: msg.key }
-    });
-  } catch (error) {
-    console.error('ViewOnce command error:', error);
-    let errorMessage = `❌ *ᴏʜ ɴᴏ, ɪ ᴄᴏᴜʟᴅɴ'ᴛ ᴜɴᴠᴇɪʟ ɪᴛ, ʙᴀʙᴇ 💔*\n\n`;
-
-    if (error.message?.includes('decrypt') || error.message?.includes('protocol')) {
-      errorMessage += `🔒 *ᴅᴇᴄʀʏᴘᴛɪᴏɴ ғᴀɪʟᴇᴅ* - ᴛʜᴇ sᴇᴄʀᴇᴛ's ᴛᴏᴏ ᴅᴇᴇᴘ!`;
-    } else if (error.message?.includes('download') || error.message?.includes('buffer')) {
-      errorMessage += `📥 *ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ* - ᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴄᴏɴɴᴇᴄᴛɪᴏɴ, ʟᴏᴠᴇ.`;
-    } else if (error.message?.includes('expired') || error.message?.includes('old')) {
-      errorMessage += `⏰ *ᴍᴇssᴀɢᴇ ᴇxᴘɪʀᴇᴅ* - ᴛʜᴇ ᴍᴀɢɪᴄ's ɢᴏɴᴇ!`;
-    } else {
-      errorMessage += `🐛 *ᴇʀʀᴏʀ:* ${error.message || 'sᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ'}`;
-    }
-
-    errorMessage += `\n\n💡 *ᴛʀʏ:*\n• ᴜsɪɴɢ ᴀ ғʀᴇsʜ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴍᴇssᴀɢᴇ\n• ᴄʜᴇᴄᴋɪɴɢ ʏᴏᴜʀ ɪɴᴛᴇʀɴᴇᴛ ᴄᴏɴɴᴇᴄᴛɪᴏɴ`;
-
-    await socket.sendMessage(sender, { text: errorMessage });
-    await socket.sendMessage(sender, {
-      react: { text: '❌', key: msg.key }
-    });
-  }
-  break;
+}
+break;
 }
 // Case: song
 case 'play':
@@ -1395,7 +1340,7 @@ case 'song': {
         
         // Create description
         const desc = `
-*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
+*🎵 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎵*
 ╭───────────────┈  ⊷
 ├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
 ├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
