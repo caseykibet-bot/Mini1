@@ -1466,19 +1466,10 @@ case 'play':
 case 'video': {
     // Import dependencies
     const yts = require('yt-search');
-    const fs = require('fs').promises;
-    const path = require('path');
-    const { existsSync, mkdirSync } = require('fs');
 
     // Constants
-    const TEMP_DIR = './temp';
     const API_BASE_URL = 'https://api.giftedtech.co.ke/api/download/ytmp4';
     const API_KEY = 'gifted';
-
-    // Ensure temp directory exists
-    if (!existsSync(TEMP_DIR)) {
-        mkdirSync(TEMP_DIR, { recursive: true });
-    }
 
     // Utility functions
     function extractYouTubeId(url) {
@@ -1498,18 +1489,6 @@ case 'video': {
         return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
-    async function cleanupFiles(...filePaths) {
-        for (const filePath of filePaths) {
-            if (filePath) {
-                try {
-                    await fs.unlink(filePath);
-                } catch (err) {
-                    // Silent cleanup - no error reporting needed
-                }
-            }
-        }
-    }
-
     // Extract query from message
     const q = msg.message?.conversation || 
               msg.message?.extendedTextMessage?.text || 
@@ -1518,13 +1497,11 @@ case 'video': {
 
     if (!q || q.trim() === '') {
         return await socket.sendMessage(sender, 
-            { text: '*🎬 Give me a video title or YouTube link, love 😘*' }, 
-            { quoted: fakevCard }
+            { text: '*🎬 Give me a video title or YouTube link, love 😘*' }
         );
     }
 
     const fixedQuery = convertYouTubeLink(q.trim());
-    let tempFilePath = '';
 
     try {
         // Search for the video
@@ -1533,8 +1510,7 @@ case 'video': {
         
         if (!videoInfo) {
             return await socket.sendMessage(sender, 
-                { text: '*❌ No videos found, darling! Try another? 💔*' }, 
-                { quoted: fakevCard }
+                { text: '*❌ No videos found, darling! Try another? 💔*' }
             );
         }
 
@@ -1554,7 +1530,7 @@ case 'video': {
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟
 `;
 
-        // Send video info immediately
+        // Send video info immediately WITH fake vCard (only here)
         await socket.sendMessage(sender, {
             image: { url: videoInfo.thumbnail },
             caption: desc
@@ -1583,6 +1559,8 @@ case 'video': {
             downloadUrl = apiData.links[0].url || apiData.links[0].downloadUrl;
         } else if (apiData.data && apiData.data.downloadUrl) {
             downloadUrl = apiData.data.downloadUrl;
+        } else if (apiData.result && apiData.result.download_url) {
+            downloadUrl = apiData.result.download_url;
         } else {
             throw new Error('No download URL found in API response');
         }
@@ -1593,44 +1571,17 @@ case 'video': {
 
         // Clean title for filename
         const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
-        tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}.mp4`);
-        
-        // Download the video file
-        const videoResponse = await fetch(downloadUrl);
-        
-        if (!videoResponse.ok) {
-            throw new Error(`Video download failed with status: ${videoResponse.status}`);
-        }
 
-        const arrayBuffer = await videoResponse.arrayBuffer();
-        
-        if (arrayBuffer.byteLength === 0) {
-            throw new Error('Downloaded video is empty');
-        }
-
-        await fs.writeFile(tempFilePath, Buffer.from(arrayBuffer));
-
-        // Check if file was downloaded successfully
-        const stats = await fs.stat(tempFilePath);
-        if (stats.size === 0) {
-            throw new Error('Downloaded file is empty');
-        }
-        
-        // Send the video file
-        const videoBuffer = await fs.readFile(tempFilePath);
+        // Send video directly from URL WITHOUT fake vCard
         await socket.sendMessage(sender, {
-            video: videoBuffer,
+            video: { url: downloadUrl },
             mimetype: "video/mp4",
             fileName: `${cleanTitle}.mp4`,
             caption: `*${videoInfo.title}*`
-        }, { quoted: fakevCard });
-
-        // Cleanup
-        await cleanupFiles(tempFilePath);
+        });
         
     } catch (err) {
         console.error('Video command error:', err);
-        await cleanupFiles(tempFilePath);
         
         let errorMessage = "*❌ Oh no, the video download failed, love! 😢 Try again?*";
         
@@ -1639,8 +1590,7 @@ case 'video': {
         }
         
         await socket.sendMessage(sender, 
-            { text: errorMessage }, 
-            { quoted: fakevCard }
+            { text: errorMessage }
         );
     }
     break;
