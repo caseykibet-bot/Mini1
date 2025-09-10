@@ -603,8 +603,8 @@ function setupCommandHandlers(socket, number) {
                                         })
                                     }
                                 },
-                                { buttonId: `${config.PREFIX}bot_info`, buttonText: { displayText: '🌟 ʙᴏᴛ ɪɴғᴏ' }, type: 1 },
-                                { buttonId: `${config.PREFIX}bot_stats`, buttonText: { displayText: '📈 ʙᴏᴛ sᴛᴀᴛs' }, type: 1 }
+                                { buttonId: `${config.PREFIX}session`, buttonText: { displayText: '🌟 ʙᴏᴛ ɪɴғᴏ' }, type: 1 },
+                                { buttonId: `${config.PREFIX}active`, buttonText: { displayText: '📈 ʙᴏᴛ sᴛᴀᴛs' }, type: 1 }
                             ],
                             headerType: 1,
                             viewOnce: true
@@ -769,9 +769,10 @@ case 'menu': {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
-                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },
-                    { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}bot_stats` },
-                    { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}bot_info` },
+                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },    
+                    { title: "🌟owner", description: "intouch with dev", id: `${config.PREFIX}ownee` },
+                    { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
+                    { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
                     { title: "📋 ᴍᴇɴᴜ", description: "Show this menu", id: `${config.PREFIX}menu` },
                     { title: "📜 ᴀʟʟ ᴍᴇɴᴜ", description: "List all commands (text)", id: `${config.PREFIX}allmenu` },
                     { title: "🏓 ᴘɪɴɢ", description: "Check bot response speed", id: `${config.PREFIX}ping` },
@@ -785,7 +786,8 @@ case 'menu': {
                   title: "🎵 ᴍᴇᴅɪᴀ ᴛᴏᴏʟs",
                   highlight_label: 'New',
                   rows: [
-                    { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` },
+                    { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
+                    { title: "play", description: "play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
                     { title: "📸 ɪɴsᴛᴀɢʀᴀᴍ", description: "Download Instagram content", id: `${config.PREFIX}ig` },
@@ -851,7 +853,10 @@ case 'menu': {
                     { title: "🌦️ ᴡᴇᴀᴛʜᴇʀ", description: "Get weather forecast", id: `${config.PREFIX}weather` },
                     { title: "🔗 sʜᴏʀᴛᴜʀʟ", description: "Create shortened URL", id: `${config.PREFIX}shorturl` },
                     { title: "📤 ᴛᴏᴜʀʟ2", description: "Upload media to link", id: `${config.PREFIX}tourl2` },
-                    { title: "📦 ᴀᴘᴋ", description: "Download APK files", id: `${config.PREFIX}apk` },
+                    { title: "📦 ᴀᴘᴋ", description: "Download APK files", id: `${config.PREFIX}apk` },   
+                    { title: "🧾lyrics", description: "generate lyrics", id: `${config.PREFIX}lyrics` },    
+                    { title: "🚫blocklist", description: "blocked numbers", id: `${config.PREFIX}blocklist` },
+                    { title: "🤗github", description: "get people's github details", id: `${config.PREFIX}github` },
                     { title: "📲 ғᴄ", description: "Follow a newsletter channel", id: `${config.PREFIX}fc` }
                   ]
                 }
@@ -892,6 +897,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
   }
   break;
 }
+//allmenu 
   case 'allmenu': {
   try {
     await socket.sendMessage(sender, { react: { text: '📜', key: msg.key } });
@@ -2119,155 +2125,6 @@ const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // F
   }
   break;
 }
-//shazam ooh 
-case 'shazam':
-case 'whatsong':
-case 'findsong': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🎵", // Music note emoji
-            key: msg.key
-        }
-    });
-
-    // Import dependencies
-    const acrcloud = require("acrcloud");
-    const yts = require("yt-search");
-    const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-    const fs = require("fs");
-    const ffmpeg = require("fluent-ffmpeg");
-    const ffmpegPath = require("ffmpeg-static");
-    const path = require("path");
-
-    ffmpeg.setFfmpegPath(ffmpegPath);
-
-    // Function to trim audio/video to 15 seconds
-    function trimTo15Seconds(inputBuffer, outputPath) {
-        return new Promise((resolve, reject) => {
-            const tempDir = path.join(__dirname, '..', 'temp');
-            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-
-            const inputFile = path.join(tempDir, `input-${Date.now()}.mp4`);
-            const outputFile = outputPath;
-
-            fs.writeFileSync(inputFile, inputBuffer);
-
-            ffmpeg(inputFile)
-                .setStartTime(0)
-                .duration(15)
-                .output(outputFile)
-                .on('end', () => {
-                    const trimmed = fs.readFileSync(outputFile);
-                    fs.unlinkSync(inputFile);
-                    fs.unlinkSync(outputFile);
-                    resolve(trimmed);
-                })
-                .on('error', (err) => reject(err))
-                .run();
-        });
-    }
-
-    try {
-        // Check if message is a reply to audio or video
-        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-
-        if (!quoted || (!quoted.audioMessage && !quoted.videoMessage)) {
-            return await socket.sendMessage(sender, {
-                text: '🎵 *Reply to a short audio or video (10-15s) to identify the song!*\n\n' +
-                      'How to use:\n' +
-                      '1. Play the song you want to identify\n' +
-                      '2. Reply to this message with *.shazam*\n' +
-                      '3. Make sure the audio is clear and 10-15 seconds long'
-            }, { quoted: fakevCard });
-        }
-
-        // Download and process the media
-        const buffer = await downloadMediaMessage(
-            { message: quoted },
-            'buffer',
-            {},
-            { logger: console }
-        );
-
-        const tempDir = path.join(__dirname, '..', 'temp');
-        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-        
-        const trimmedBuffer = await trimTo15Seconds(buffer, path.join(tempDir, `trimmed-${Date.now()}.mp4`));
-
-        // Initialize ACRCloud
-        const acr = new acrcloud({
-            host: 'identify-ap-southeast-1.acrcloud.com',
-            access_key: '26afd4eec96b0f5e5ab16a7e6e05ab37',
-            access_secret: 'wXOZIqdMNZmaHJP1YDWVyeQLg579uK2CfY6hWMN8'
-        });
-
-        // Identify the song
-        const { status, metadata } = await acr.identify(trimmedBuffer);
-
-        if (status.code !== 0 || !metadata?.music?.length) {
-            return await socket.sendMessage(sender, {
-                text: '❌ *Could not recognize the song!*\n\n' +
-                      'Please try again with:\n' +
-                      '• A clearer audio clip\n' +
-                      '• 10-15 seconds duration\n' +
-                      '• Less background noise'
-            }, { quoted: fakevCard });
-        }
-
-        const music = metadata.music[0];
-        const { title, artists, album, genres, release_date } = music;
-
-        // Search for YouTube video
-        const query = `${title} ${artists?.[0]?.name || ''}`;
-        const search = await yts(query);
-        const youtubeUrl = search?.videos?.[0]?.url || 'Not available';
-
-        // Build result message
-        let result = `🎶 *🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐒𝐎𝐍𝐆 𝐈𝐃𝐄𝐍𝐓𝐈𝐅𝐈𝐄𝐑 🌸*\n\n`;
-        result += `🎧 *Title:* ${title || 'Unknown'}\n`;
-        if (artists && artists.length > 0) {
-            result += `👤 *Artist(s):* ${artists.map(a => a.name).join(', ')}\n`;
-        }
-        if (album?.name) {
-            result += `💿 *Album:* ${album.name}\n`;
-        }
-        if (genres && genres.length > 0) {
-            result += `🎼 *Genre:* ${genres.map(g => g.name).join(', ')}\n`;
-        }
-        if (release_date) {
-            result += `📅 *Released:* ${release_date}\n`;
-        }
-        result += `🔗 *YouTube:* ${youtubeUrl}\n\n`;
-        result += `_Powered by CaseyRhodes Tech_ 🌟`;
-
-        // Send the result
-        await socket.sendMessage(sender, {
-            text: result,
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363238139244263@newsletter',
-                    newsletterName: 'CASEYRHODES-MD',
-                    serverMessageId: -1
-                }
-            }
-        }, { quoted: fakevCard });
-
-    } catch (err) {
-        console.error('[SHZ ERROR]', err);
-        await socket.sendMessage(sender, {
-            text: '❌ *Song not recognizable!*\n\n' +
-                  'Please try again with:\n' +
-                  '• A clearer audio clip\n' +
-                  '• Shorter duration (10-15s)\n' +
-                  '• Less background noise\n\n' +
-                  'Error: ' + err.message
-        }, { quoted: fakevCard });
-    }
-    break;
-}
 //===============================
 // 12
                 case 'bomb': {
@@ -3145,112 +3002,75 @@ case 'profilepic': {
                     break;
                 }
                 
-              ///  for bot presence
-                case 'mode': {
-    if (!isCreator) {
-        await Matrix.sendMessage(m.from, { text: "*📛 THIS IS AN OWNER COMMAND*" }, { quoted: m });
-        return;
+         //get github username details 
+case 'github':
+case 'gh': {
+  try {
+    const username = args[0];
+
+    if (!username) {
+      await socket.sendMessage(from, {
+        text: '📦 *Please provide a GitHub username.*\nExample: .github caseyrhodes'
+      }, { quoted: msg });
+      break;
     }
 
-    // Initialize mode settings from config if they don't exist
-    if (typeof Matrix.public === 'undefined') {
-        Matrix.public = config.MODE === "public";
-    }
-    if (typeof Matrix.otherMode === 'undefined') {
-        Matrix.otherMode = false;
-    }
+    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
 
-    // If no specific mode is provided, show the button interface
-    if (!text) {
-        const currentMode = Matrix.public ? 'public' : 'private';
-        const otherStatus = Matrix.otherMode ? 'enabled' : 'disabled';
-        
-        const buttonMessage = {
-            text: `*🤖 BOT MODE SETTINGS*\n\nCurrent Mode: ${currentMode.toUpperCase()}\nOther Mode: ${otherStatus.toUpperCase()}\n\nSelect an option:`,
-            footer: config.BOT_NAME || "Bot", // Use config.BOT_NAME or fallback
-            buttons: [
-                { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
-                { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
-                { buttonId: `${prefix}mode other`, buttonText: { displayText: Matrix.otherMode ? '❌ DISABLE OTHER' : '✅ ENABLE OTHER' }, type: 1 }
-            ],
-            headerType: 1
-        };
-        
-        await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
-        return;
-    }
+    try {
+      const response = await axios.get(`https://api.github.com/users/${username}`);
+      const data = response.data;
 
-    const modeArg = text.toLowerCase().trim();
-    
-    if (['public', 'private', 'other'].includes(modeArg)) {
-        if (modeArg === 'public') {
-            Matrix.public = true;
-            Matrix.otherMode = false;
-            config.MODE = "public"; // Update config
-            await saveConfig(); // Save to file if needed
-            
-            const buttonMessage = {
-                text: '✅ Mode has been changed to PUBLIC.',
-                footer: config.BOT_NAME || "Bot",
-                buttons: [
-                    { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 SWITCH TO PRIVATE' }, type: 1 },
-                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
-                ],
-                headerType: 1
-            };
-            
-            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
-        } else if (modeArg === 'private') {
-            Matrix.public = false;
-            Matrix.otherMode = false;
-            config.MODE = "private"; // Update config
-            await saveConfig(); // Save to file if needed
-            
-            const buttonMessage = {
-                text: '✅ Mode has been changed to PRIVATE.',
-                footer: config.BOT_NAME || "Bot",
-                buttons: [
-                    { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 SWITCH TO PUBLIC' }, type: 1 },
-                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
-                ],
-                headerType: 1
-            };
-            
-            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
-        } else if (modeArg === 'other') {
-            Matrix.otherMode = !Matrix.otherMode;
-            const status = Matrix.otherMode ? 'enabled' : 'disabled';
-            
-            const buttonMessage = {
-                text: `✅ Other mode has been ${status.toUpperCase()}.`,
-                footer: config.BOT_NAME || "Bot",
-                buttons: [
-                    { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
-                    { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
-                    { buttonId: `${prefix}mode`, buttonText: { displayText: '⚙️ SETTINGS' }, type: 1 }
-                ],
-                headerType: 1
-            };
-            
-            await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
-        }
-    } else {
-        const buttonMessage = {
-            text: "❌ Invalid mode. Please select a valid option:",
-            footer: config.BOT_NAME || "Bot",
-            buttons: [
-                { buttonId: `${prefix}mode public`, buttonText: { displayText: '🌐 PUBLIC' }, type: 1 },
-                { buttonId: `${prefix}mode private`, buttonText: { displayText: '🔒 PRIVATE' }, type: 1 },
-                { buttonId: `${prefix}mode other`, buttonText: { displayText: '🔧 OTHER' }, type: 1 }
-            ],
-            headerType: 1
-        };
-        
-        await Matrix.sendMessage(m.from, buttonMessage, { quoted: m });
+      if (data.message === 'Not Found') {
+        await socket.sendMessage(from, {
+          text: '❌ *GitHub user not found.*\nPlease check the username and try again.'
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+        break;
+      }
+
+      const profilePic = `https://github.com/${data.login}.png`;
+
+      const userInfo = `
+🌐 *GitHub User Info*
+
+👤 *Name:* ${data.name || 'N/A'}
+🔖 *Username:* ${data.login}
+📝 *Bio:* ${data.bio || 'N/A'}
+🏢 *Company:* ${data.company || 'N/A'}
+📍 *Location:* ${data.location || 'N/A'}
+📧 *Email:* ${data.email || 'N/A'}
+🔗 *Blog:* ${data.blog || 'N/A'}
+📂 *Public Repos:* ${data.public_repos}
+👥 *Followers:* ${data.followers}
+🤝 *Following:* ${data.following}
+📅 *Created:* ${new Date(data.created_at).toLocaleDateString()}
+🔄 *Updated:* ${new Date(data.updated_at).toLocaleDateString()}
+      `.trim();
+
+      await socket.sendMessage(from, {
+        image: { url: profilePic },
+        caption: userInfo
+      }, { quoted: msg });
+
+      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+
+    } catch (err) {
+      console.error('GitHub API error:', err);
+      await socket.sendMessage(from, {
+        text: '⚠️ Error fetching GitHub user. Please try again later.'
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
     }
-    break;
+  } catch (error) {
+    console.error('GitHub command error:', error);
+    await socket.sendMessage(from, {
+      text: '❌ An unexpected error occurred. Please try again.'
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
 }
-
                 // Case: promote - Promote a member to group admin
                 case 'promote': {
                 await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
@@ -4205,7 +4025,85 @@ case 'repo-owner': {
     }, { quoted: fakevCard });
     break;
 }
+//blockthem 
 
+case 'block': {
+  try {
+    // Get sender JID directly
+    const senderJid = msg.key.participant || msg.key.remoteJid;
+    
+    // Define owner JIDs directly
+    const ownerJids = [
+      '254101022551@s.whatsapp.net',
+      '254112192119@s.whatsapp.net',
+      // Add your KING_ID if it exists, or remove this line
+      ...(global.KING_ID ? [global.KING_ID] : [])
+    ];
+
+    if (!ownerJids.includes(senderJid)) {
+      await socket.sendMessage(from, { 
+        text: "❌ This command is only available for bot owners." 
+      }, { quoted: msg });
+      break;
+    }
+
+    let targetJid;
+    const restrictedJIDs = [
+      "254742063632@s.whatsapp.net",
+      "254750948696@s.whatsapp.net",
+      "254101022551@s.whatsapp.net",
+      "254112192119@s.whatsapp.net"
+    ];
+
+    // Check if replying to a message
+    if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
+      targetJid = msg.message.extendedTextMessage.contextInfo.participant;
+    } else if (args.length > 0) {
+      // Format JID directly without helper function
+      const cleaned = args[0].replace(/[^0-9]/g, '');
+      targetJid = `${cleaned}@s.whatsapp.net`;
+    } else if (from.endsWith('@s.whatsapp.net')) {
+      targetJid = from;
+    } else {
+      await socket.sendMessage(from, { 
+        text: "📝 Please mention a user or provide a number to block.\nExample: .block 254712345678" 
+      }, { quoted: msg });
+      break;
+    }
+
+    if (restrictedJIDs.includes(targetJid)) {
+      await socket.sendMessage(from, { 
+        text: "❌ I cannot block my developers!" 
+      }, { quoted: msg });
+      break;
+    }
+
+    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
+
+    try {
+      await socket.updateBlockStatus(targetJid, "block");
+      await socket.sendMessage(from, { 
+        text: `✅ Successfully blocked ${targetJid.replace('@s.whatsapp.net', '')}` 
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    } catch (blockError) {
+      console.error('Block error:', blockError);
+      await socket.sendMessage(from, { 
+        text: "❌ Failed to block user. Please check if the number is valid." 
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+    }
+
+  } catch (error) {
+    console.error('Block command error:', error);
+    await socket.sendMessage(from, { 
+      text: "❌ An error occurred while processing the block command." 
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
+}
+//starts
 case 'repo-audio': {
     await socket.sendMessage(sender, { react: { text: '🎵', key: msg.key } });
     await socket.sendMessage(sender, {
