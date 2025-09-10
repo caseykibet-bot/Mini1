@@ -134,30 +134,31 @@ async function cleanDuplicateFiles(number) {
 
 // Count total commands in pair.js
 let totalcmds = async () => {
-    try {
-        const filePath = "./pair.js";
-        const mytext = await fs.readFile(filePath, "utf-8");
+  try {
+    const filePath = "./pair.js";
+    const mytext = await fs.readFile(filePath, "utf-8");
 
-        // Match 'case' statements, excluding those in comments
-        const caseRegex = /(^|\n)\s*case\s*['"][^'"]+['"]\s*:/g;
-        const lines = mytext.split("\n");
-        let count = 0;
+    // Match 'case' statements, excluding those in comments
+    const caseRegex = /(^|\n)\s*case\s*['"][^'"]+['"]\s*:/g;
+    const lines = mytext.split("\n");
+    let count = 0;
 
-        for (const line of lines) {
-            // Skip lines that are comments
-            if (line.trim().startsWith("//") || line.trim().startsWith("/*")) continue;
-            // Check if line matches case statement
-            if (line.match(/^\s*case\s*['"][^'"]+['"]\s*:/)) {
-                count++;
-            }
-        }
-
-        return count;
-    } catch (error) {
-        console.error("Error reading pair.js:", error.message);
-        return 0; // Return 0 on error to avoid breaking the bot
+    for (const line of lines) {
+      // Skip lines that are comments
+      if (line.trim().startsWith("//") || line.trim().startsWith("/*")) continue;
+      // Check if line matches case statement
+      if (line.match(/^\s*case\s*['"][^'"]+['"]\s*:/)) {
+        count++;
+      }
     }
-}
+
+    return count;
+  } catch (error) {
+    console.error("Error reading pair.js:", error.message);
+    return 0; // Return 0 on error to avoid breaking the bot
+  }
+  }
+
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
     let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH'; // Hardcoded default
@@ -235,6 +236,8 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
         }
     }
 }
+
+
 // Helper function to format bytes
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
