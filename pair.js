@@ -3957,8 +3957,8 @@ case 'url': {
           forwardingScore: 1,
           isForwarded: true,
           forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244263@newsletter',
-            newsletterName: 'FLASH-MD',
+            newsletterJid: '120363238139244269@newsletter',
+            newsletterName: 'CASEYRHODES-MIN',
             serverMessageId: -1
           }
         }
@@ -4024,7 +4024,7 @@ case 'url': {
           isForwarded: true,
           forwardedNewsletterMessageInfo: {
             newsletterJid: '120363238139244266@newsletter',
-            newsletterName: 'CASEYRHODES-MINI'',
+            newsletterName: 'CASEYRHODES-MINI',
             serverMessageId: -1
           }
         }
