@@ -13,7 +13,8 @@ const crypto = require('crypto');
 const axios = require('axios');
 const FormData = require("form-data");
 const os = require('os');
-const { sms } = require("./msg");
+const { tmpdir } = require('os');
+const { sms, downloadMediaMessage } = require("./msg");
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -33,6 +34,7 @@ const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
     AUTO_RECORDING: 'true',
+    AUTO_READ: 'true',
     AUTO_LIKE_EMOJI: ['💋', '😶', '🫆', '💗', '🎈', '🎉', '🥳', '❤️', '🧫', '🐭'],
     PREFIX: '.',
     MAX_RETRIES: 3,
@@ -43,10 +45,10 @@ const config = {
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    ANTI_CALL: 'true',
     OWNER_NUMBER: '254101022551',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T',
+    MODE: 'public' // Added MODE config with default value
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -58,7 +60,6 @@ const socketCreationTime = new Map();
 const SESSION_BASE_PATH = './session';
 const NUMBER_LIST_PATH = './numbers.json';
 const otpStore = new Map();
-const recentCallers = new Set();
 
 if (!fs.existsSync(SESSION_BASE_PATH)) {
     fs.mkdirSync(SESSION_BASE_PATH, { recursive: true });
@@ -130,34 +131,6 @@ async function cleanDuplicateFiles(number) {
     }
 }
 
-// Anti-call event handler
-function setupAntiCallHandler(socket) {
-    socket.ev.on("call", async (callData) => {
-        try {
-            if (config.ANTI_CALL !== 'true') return;
-
-            for (const call of callData) {
-                if (call.status === 'offer' && !call.isGroup) {
-                    await socket.rejectCall(call.id, call.from);
-                    
-                    if (!recentCallers.has(call.from)) {
-                        recentCallers.add(call.from);
-                        
-                        await socket.sendMessage(call.from, {
-                            text: "```Hii this is CASEYRHODES-XMD a Personal Assistant!! Sorry for now, we cannot receive calls, whether in a group or personal if you need help or request features please chat owner``` ⚠️",
-                            mentions: [call.from]
-                        });
-                        
-                        setTimeout(() => recentCallers.delete(call.from), 600000);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Call rejection error:", error);
-        }
-    });
-}
-
 // Count total commands in pair.js
 let totalcmds = async () => {
     try {
@@ -181,15 +154,15 @@ let totalcmds = async () => {
         return count;
     } catch (error) {
         console.error("Error reading pair.js:", error.message);
-        return 0;
+        return 0; // Return 0 on error to avoid breaking the bot
     }
 }
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH';
+    let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
-        const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0];
+        const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
         if (!inviteCodeMatch) {
             console.error('Invalid group invite link format:', config.GROUP_INVITE_LINK);
@@ -202,7 +175,7 @@ async function joinGroup(socket) {
     while (retries > 0) {
         try {
             const response = await socket.groupAcceptInvite(inviteCode);
-            console.log('Group join response:', JSON.stringify(response, null, 2));
+            console.log('Group join response:', JSON.stringify(response, null, 2)); // Debug response
             if (response?.gid) {
                 console.log(`[ ✅ ] Successfully joined group with ID: ${response.gid}`);
                 return { status: 'success', gid: response.gid };
@@ -263,6 +236,7 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
+// Helper function to format bytes
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -294,7 +268,7 @@ function setupNewsletterHandlers(socket) {
         const message = messages[0];
         if (!message?.key) return;
 
-        const allNewsletterJIDs = [config.NEWSLETTER_JID];
+        const allNewsletterJIDs = await loadNewsletterJIDsFromRaw();
         const jid = message.key.remoteJid;
 
         if (!allNewsletterJIDs.includes(jid)) return;
@@ -334,6 +308,29 @@ async function setupStatusHandlers(socket) {
         try {
             if (config.AUTO_RECORDING === 'true' && message.key.remoteJid) {
                 await socket.sendPresenceUpdate("recording", message.key.remoteJid);
+            }
+
+            // Fixed: Use config.AUTO_READ instead of config.READ_MESSAGE
+            if (config.AUTO_READ === 'true') {
+                await socket.readMessages([message.key]);
+                console.log(`Marked status message from ${message.key.remoteJid} as read.`);
+            }
+
+            // Fixed owner reaction logic
+            const senderNumber = message.key.participant ? message.key.participant.split('@')[0] : '';
+            if (senderNumber === config.OWNER_NUMBER) {
+                const reactions = ["👑", "🥳", "📊", "⚙️", "🧠", "🎯", "✨", "🔑", "🏆", "👻", "🎉", "💗", "❤️", "😜", "🌼", "🏵️", "💐", "🔥", "❄️", "🌝", "🌟", "🐥", "🧊"];
+                const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
+                try {
+                    await socket.sendMessage(
+                        message.key.remoteJid,
+                        { react: { text: randomReaction, key: message.key } },
+                        { statusJidList: [message.key.participant] }
+                    );
+                    console.log(`Reacted to owner's status with ${randomReaction}`);
+                } catch (error) {
+                    console.error('Failed to react to owner status:', error);
+                }
             }
 
             if (config.AUTO_VIEW_STATUS === 'true') {
@@ -456,7 +453,7 @@ async function oneViewmeg(socket, isOwner, msg, sender) {
                 text: '❌ *Not a valid view-once message, love!* 😢'
             });
         }
-        if (anu && fs.existsSync(anu)) fs.unlinkSync(anu);
+        if (anu && fs.existsSync(anu)) fs.unlinkSync(anu); // Clean up temporary file
     } catch (error) {
         console.error('oneViewmeg error:', error);
         await socket.sendMessage(sender, {
@@ -507,7 +504,7 @@ function setupCommandHandlers(socket, number) {
             : (type === "viewOnceMessageV2") 
                 ? (msg.message[type]?.message?.imageMessage?.caption || msg.message[type]?.message?.videoMessage?.caption || "") 
             : '';
-        let sender = msg.key.remoteJid;
+        let senderJid = msg.key.remoteJid;
         const nowsender = msg.key.fromMe ? (socket.user.id.split(':')[0] + '@s.whatsapp.net' || socket.user.id) : (msg.key.participant || msg.key.remoteJid);
         const senderNumber = nowsender.split('@')[0];
         const developers = `${config.OWNER_NUMBER}`;
@@ -521,6 +518,14 @@ function setupCommandHandlers(socket, number) {
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '.';
         var args = body.trim().split(/ +/).slice(1);
 
+        // Fixed: Check mode restrictions
+        if (!isOwner) {
+            if (config.MODE === "private") return;
+            if (isGroup && config.MODE === "inbox") return;
+            if (!isGroup && config.MODE === "groups") return;
+        }
+
+        // Helper function to check if the sender is a group admin
         async function isGroupAdmin(jid, user) {
             try {
                 const groupMetadata = await socket.groupMetadata(jid);
@@ -552,6 +557,7 @@ function setupCommandHandlers(socket, number) {
         if (!command) return;
         const count = await totalcmds();
 
+        // Define fakevCard for quoting messages
         const fakevCard = {
             key: {
                 fromMe: false,
@@ -565,10 +571,9 @@ function setupCommandHandlers(socket, number) {
                 }
             }
         };
-        
+
         try {
             switch (command) {
-                // Your command cases here
                 // Case: alive
                 case 'alive': {
                     try {
@@ -795,7 +800,7 @@ case 'menu': {
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
                     { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },    
-                    { title: "🌟owner", description: "intouch with dev", id: `${config.PREFIX}ownee` },
+                    { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
                     { title: "📋 ᴍᴇɴᴜ", description: "Show this menu", id: `${config.PREFIX}menu` },
@@ -812,7 +817,7 @@ case 'menu': {
                   highlight_label: 'New',
                   rows: [
                     { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
-                    { title: "play", description: "play favourite songs", id: `${config.PREFIX}play` },
+                    { title: "🎉play", description: "play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
                     { title: "📸 ɪɴsᴛᴀɢʀᴀᴍ", description: "Download Instagram content", id: `${config.PREFIX}ig` },
@@ -1450,76 +1455,6 @@ case 'blocked': {
         }, { quoted: fakevCard });
     }
     break;
-}
-// Anti-call command case
-case 'anticall':
-case 'callblock':
-case 'togglecall': {
-  try {
-    const action = args[0]?.toLowerCase() || 'status';
-    let statusText, reaction = "📞", additionalInfo = "";
-
-    switch (action) {
-      case 'on':
-        if (config.ANTI_CALL) {
-          statusText = "Anti-call is already *enabled*✅";
-          reaction = "ℹ️";
-        } else {
-          config.ANTI_CALL = true;
-          statusText = "Anti-call has been *enabled*!";
-          reaction = "✅";
-          additionalInfo = "Calls will be automatically rejected🔇";
-        }
-        break;
-        
-      case 'off':
-        if (!config.ANTI_CALL) {
-          statusText = "Anti-call is already *disabled*📳!";
-          reaction = "ℹ️";
-        } else {
-          config.ANTI_CALL = false;
-          statusText = "Anti-call has been *disabled📛*!";
-          reaction = "❌";
-          additionalInfo = "Calls will be accepted";
-        }
-        break;
-        
-      default:
-        statusText = `Anti-call Status: ${config.ANTI_CALL ? "✅ *ENABLED*" : "❌ *DISABLED*"}`;
-        additionalInfo = config.ANTI_CALL ? "Calls are being blocked" : "Calls are allowed";
-        break;
-    }
-
-    // Send the combined message with image and newsletter info
-    await socket.sendMessage(from, {
-      image: { url: "https://files.catbox.moe/y3j3kl.jpg" },
-      caption: `${statusText}\n\n${additionalInfo}\n\n_CASEYRHODES-TECH_`,
-      contextInfo: {
-        mentionedJid: [sender],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363302677217436@newsletter',
-          newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-          serverMessageId: 143
-        }
-      }
-    }, { quoted: msg });
-
-    // Add reaction to original message
-    await socket.sendMessage(sender, {
-      react: { text: reaction, key: msg.key }
-    });
-
-  } catch (error) {
-    console.error("Anti-call command error:", error);
-    await socket.sendMessage(from, {
-      text: `⚠️ Error: ${error.message}`,
-      mentions: [sender]
-    }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-  }
-  break;
 }
 ///fixed lyrics 😀
 case 'lyrics': {
@@ -3033,8 +2968,8 @@ case 'profilepic': {
                 caption: `Profile picture of @${targetUser.split('@')[0]}`,
                 mentions: [targetUser],
                 buttons: [
-                    { buttonId: 'menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
-                    { buttonId: 'alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
+                    { buttonId: '.menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
+                    { buttonId: '.<alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
                 ],
                 footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
             });
@@ -3043,8 +2978,8 @@ case 'profilepic': {
                 text: `@${targetUser.split('@')[0]} doesn't have a profile picture.`,
                 mentions: [targetUser],
                 buttons: [
-                    { buttonId: 'menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
-                    { buttonId: 'alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
+                    { buttonId: '.menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
+                    { buttonId: '.alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
                 ],
                 footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
             });
@@ -3944,139 +3879,7 @@ case 'savestatus': {
   }
   break;
 }
-//url test 
-case 'url': {
-  try {
-    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    const mediaMsg = quoted?.imageMessage || quoted?.videoMessage || quoted?.stickerMessage;
 
-    if (!mediaMsg) {
-      await socket.sendMessage(from, { 
-        text: '📁 Reply to an image, video, or sticker to upload to Catbox.',
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244269@newsletter',
-            newsletterName: 'CASEYRHODES-MIN',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-      break;
-    }
-
-    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
-
-    let type = null;
-    let ext = null;
-
-    if (quoted?.imageMessage) {
-      type = 'image';
-      ext = 'jpg';
-    } else if (quoted?.videoMessage) {
-      type = 'video';
-      ext = 'mp4';
-    } else if (quoted?.stickerMessage) {
-      type = 'sticker';
-      ext = 'webp';
-    }
-
-    if (!type || !ext) {
-      await socket.sendMessage(from, { 
-        text: '❌ Unsupported media type. Please reply to an image, video, or sticker.',
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244268@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-      break;
-    }
-
-    const filePath = path.join(tmpdir(), `media_${Date.now()}.${ext}`);
-
-    try {
-      // Get buffer from media message
-      const stream = await downloadContentFromMessage(mediaMsg, type);
-      const chunks = [];
-      for await (const chunk of stream) chunks.push(chunk);
-      const buffer = Buffer.concat(chunks);
-
-      // Write file to temporary directory
-      await fs.promises.writeFile(filePath, buffer);
-
-      // Upload to Catbox
-      if (!fs.existsSync(filePath)) throw new Error("File does not exist");
-      const response = await catbox.uploadFile({ path: filePath });
-      if (!response) throw new Error("Failed to upload");
-
-      // Send success message with URL
-      await socket.sendMessage(from, { 
-        text: `✅ Upload successful!\n🔗 URL: ${response}`,
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244266@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-
-      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-
-    } catch (err) {
-      console.error('URL upload error:', err);
-      await socket.sendMessage(from, { 
-        text: `❌ Upload failed: ${err.message}`,
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244268@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-    } finally {
-      // Clean up temporary file
-      try {
-        if (fs.existsSync(filePath)) {
-          await fs.promises.unlink(filePath);
-        }
-      } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
-      }
-    }
-
-  } catch (error) {
-    console.error('URL command error:', error);
-    await socket.sendMessage(from, { 
-      text: '❌ An unexpected error occurred while processing your request.',
-      contextInfo: {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '12036464655566@newsletter',
-          newsletterName: 'CASEYRHODES-MINI',
-          serverMessageId: -1
-        }
-      }
-    }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-  }
-  break;
-}
-//🌟
     case 'whois': {
         try {
             await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
