@@ -1461,6 +1461,190 @@ case 'song': {
     }
     break;
 }
+// Case: video
+case 'play':
+case 'video': {
+    // Import dependencies
+    const yts = require('yt-search');
+    const fs = require('fs').promises;
+    const path = require('path');
+    const { existsSync, mkdirSync } = require('fs');
+
+    // Constants
+    const TEMP_DIR = './temp';
+    const API_BASE_URL = 'https://api.giftedtech.co.ke/api/download/ytmp4';
+    const API_KEY = 'gifted';
+
+    // Ensure temp directory exists
+    if (!existsSync(TEMP_DIR)) {
+        mkdirSync(TEMP_DIR, { recursive: true });
+    }
+
+    // Utility functions
+    function extractYouTubeId(url) {
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    }
+
+    function convertYouTubeLink(input) {
+        const videoId = extractYouTubeId(input);
+        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
+    }
+
+    function formatDuration(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    async function cleanupFiles(...filePaths) {
+        for (const filePath of filePaths) {
+            if (filePath) {
+                try {
+                    await fs.unlink(filePath);
+                } catch (err) {
+                    // Silent cleanup - no error reporting needed
+                }
+            }
+        }
+    }
+
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+
+    if (!q || q.trim() === '') {
+        return await socket.sendMessage(sender, 
+            { text: '*🎬 Give me a video title or YouTube link, love 😘*' }, 
+            { quoted: fakevCard }
+        );
+    }
+
+    const fixedQuery = convertYouTubeLink(q.trim());
+    let tempFilePath = '';
+
+    try {
+        // Search for the video
+        const search = await yts(fixedQuery);
+        const videoInfo = search.videos[0];
+        
+        if (!videoInfo) {
+            return await socket.sendMessage(sender, 
+                { text: '*❌ No videos found, darling! Try another? 💔*' }, 
+                { quoted: fakevCard }
+            );
+        }
+
+        // Format duration
+        const formattedDuration = formatDuration(videoInfo.seconds);
+        
+        // Create description
+        const desc = `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
+╭───────────────┈  ⊷
+├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
+├👤 *ᴄʜᴀɴɴᴇʟ:* ${videoInfo.author.name}
+├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
+├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
+├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
+├🎥 *Format:* MP4 Video
+╰───────────────┈ ⊷
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟
+`;
+
+        // Send video info immediately
+        await socket.sendMessage(sender, {
+            image: { url: videoInfo.thumbnail },
+            caption: desc
+        }, { quoted: fakevCard });
+
+        // Build API URL
+        const apiUrl = `${API_BASE_URL}?apikey=${API_KEY}&url=${encodeURIComponent(videoInfo.url)}`;
+        
+        // Fetch video data from API
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+        }
+        
+        const apiData = await response.json();
+        
+        // Handle different possible API response structures
+        let downloadUrl;
+        
+        if (apiData.downloadUrl) {
+            downloadUrl = apiData.downloadUrl;
+        } else if (apiData.url) {
+            downloadUrl = apiData.url;
+        } else if (apiData.links && apiData.links.length > 0) {
+            downloadUrl = apiData.links[0].url || apiData.links[0].downloadUrl;
+        } else if (apiData.data && apiData.data.downloadUrl) {
+            downloadUrl = apiData.data.downloadUrl;
+        } else {
+            throw new Error('No download URL found in API response');
+        }
+
+        if (!downloadUrl) {
+            throw new Error('Download URL is empty or invalid');
+        }
+
+        // Clean title for filename
+        const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
+        tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}.mp4`);
+        
+        // Download the video file
+        const videoResponse = await fetch(downloadUrl);
+        
+        if (!videoResponse.ok) {
+            throw new Error(`Video download failed with status: ${videoResponse.status}`);
+        }
+
+        const arrayBuffer = await videoResponse.arrayBuffer();
+        
+        if (arrayBuffer.byteLength === 0) {
+            throw new Error('Downloaded video is empty');
+        }
+
+        await fs.writeFile(tempFilePath, Buffer.from(arrayBuffer));
+
+        // Check if file was downloaded successfully
+        const stats = await fs.stat(tempFilePath);
+        if (stats.size === 0) {
+            throw new Error('Downloaded file is empty');
+        }
+        
+        // Send the video file
+        const videoBuffer = await fs.readFile(tempFilePath);
+        await socket.sendMessage(sender, {
+            video: videoBuffer,
+            mimetype: "video/mp4",
+            fileName: `${cleanTitle}.mp4`,
+            caption: `*${videoInfo.title}*`
+        }, { quoted: fakevCard });
+
+        // Cleanup
+        await cleanupFiles(tempFilePath);
+        
+    } catch (err) {
+        console.error('Video command error:', err);
+        await cleanupFiles(tempFilePath);
+        
+        let errorMessage = "*❌ Oh no, the video download failed, love! 😢 Try again?*";
+        
+        if (err.message.includes('API responded') || err.message.includes('No download URL')) {
+            errorMessage = "*❌ The video service is temporarily unavailable. Please try again later, darling! 💔*";
+        }
+        
+        await socket.sendMessage(sender, 
+            { text: errorMessage }, 
+            { quoted: fakevCard }
+        );
+    }
+    break;
+}
 //===============================   
  case 'logo': {
     const q = args.join(" ");
