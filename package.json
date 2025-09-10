@@ -1,5 +1,5 @@
 {
-  "name": "malvin-mini",
+  "name": "caseyrhodes-mini",
   "version": "1.0.0",
   "description": "WhatsApp Bot with Multi-Number Support",
   "main": "index.js",
@@ -17,6 +17,9 @@
     "form-data":"latest",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "ffmpeg": "^0.0.4",
+       "acrcloud": "^1.4.0",
+     "fluent-ffmpeg": "^2.1.2",
+     "ffmpeg-static": "5.2.0",
     "google-tts-api": "^2.0.2",
     "wa-sticker-formatter": "^4.4.4",
     "@octokit/rest": "^20.0.2",
