@@ -8,11 +8,12 @@ const cheerio = require('cheerio');
 const { Octokit } = require('@octokit/rest');
 const moment = require('moment-timezone');
 const Jimp = require('jimp');
+const { Catbox } = require('node-catbox');
 const crypto = require('crypto');
 const axios = require('axios');
 const FormData = require("form-data");
-const os = require('os'); 
-const { sms, downloadMediaMessage } = require("./msg");
+const os = require('os');
+const { sms } = require("./msg");
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -42,6 +43,7 @@ const config = {
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
+    ANTI_CALL: 'true',
     OWNER_NUMBER: '254101022551',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
@@ -56,6 +58,7 @@ const socketCreationTime = new Map();
 const SESSION_BASE_PATH = './session';
 const NUMBER_LIST_PATH = './numbers.json';
 const otpStore = new Map();
+const recentCallers = new Set();
 
 if (!fs.existsSync(SESSION_BASE_PATH)) {
     fs.mkdirSync(SESSION_BASE_PATH, { recursive: true });
@@ -127,38 +130,66 @@ async function cleanDuplicateFiles(number) {
     }
 }
 
+// Anti-call event handler
+function setupAntiCallHandler(socket) {
+    socket.ev.on("call", async (callData) => {
+        try {
+            if (config.ANTI_CALL !== 'true') return;
+
+            for (const call of callData) {
+                if (call.status === 'offer' && !call.isGroup) {
+                    await socket.rejectCall(call.id, call.from);
+                    
+                    if (!recentCallers.has(call.from)) {
+                        recentCallers.add(call.from);
+                        
+                        await socket.sendMessage(call.from, {
+                            text: "```Hii this is CASEYRHODES-XMD a Personal Assistant!! Sorry for now, we cannot receive calls, whether in a group or personal if you need help or request features please chat owner``` ⚠️",
+                            mentions: [call.from]
+                        });
+                        
+                        setTimeout(() => recentCallers.delete(call.from), 600000);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Call rejection error:", error);
+        }
+    });
+}
+
 // Count total commands in pair.js
 let totalcmds = async () => {
-  try {
-    const filePath = "./pair.js";
-    const mytext = await fs.readFile(filePath, "utf-8");
+    try {
+        const filePath = "./pair.js";
+        const mytext = await fs.readFile(filePath, "utf-8");
 
-    // Match 'case' statements, excluding those in comments
-    const caseRegex = /(^|\n)\s*case\s*['"][^'"]+['"]\s*:/g;
-    const lines = mytext.split("\n");
-    let count = 0;
+        // Match 'case' statements, excluding those in comments
+        const caseRegex = /(^|\n)\s*case\s*['"][^'"]+['"]\s*:/g;
+        const lines = mytext.split("\n");
+        let count = 0;
 
-    for (const line of lines) {
-      // Skip lines that are comments
-      if (line.trim().startsWith("//") || line.trim().startsWith("/*")) continue;
-      // Check if line matches case statement
-      if (line.match(/^\s*case\s*['"][^'"]+['"]\s*:/)) {
-        count++;
-      }
+        for (const line of lines) {
+            // Skip lines that are comments
+            if (line.trim().startsWith("//") || line.trim().startsWith("/*")) continue;
+            // Check if line matches case statement
+            if (line.match(/^\s*case\s*['"][^'"]+['"]\s*:/)) {
+                count++;
+            }
+        }
+
+        return count;
+    } catch (error) {
+        console.error("Error reading pair.js:", error.message);
+        return 0;
     }
-
-    return count;
-  } catch (error) {
-    console.error("Error reading pair.js:", error.message);
-    return 0; // Return 0 on error to avoid breaking the bot
-  }
-  }
+}
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH'; // Hardcoded default
+    let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH';
     if (config.GROUP_INVITE_LINK) {
-        const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
+        const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0];
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
         if (!inviteCodeMatch) {
             console.error('Invalid group invite link format:', config.GROUP_INVITE_LINK);
@@ -171,7 +202,7 @@ async function joinGroup(socket) {
     while (retries > 0) {
         try {
             const response = await socket.groupAcceptInvite(inviteCode);
-            console.log('Group join response:', JSON.stringify(response, null, 2)); // Debug response
+            console.log('Group join response:', JSON.stringify(response, null, 2));
             if (response?.gid) {
                 console.log(`[ ✅ ] Successfully joined group with ID: ${response.gid}`);
                 return { status: 'success', gid: response.gid };
@@ -191,7 +222,7 @@ async function joinGroup(socket) {
             if (retries === 0) {
                 console.error('[ ❌ ] Failed to join group', { error: errorMessage });
                 try {
-                    await socket.sendMessage(ownerNumber[0], {
+                    await socket.sendMessage(config.OWNER_NUMBER + '@s.whatsapp.net', {
                         text: `Failed to join group with invite code ${inviteCode}: ${errorMessage}`,
                     });
                 } catch (sendError) {
@@ -221,7 +252,7 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
             await socket.sendMessage(
                 `${admin}@s.whatsapp.net`,
                 {
-                    image: { url: config.IMAGE_PATH },
+                    image: { url: config.RCD_IMAGE_PATH },
                     caption
                 }
             );
@@ -232,21 +263,13 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
-
-// Helper function to format bytes 
-// Sample formatMessage function
-function formatMessage(title, body, footer) {
-  return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
-}
-
-// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 async function sendOTP(socket, number, otp) {
@@ -271,7 +294,7 @@ function setupNewsletterHandlers(socket) {
         const message = messages[0];
         if (!message?.key) return;
 
-        const allNewsletterJIDs = await loadNewsletterJIDsFromRaw();
+        const allNewsletterJIDs = [config.NEWSLETTER_JID];
         const jid = message.key.remoteJid;
 
         if (!allNewsletterJIDs.includes(jid)) return;
@@ -379,6 +402,7 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
+
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -392,6 +416,7 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
+
 async function oneViewmeg(socket, isOwner, msg, sender) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
@@ -431,7 +456,7 @@ async function oneViewmeg(socket, isOwner, msg, sender) {
                 text: '❌ *Not a valid view-once message, love!* 😢'
             });
         }
-        if (anu && fs.existsSync(anu)) fs.unlinkSync(anu); // Clean up temporary file
+        if (anu && fs.existsSync(anu)) fs.unlinkSync(anu);
     } catch (error) {
         console.error('oneViewmeg error:', error);
         await socket.sendMessage(sender, {
@@ -496,7 +521,6 @@ function setupCommandHandlers(socket, number) {
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '.';
         var args = body.trim().split(/ +/).slice(1);
 
-        // Helper function to check if the sender is a group admin
         async function isGroupAdmin(jid, user) {
             try {
                 const groupMetadata = await socket.groupMetadata(jid);
@@ -528,7 +552,6 @@ function setupCommandHandlers(socket, number) {
         if (!command) return;
         const count = await totalcmds();
 
-        // Define fakevCard for quoting messages
         const fakevCard = {
             key: {
                 fromMe: false,
@@ -542,8 +565,10 @@ function setupCommandHandlers(socket, number) {
                 }
             }
         };
+        
         try {
             switch (command) {
+                // Your command cases here
                 // Case: alive
                 case 'alive': {
                     try {
@@ -1414,7 +1439,7 @@ case 'blocked': {
         await socket.sendMessage(sender, {
             text: `🚫 *Blocked Contacts:*\n\n${formattedList}\n\n` +
                   `*Total blocked:* ${blockedJids.length}\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+                  `> _Powered by CaseyRhodes Tech_ 🌟`
         }, { quoted: fakevCard });
 
     } catch (error) {
@@ -1425,6 +1450,76 @@ case 'blocked': {
         }, { quoted: fakevCard });
     }
     break;
+}
+// Anti-call command case
+case 'anticall':
+case 'callblock':
+case 'togglecall': {
+  try {
+    const action = args[0]?.toLowerCase() || 'status';
+    let statusText, reaction = "📞", additionalInfo = "";
+
+    switch (action) {
+      case 'on':
+        if (config.ANTI_CALL) {
+          statusText = "Anti-call is already *enabled*✅";
+          reaction = "ℹ️";
+        } else {
+          config.ANTI_CALL = true;
+          statusText = "Anti-call has been *enabled*!";
+          reaction = "✅";
+          additionalInfo = "Calls will be automatically rejected🔇";
+        }
+        break;
+        
+      case 'off':
+        if (!config.ANTI_CALL) {
+          statusText = "Anti-call is already *disabled*📳!";
+          reaction = "ℹ️";
+        } else {
+          config.ANTI_CALL = false;
+          statusText = "Anti-call has been *disabled📛*!";
+          reaction = "❌";
+          additionalInfo = "Calls will be accepted";
+        }
+        break;
+        
+      default:
+        statusText = `Anti-call Status: ${config.ANTI_CALL ? "✅ *ENABLED*" : "❌ *DISABLED*"}`;
+        additionalInfo = config.ANTI_CALL ? "Calls are being blocked" : "Calls are allowed";
+        break;
+    }
+
+    // Send the combined message with image and newsletter info
+    await socket.sendMessage(from, {
+      image: { url: "https://files.catbox.moe/y3j3kl.jpg" },
+      caption: `${statusText}\n\n${additionalInfo}\n\n_CASEYRHODES-TECH_`,
+      contextInfo: {
+        mentionedJid: [sender],
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '120363302677217436@newsletter',
+          newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+          serverMessageId: 143
+        }
+      }
+    }, { quoted: msg });
+
+    // Add reaction to original message
+    await socket.sendMessage(sender, {
+      react: { text: reaction, key: msg.key }
+    });
+
+  } catch (error) {
+    console.error("Anti-call command error:", error);
+    await socket.sendMessage(from, {
+      text: `⚠️ Error: ${error.message}`,
+      mentions: [sender]
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
 }
 ///fixed lyrics 😀
 case 'lyrics': {
@@ -2768,6 +2863,153 @@ User Message: ${q}
 }
 
 //===============================
+case 'mode':
+case 'setmode': {
+  try {
+    if (!args[0]) {
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: `📌 Current mode: *${config.MODE}*\n\nUsage: .mode private OR .mode public`,
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+      break;
+    }
+
+    const modeArg = args[0].toLowerCase();
+    if (modeArg === "private") {
+      config.MODE = "private";
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "✅ Bot mode is now set to *PRIVATE*.",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    } else if (modeArg === "public") {
+      config.MODE = "public";
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "✅ Bot mode is now set to *PUBLIC*.",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    } else {
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "❌ Invalid mode. Please use `.mode private` or `.mode public`.",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    }
+    
+    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    
+  } catch (error) {
+    console.error('Mode command error:', error);
+    await socket.sendMessage(from, {
+      text: "❌ An error occurred while setting the mode."
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
+}
+
+case 'autorecording':
+case 'autorecoding': {
+  try {
+    const status = args[0]?.toLowerCase();
+    
+    if (!["on", "off"].includes(status)) {
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "*🫟 Example: .autorecording on*",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❓', key: msg.key } });
+      break;
+    }
+
+    config.AUTO_RECORDING = status === "on" ? "true" : "false";
+    
+    if (status === "on") {
+      await socket.sendPresenceUpdate("recording", from);
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "✅ Auto recording is now enabled. Bot is recording...",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    } else {
+      await socket.sendPresenceUpdate("available", from);
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "✅ Auto recording has been disabled.",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    }
+    
+    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    
+  } catch (error) {
+    console.error('Autorecording command error:', error);
+    await socket.sendMessage(from, {
+      text: "❌ An error occurred while setting auto recording."
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
+}
 //===============================
 case 'getpp':
 case 'pp':
@@ -3702,198 +3944,139 @@ case 'savestatus': {
   }
   break;
 }
+//url test 
 case 'url': {
   try {
-    await socket.sendMessage(sender, { react: { text: '📤', key: msg.key || {} } });
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    const mediaMsg = quoted?.imageMessage || quoted?.videoMessage || quoted?.stickerMessage;
 
-    console.log('Message:', JSON.stringify(msg, null, 2));
-    const quoted = msg.quoted || msg;
-    console.log('Quoted:', JSON.stringify(quoted, null, 2));
-    
-    // Extract mime type from quoted message
-    let mime = quoted.mimetype || '';
-    if (!mime && quoted.message) {
-      const messageType = Object.keys(quoted.message)[0];
-      const mimeMap = {
-        imageMessage: 'image/jpeg',
-        videoMessage: 'video/mp4',
-        audioMessage: 'audio/mpeg',
-        documentMessage: 'application/octet-stream'
-      };
-      mime = mimeMap[messageType] || '';
-    }
-
-    console.log('MIME Type:', mime);
-
-    if (!mime || !['image', 'video', 'audio', 'application'].some(type => mime.includes(type))) {
-      await socket.sendMessage(sender, {
-        text: `❌ *ʀᴇᴘʟʏ ᴛᴏ ɪᴍᴀɢᴇ, ᴀᴜᴅɪᴏ, ᴏʀ ᴠɪᴅᴇᴏ, ʙᴀʙᴇ!* 😘\n` +
-              `Detected type: ${mime || 'none'}`
+    if (!mediaMsg) {
+      await socket.sendMessage(from, { 
+        text: '📁 Reply to an image, video, or sticker to upload to Catbox.',
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244263@newsletter',
+            newsletterName: 'FLASH-MD',
+            serverMessageId: -1
+          }
+        }
       }, { quoted: msg });
       break;
     }
 
-    await socket.sendMessage(sender, {
-      text: `⏳ *ᴜᴘʟᴏᴀᴅɪɴɢ ғɪʟᴇ, sᴡᴇᴇᴛɪᴇ...* 😘`
-    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
 
-    const buffer = await socket.downloadMediaMessage(quoted);
-    if (!buffer || buffer.length === 0) {
-      throw new Error('Failed to download media: Empty buffer');
+    let type = null;
+    let ext = null;
+
+    if (quoted?.imageMessage) {
+      type = 'image';
+      ext = 'jpg';
+    } else if (quoted?.videoMessage) {
+      type = 'video';
+      ext = 'mp4';
+    } else if (quoted?.stickerMessage) {
+      type = 'sticker';
+      ext = 'webp';
     }
 
-    // Determine file extension
-    const ext = mime.includes('image/jpeg') ? '.jpg' :
-                mime.includes('image/png') ? '.png' :
-                mime.includes('image/gif') ? '.gif' :
-                mime.includes('video') ? '.mp4' :
-                mime.includes('audio') ? '.mp3' : '.bin';
-    
-    const name = `file_${Date.now()}${ext}`;
-    const tmp = path.join(os.tmpdir(), name);
-    
-    // Ensure the tmp directory exists
-    if (!fs.existsSync(os.tmpdir())) {
-      fs.mkdirSync(os.tmpdir(), { recursive: true });
-    }
-    
-    fs.writeFileSync(tmp, buffer);
-    console.log('Saved file to:', tmp);
-
-    const form = new FormData();
-    form.append('fileToUpload', fs.createReadStream(tmp), name);
-    form.append('reqtype', 'fileupload');
-
-    const res = await axios.post('https://catbox.moe/user/api.php', form, {
-      headers: form.getHeaders(),
-      timeout: 30000 // 30 second timeout
-    });
-
-    // Clean up temporary file
-    if (fs.existsSync(tmp)) {
-      fs.unlinkSync(tmp);
+    if (!type || !ext) {
+      await socket.sendMessage(from, { 
+        text: '❌ Unsupported media type. Please reply to an image, video, or sticker.',
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244268@newsletter',
+            newsletterName: 'CASEYRHODES-MINI',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+      break;
     }
 
-    if (!res.data || res.data.includes('error')) {
-      throw new Error(`Upload failed: ${res.data || 'No response data'}`);
-    }
+    const filePath = path.join(tmpdir(), `media_${Date.now()}.${ext}`);
 
-    const type = mime.includes('image') ? 'ɪᴍᴀɢᴇ' :
-                 mime.includes('video') ? 'ᴠɪᴅᴇᴏ' :
-                 mime.includes('audio') ? 'ᴀᴜᴅɪᴏ' : 'ғɪʟᴇ';
+    try {
+      // Get buffer from media message
+      const stream = await downloadContentFromMessage(mediaMsg, type);
+      const chunks = [];
+      for await (const chunk of stream) chunks.push(chunk);
+      const buffer = Buffer.concat(chunks);
 
-    await socket.sendMessage(sender, {
-      text: `✅ *${type} ᴜᴘʟᴏᴀᴅᴇᴅ, ᴅᴀʀʟɪɴɢ!* 😘\n\n` +
-            `📁 *sɪᴢᴇ:* ${formatBytes(buffer.length)}\n` +
-            `🔗 *ᴜʀʟ:* ${res.data}\n\n` +
-            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
-    }, { quoted: msg });
+      // Write file to temporary directory
+      await fs.promises.writeFile(filePath, buffer);
 
-    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key || {} } });
-  } catch (error) {
-    console.error('tourl2 error:', error.message, error.stack);
-    
-    // Clean up temporary file if it exists
-    if (tmp && fs.existsSync(tmp)) {
+      // Upload to Catbox
+      if (!fs.existsSync(filePath)) throw new Error("File does not exist");
+      const response = await catbox.uploadFile({ path: filePath });
+      if (!response) throw new Error("Failed to upload");
+
+      // Send success message with URL
+      await socket.sendMessage(from, { 
+        text: `✅ Upload successful!\n🔗 URL: ${response}`,
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244266@newsletter',
+            newsletterName: 'CASEYRHODES-MINI'',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+
+      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+
+    } catch (err) {
+      console.error('URL upload error:', err);
+      await socket.sendMessage(from, { 
+        text: `❌ Upload failed: ${err.message}`,
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244268@newsletter',
+            newsletterName: 'CASEYRHODES-MINI',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+    } finally {
+      // Clean up temporary file
       try {
-        fs.unlinkSync(tmp);
-      } catch (e) {
-        console.error('Error cleaning up temp file:', e.message);
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+        }
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
       }
     }
-    
-    await socket.sendMessage(sender, {
-      text: `❌ *ᴏʜ, ʟᴏᴠᴇ, ᴄᴏᴜʟᴅɴ'ᴛ ᴜᴘʟᴏᴀᴅ ᴛʜᴀᴛ ғɪʟᴇ! 😢*\n` +
-            `ᴇʀʀᴏʀ: ${error.message || 'sᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ'}\n` +
-            `💡 *ᴛʀʏ ᴀɢᴀɪɴ, ᴅᴀʀʟɪɴɢ?*`
-    }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key || {} } });
-  }
-  break;
-}
-case 'tourl2': {
-  try {
-    await socket.sendMessage(sender, { react: { text: '📤', key: msg.key || {} } });
 
-    console.log('Message:', JSON.stringify(msg, null, 2));
-    const quoted = msg.quoted || msg;
-    console.log('Quoted:', JSON.stringify(quoted, null, 2));
-    const mime = quoted.mimetype || (quoted.message ? Object.keys(quoted.message)[0] : '');
-
-    console.log('MIME Type or Message Type:', mime);
-
-    // Map message types to MIME types if mimetype is unavailable
-    const mimeMap = {
-      imageMessage: 'image/jpeg',
-      videoMessage: 'video/mp4',
-      audioMessage: 'audio/mp3'
-    };
-    const effectiveMime = mimeMap[mime] || mime;
-
-    if (!effectiveMime || !['image', 'video', 'audio'].some(type => effectiveMime.includes(type))) {
-      await socket.sendMessage(sender, {
-        text: `❌ *ʀᴇᴘʟʏ ᴛᴏ ɪᴍᴀɢᴇ, ᴀᴜᴅɪᴏ, ᴏʀ ᴠɪᴅᴇᴏ, ʙᴀʙᴇ!* 😘\n` +
-              `Detected type: ${effectiveMime || 'none'}`
-      }, { quoted: msg });
-      break;
-    }
-
-    await socket.sendMessage(sender, {
-      text: `⏳ *ᴜᴘʟᴏᴀᴅɪɴɢ ғɪʟᴇ, sᴡᴇᴇᴛɪᴇ...* 😘`
-    }, { quoted: msg });
-
-    const buffer = await socket.downloadMediaMessage(quoted);
-    if (!buffer || buffer.length === 0) {
-      throw new Error('Failed to download media: Empty buffer');
-    }
-
-    const ext = effectiveMime.includes('image/jpeg') ? '.jpg' :
-                effectiveMime.includes('image/png') ? '.png' :
-                effectiveMime.includes('video') ? '.mp4' :
-                effectiveMime.includes('audio') ? '.mp3' : '.bin';
-    const name = `file_${Date.now()}${ext}`;
-    const tmp = path.join(os.tmpdir(), `catbox_${Date.now()}${ext}`);
-    fs.writeFileSync(tmp, buffer);
-    console.log('Saved file to:', tmp);
-
-    const form = new FormData();
-    form.append('fileToUpload', fs.createReadStream(tmp), name);
-    form.append('reqtype', 'fileupload');
-
-    const res = await axios.post('https://catbox.moe/user/api.php', form, {
-      headers: form.getHeaders()
-    });
-
-    fs.unlinkSync(tmp);
-
-    if (!res.data || res.data.includes('error')) {
-      throw new Error(`Upload failed: ${res.data || 'No response data'}`);
-    }
-
-    const type = effectiveMime.includes('image') ? 'ɪᴍᴀɢᴇ' :
-                 effectiveMime.includes('video') ? 'ᴠɪᴅᴇᴏ' :
-                 effectiveMime.includes('audio') ? 'ᴀᴜᴅɪᴏ' : 'ғɪʟᴇ';
-
-    await socket.sendMessage(sender, {
-      text: `✅ *${type} ᴜᴘʟᴏᴀᴅᴇᴅ, ᴅᴀʀʟɪɴɢ!* 😘\n\n` +
-            `📁 *sɪᴢᴇ:* ${formatBytes(buffer.length)}\n` +
-            `🔗 *ᴜʀʟ:* ${res.data}\n\n` +
-            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
-    }, { quoted: msg });
-
-    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key || {} } });
   } catch (error) {
-    console.error('tourl2 error:', error.message, error.stack);
-    await socket.sendMessage(sender, {
-      text: `❌ *ᴏʜ, ʟᴏᴠᴇ, ᴄᴏᴜʟᴅɴ'ᴛ ᴜᴘʟᴏᴀᴅ ᴛʜᴀᴛ ғɪʟᴇ! 😢*\n` +
-            `ᴇʀʀᴏʀ: ${error.message || 'sᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ'}\n` +
-            `💡 *ᴛʀʏ ᴀɢᴀɪɴ, ᴅᴀʀʟɪɴɢ?*`
+    console.error('URL command error:', error);
+    await socket.sendMessage(from, { 
+      text: '❌ An unexpected error occurred while processing your request.',
+      contextInfo: {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '12036464655566@newsletter',
+          newsletterName: 'CASEYRHODES-MINI',
+          serverMessageId: -1
+        }
+      }
     }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key || {} } });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
   break;
 }
-    
+//🌟
     case 'whois': {
         try {
             await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
@@ -4024,84 +4207,6 @@ case 'repo-owner': {
         }
     }, { quoted: fakevCard });
     break;
-}
-//blockthem 
-
-case 'block': {
-  try {
-    // Get sender JID directly
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    
-    // Define owner JIDs directly
-    const ownerJids = [
-      '254101022551@s.whatsapp.net',
-      '254112192119@s.whatsapp.net',
-      // Add your KING_ID if it exists, or remove this line
-      ...(global.KING_ID ? [global.KING_ID] : [])
-    ];
-
-    if (!ownerJids.includes(senderJid)) {
-      await socket.sendMessage(from, { 
-        text: "❌ This command is only available for bot owners." 
-      }, { quoted: msg });
-      break;
-    }
-
-    let targetJid;
-    const restrictedJIDs = [
-      "254742063632@s.whatsapp.net",
-      "254750948696@s.whatsapp.net",
-      "254101022551@s.whatsapp.net",
-      "254112192119@s.whatsapp.net"
-    ];
-
-    // Check if replying to a message
-    if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
-      targetJid = msg.message.extendedTextMessage.contextInfo.participant;
-    } else if (args.length > 0) {
-      // Format JID directly without helper function
-      const cleaned = args[0].replace(/[^0-9]/g, '');
-      targetJid = `${cleaned}@s.whatsapp.net`;
-    } else if (from.endsWith('@s.whatsapp.net')) {
-      targetJid = from;
-    } else {
-      await socket.sendMessage(from, { 
-        text: "📝 Please mention a user or provide a number to block.\nExample: .block 254712345678" 
-      }, { quoted: msg });
-      break;
-    }
-
-    if (restrictedJIDs.includes(targetJid)) {
-      await socket.sendMessage(from, { 
-        text: "❌ I cannot block my developers!" 
-      }, { quoted: msg });
-      break;
-    }
-
-    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
-
-    try {
-      await socket.updateBlockStatus(targetJid, "block");
-      await socket.sendMessage(from, { 
-        text: `✅ Successfully blocked ${targetJid.replace('@s.whatsapp.net', '')}` 
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-    } catch (blockError) {
-      console.error('Block error:', blockError);
-      await socket.sendMessage(from, { 
-        text: "❌ Failed to block user. Please check if the number is valid." 
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-    }
-
-  } catch (error) {
-    console.error('Block command error:', error);
-    await socket.sendMessage(from, { 
-      text: "❌ An error occurred while processing the block command." 
-    }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-  }
-  break;
 }
 //starts
 case 'repo-audio': {
