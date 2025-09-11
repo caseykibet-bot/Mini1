@@ -1,228 +1,37 @@
 const express = require('express');
 const app = express();
-const __path = process.cwd();
+__path = process.cwd()
 const bodyParser = require("body-parser");
-const fs = require('fs');
-const path = require('path');
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
-const compression = require('compression');
-
-// Increase maximum event listeners
-require('events').EventEmitter.defaultMaxListeners = 1000;
-
 const PORT = process.env.PORT || 8000;
-const HOST = process.env.HOST || '0.0.0.0';
-
-// Import routes
 let code = require('./pair');
 
-// Security middleware - configured to not interfere with HTML content
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "https:", "data:"],
-      connectSrc: ["'self'"],
-      frameSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameAncestors: ["'self'"],
-    },
-  },
-  crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: "same-site" }
-}));
+require('events').EventEmitter.defaultMaxListeners = 1000;
 
-// Compression middleware
-app.use(compression());
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(limiter);
-
-// Body parser middleware with increased limits for handling larger payloads
-app.use(bodyParser.json({ 
-  limit: '50mb',
-  verify: (req, res, buf) => {
-    try {
-      JSON.parse(buf);
-    } catch (e) {
-      res.status(400).json({ error: 'Invalid JSON' });
-    }
-  }
-}));
-
-app.use(bodyParser.urlencoded({ 
-  limit: '50mb',
-  extended: true,
-  parameterLimit: 100000
-}));
-
-// Static file serving with cache control - ensure HTML files are served correctly
-app.use(express.static(__path, {
-  maxAge: '1d',
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'public, max-age=0');
-    }
-  }
-}));
-
-// Enhanced error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Route handlers with improved error handling
 app.use('/code', code);
-
 app.use('/pair', async (req, res, next) => {
-  try {
-    const filePath = path.join(__path, 'pair.html');
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).json({ error: 'File not found' });
-    }
-  } catch (error) {
-    next(error);
-  }
+    res.sendFile(__path + '/pair.html');
 });
-
 app.use('/', async (req, res, next) => {
-  try {
-    const filePath = path.join(__path, 'main.html');
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).json({ error: 'File not found' });
-    }
-  } catch (error) {
-    next(error);
-  }
+    res.sendFile(__path + '/main.html');
 });
 
-// 404 handler for undefined routes
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Server setup with enhanced event listeners
-const server = app.listen(PORT, HOST, () => {
-  console.log(`
-██████╗ ███████╗██╗   ██╗███████╗███████╗███████╗
-██╔══██╗██╔════╝██║   ██║██╔════╝██╔════╝██╔════╝
-██████╔╝█████╗  ██║   ██║███████╗███████╗███████╗
-██╔══██╗██╔══╝  ██║   ██║╚════██║╚════██║╚════██║
-██║  ██║███████╗╚██████╔╝███████║███████║███████║
-╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚══════╝╚══════╝╚══════╝
+// ✅ Changed here to bind on 0.0.0.0
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(` ██████╗ █████╗ ███████╗███████╗██╗   ██╗██████╗ ██╗  ██╗ ██████╗ ██████╗ ███████╗███████╗
+██╔════╝██╔══██╗██╔════╝██╔════╝╚██╗ ██╔╝██╔══██╗██║  ██║██╔═══██╗██╔══██╗██╔════╝██╔════╝
+██║     ███████║███████╗█████╗   ╚████╔╝ ██████╔╝███████║██║   ██║██║  ██║███████╗███████╗
+██║     ██╔══██║╚════██║██╔══╝    ╚██╔╝  ██╔══██╗██╔══██║██║   ██║██║  ██║╚════██║╚════██║
+╚██████╗██║  ██║███████║███████╗   ██║   ██████╔╝██║  ██║╚██████╔╝██████╔╝███████║███████║
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
 
-Server running on http://${HOST}:${PORT}
 Don't Forget To Give Star ‼️
-Made By Casey Rhodes 
-  `);
-});
 
-// Enhanced server event listeners
-server.on('connection', (socket) => {
-  console.log(`New connection from: ${socket.remoteAddress}:${socket.remotePort}`);
-  
-  // Set timeout for idle connections
-  socket.setTimeout(30 * 60 * 1000); // 30 minutes
-  
-  socket.on('timeout', () => {
-    console.log(`Socket timeout from: ${socket.remoteAddress}`);
-    socket.end();
-  });
-  
-  socket.on('error', (err) => {
-    console.error('Socket error:', err.message);
-  });
-});
+made By Caseyrhodes 
 
-server.on('error', (err) => {
-  console.error('Server error:', err);
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use`);
-    process.exit(1);
-  }
-});
-
-server.on('close', () => {
-  console.log('Server closed');
-});
-
-// Additional event listeners for process monitoring
-process.on('SIGINT', () => {
-  console.log('\nReceived SIGINT. Shutting down gracefully...');
-  server.close(() => {
-    console.log('HTTP server closed.');
-    process.exit(0);
-  });
-  
-  // Force close after 10 seconds
-  setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down');
-    process.exit(1);
-  }, 10000);
-});
-
-process.on('SIGTERM', () => {
-  console.log('\nReceived SIGTERM. Shutting down gracefully...');
-  server.close(() => {
-    console.log('HTTP server closed.');
-    process.exit(0);
-  });
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
-});
-
-// Memory usage monitoring
-setInterval(() => {
-  const memoryUsage = process.memoryUsage();
-  console.log(`Memory usage: RSS ${Math.round(memoryUsage.rss / 1024 / 1024)}MB, Heap ${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB/${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`);
-}, 60000); // Log every minute
-
-// Request count monitoring
-let requestCount = 0;
-app.use((req, res, next) => {
-  requestCount++;
-  console.log(`Request #${requestCount}: ${req.method} ${req.url}`);
-  next();
-});
-
-// Connection count monitoring
-let connectionCount = 0;
-server.on('connection', (socket) => {
-  connectionCount++;
-  console.log(`Active connections: ${connectionCount}`);
-  
-  socket.on('close', () => {
-    connectionCount--;
-    console.log(`Active connections: ${connectionCount}`);
-  });
+Server running on http://0.0.0.0:` + PORT);
 });
 
 module.exports = app;
