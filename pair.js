@@ -769,7 +769,8 @@ case 'menu': {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
-                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },    
+                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },   
+                    { title: "🌸ғᴏʟʟᴏᴡ ᴄʜᴀɴɴᴇʟ", description: "support our channel", id: `${config.PREFIX}follow` }, 
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
@@ -786,7 +787,9 @@ case 'menu': {
                   title: "🎵 ᴍᴇᴅɪᴀ ᴛᴏᴏʟs",
                   highlight_label: 'New',
                   rows: [
-                    { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
+                    { title: "🎧 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
+                     { title: "📽️ video", description: "Download video from YouTube", id: `${config.PREFIX}video` }, 
+                    { title: "👀Details", description: "get any message details", id: `${config.PREFIX}details` },      
                     { title: "🎉play", description: "play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
@@ -3818,7 +3821,92 @@ case 'repo-visit': {
     }, { quoted: fakevCard });
     break;
 }
+//Follow channel guys 
+// Follow channel command
+case 'follow':
+case 'followchannel': {
+    const channelMessage = `📢 *CASEYRHODES OFFICIAL CHANNEL* 📢\n\n` +
+        `Stay updated with the latest news, updates, and exclusive content!\n\n` +
+        `🔗 Channel Link: https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T\n\n` +
+        `_Click the button below to get the channel link_`;
 
+    await socket.sendMessage(
+        m.chat, 
+        {
+            text: channelMessage,
+            buttons: [
+                {
+                    buttonId: '.get-channel-link',
+                    buttonText: { displayText: '🔗 Get Channel Link' },
+                    type: 1
+                }
+            ],
+            footer: 'Caseyrhodes mini'
+        },
+        { quoted: m }
+    );
+    break;
+}
+
+// Separate channel command
+case 'channel':
+case 'ch': {
+    const channelInfo = `📢 *CASEYRHODES CHANNEL INFORMATION* 📢\n\n` +
+        `• Name: CASEYRHODES-MD\n` +
+        `• Type: Official WhatsApp Channel\n` +
+        `• Content: Updates, News, Exclusive Content\n` +
+        `• Link: https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T\n\n` +
+        `_Use *${config.PREFIX}follow* to get the follow link_`;
+
+    await socket.sendMessage(
+        m.chat, 
+        { text: channelInfo },
+        { quoted: m }
+    );
+    break;
+}
+
+// Separate newsletter command (if needed without actual newsletter functionality)
+case 'newsletter':
+case 'updates': {
+    const updatesMessage = `📰 *CASEYRHODES UPDATES* 📰\n\n` +
+        `Get the latest updates from CASEYRHODES:\n\n` +
+        `• Channel: https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T\n` +
+        `• Type *${config.PREFIX}follow* to get the follow link\n` +
+        `• Type *${config.PREFIX}channel* for channel information`;
+
+    await socket.sendMessage(
+        m.chat, 
+        { text: updatesMessage },
+        { quoted: m }
+    );
+    break;
+}
+
+// Button handler for follow channel
+if (m.message.buttonsResponseMessage) {
+    const selectedButtonId = m.message.buttonsResponseMessage.selectedButtonId;
+    
+    switch(selectedButtonId) {
+        case 'get-channel-link': {
+            const channelLink = 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T';
+            
+            await socket.sendMessage(
+                m.chat,
+                { 
+                    text: `✅ *CHANNEL FOLLOW LINK* ✅\n\n` +
+                          `Click the link below to follow our channel:\n` +
+                          `🔗 ${channelLink}\n\n` +
+                          `_You can also copy and paste this link in your browser_`,
+                    mentions: [m.sender]
+                },
+                { quoted: m }
+            );
+            break;
+        }
+    }
+}
+//repo here
 case 'repo-owner': {
     await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
     await socket.sendMessage(sender, {
@@ -4181,13 +4269,12 @@ async function EmpirePair(number, res) {
 const groupStatus = groupResult.status === 'success'
     ? 'ᴊᴏɪɴᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ'
     : `ғᴀɪʟᴇᴅ ᴛᴏ ᴊᴏɪɴ ɢʀᴏᴜᴘ: ${groupResult.error}`;
-
-// Fixed template literal and formatting
+// Fixed template literal and formatting with added buttons
 await socket.sendMessage(userJid, {
     image: { url: config.RCD_IMAGE_PATH },
     caption: formatMessage(
         '👻 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ 👻',
-        `✅ Successfully connected!\n\n` +
+        `✅ Successfully connected!🎉\n\n` +
         `🔢 ɴᴜᴍʙᴇʀ: ${sanitizedNumber}\n` +
         `🏠 ɢʀᴏᴜᴘ sᴛᴀᴛᴜs: ${groupStatus}\n` +
         `⏰ ᴄᴏɴɴᴇᴄᴛᴇᴅ: ${new Date().toLocaleString()}\n\n` +
@@ -4195,9 +4282,23 @@ await socket.sendMessage(userJid, {
         `https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T\n\n` +
         `🤖 ᴛʏᴘᴇ *${config.PREFIX}menu* ᴛᴏ ɢᴇᴛ sᴛᴀʀᴛᴇᴅ!`,
         '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ'
-    )
+    ),
+    buttons: [
+        { buttonId: '.owner', buttonText: { displayText: '👤 Owner' }, type: 1 },
+        { buttonId: '.follow', buttonText: { displayText: '📢 Follow Channel' }, type: 1 },
+        { buttonId: '.alive', buttonText: { displayText: '🤖 Alive' }, type: 1 }
+    ],
+    footer: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ɪɴᴄ',
+    contextInfo: {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244263@newsletter',
+            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🎉',
+            serverMessageId: -1
+        }
+    }
 });
-
 await sendAdminConnectMessage(socket, sanitizedNumber, groupResult);
 
 // Improved file handling with error checking
@@ -4541,17 +4642,4 @@ async function autoReconnectFromGitHub() {
     }
 }
 
-autoReconnectFromGitHub();
-
-module.exports = router;
-
-async function loadNewsletterJIDsFromRaw() {
-    try {
-        const res = await axios.get('https://raw.githubusercontent.com/caseytech001/database/refs/heads/main/newsletter_list.json');
-        return Array.isArray(res.data) ? res.data : [];
-    } catch (err) {
-        console.error('❌ Failed to load newsletter list from GitHub:', err.message);
-        return [];
-    }
-}
 
