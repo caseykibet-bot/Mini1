@@ -27,24 +27,6 @@ const {
     generateWAMessageFromContent,
     S_WHATSAPP_NET
 } = require('@whiskeysockets/baileys');
-// Global timeout constants
-// Global timeout constants
-const TIMEOUTS = {
-    CONNECTION: 30000,      // 30 seconds for WhatsApp connection
-    HTTP_REQUEST: 10000,    // 10 seconds for HTTP requests
-    GROUP_JOIN: 15000,      // 15 seconds for group operations
-    API_CALL: 8000,         // 8 seconds for external APIs
-    FILE_UPLOAD: 20000      // 20 seconds for file operations
-};
-
-// Timeout utility function
-async function withTimeout(promise, timeoutMs, errorMessage = 'Operation timeout') {
-    const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
-    );
-    return Promise.race([promise, timeoutPromise]);
-}
-
 const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
