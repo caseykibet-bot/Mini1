@@ -17,17 +17,24 @@ const HOST = process.env.HOST || '0.0.0.0';
 // Import routes
 let code = require('./pair');
 
-// Security middleware
+// Security middleware - configured to not interfere with HTML content
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'", "https:", "data:"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameAncestors: ["'self'"],
     },
   },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "same-site" }
 }));
 
 // Compression middleware
@@ -45,7 +52,7 @@ app.use(limiter);
 
 // Body parser middleware with increased limits for handling larger payloads
 app.use(bodyParser.json({ 
-  limit: '50mb', // Increased from default 100kb
+  limit: '50mb',
   verify: (req, res, buf) => {
     try {
       JSON.parse(buf);
@@ -56,17 +63,17 @@ app.use(bodyParser.json({
 }));
 
 app.use(bodyParser.urlencoded({ 
-  limit: '50mb', // Increased from default 100kb
+  limit: '50mb',
   extended: true,
-  parameterLimit: 100000 // Increased parameter limit
+  parameterLimit: 100000
 }));
 
-// Static file serving with cache control
+// Static file serving with cache control - ensure HTML files are served correctly
 app.use(express.static(__path, {
   maxAge: '1d',
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'public, max-age=0');
     }
   }
 }));
@@ -159,7 +166,7 @@ server.on('close', () => {
   console.log('Server closed');
 });
 
-// Graceful shutdown handling
+// Additional event listeners for process monitoring
 process.on('SIGINT', () => {
   console.log('\nReceived SIGINT. Shutting down gracefully...');
   server.close(() => {
@@ -190,6 +197,32 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
+});
+
+// Memory usage monitoring
+setInterval(() => {
+  const memoryUsage = process.memoryUsage();
+  console.log(`Memory usage: RSS ${Math.round(memoryUsage.rss / 1024 / 1024)}MB, Heap ${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB/${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`);
+}, 60000); // Log every minute
+
+// Request count monitoring
+let requestCount = 0;
+app.use((req, res, next) => {
+  requestCount++;
+  console.log(`Request #${requestCount}: ${req.method} ${req.url}`);
+  next();
+});
+
+// Connection count monitoring
+let connectionCount = 0;
+server.on('connection', (socket) => {
+  connectionCount++;
+  console.log(`Active connections: ${connectionCount}`);
+  
+  socket.on('close', () => {
+    connectionCount--;
+    console.log(`Active connections: ${connectionCount}`);
+  });
 });
 
 module.exports = app;
