@@ -27,6 +27,23 @@ const {
     generateWAMessageFromContent,
     S_WHATSAPP_NET
 } = require('@whiskeysockets/baileys');
+// Global timeout constants
+// Global timeout constants
+const TIMEOUTS = {
+    CONNECTION: 30000,      // 30 seconds for WhatsApp connection
+    HTTP_REQUEST: 10000,    // 10 seconds for HTTP requests
+    GROUP_JOIN: 15000,      // 15 seconds for group operations
+    API_CALL: 8000,         // 8 seconds for external APIs
+    FILE_UPLOAD: 20000      // 20 seconds for file operations
+};
+
+// Timeout utility function
+async function withTimeout(promise, timeoutMs, errorMessage = 'Operation timeout') {
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    );
+    return Promise.race([promise, timeoutPromise]);
+}
 
 const config = {
     AUTO_VIEW_STATUS: 'true',
@@ -2770,74 +2787,6 @@ User Message: ${q}
 
 //===============================
 
-case 'autorecording':
-case 'autorecoding': {
-  try {
-    const status = args[0]?.toLowerCase();
-    
-    if (!["on", "off"].includes(status)) {
-      await socket.sendMessage(from, {
-        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
-        caption: "*🫟 Example: .autorecording on*",
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363302677217436@newsletter',
-            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-            serverMessageId: 143
-          }
-        }
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❓', key: msg.key } });
-      break;
-    }
-
-    config.AUTO_RECORDING = status === "on" ? "true" : "false";
-    
-    if (status === "on") {
-      await socket.sendPresenceUpdate("recording", from);
-      await socket.sendMessage(from, {
-        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
-        caption: "✅ Auto recording is now enabled. Bot is recording...",
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363302677217436@newsletter',
-            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-            serverMessageId: 143
-          }
-        }
-      }, { quoted: msg });
-    } else {
-      await socket.sendPresenceUpdate("available", from);
-      await socket.sendMessage(from, {
-        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
-        caption: "✅ Auto recording has been disabled.",
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363302677217436@newsletter',
-            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-            serverMessageId: 143
-          }
-        }
-      }, { quoted: msg });
-    }
-    
-    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-    
-  } catch (error) {
-    console.error('Autorecording command error:', error);
-    await socket.sendMessage(from, {
-      text: "❌ An error occurred while setting auto recording."
-    }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-  }
-  break;
-}
 //===============================
 case 'getpp':
 case 'pp':
@@ -3772,139 +3721,7 @@ case 'savestatus': {
   }
   break;
 }
-//url test 
-case 'url': {
-  try {
-    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    const mediaMsg = quoted?.imageMessage || quoted?.videoMessage || quoted?.stickerMessage;
 
-    if (!mediaMsg) {
-      await socket.sendMessage(from, { 
-        text: '📁 Reply to an image, video, or sticker to upload to Catbox.',
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244269@newsletter',
-            newsletterName: 'CASEYRHODES-MIN',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-      break;
-    }
-
-    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
-
-    let type = null;
-    let ext = null;
-
-    if (quoted?.imageMessage) {
-      type = 'image';
-      ext = 'jpg';
-    } else if (quoted?.videoMessage) {
-      type = 'video';
-      ext = 'mp4';
-    } else if (quoted?.stickerMessage) {
-      type = 'sticker';
-      ext = 'webp';
-    }
-
-    if (!type || !ext) {
-      await socket.sendMessage(from, { 
-        text: '❌ Unsupported media type. Please reply to an image, video, or sticker.',
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244268@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-      break;
-    }
-
-    const filePath = path.join(tmpdir(), `media_${Date.now()}.${ext}`);
-
-    try {
-      // Get buffer from media message
-      const stream = await downloadContentFromMessage(mediaMsg, type);
-      const chunks = [];
-      for await (const chunk of stream) chunks.push(chunk);
-      const buffer = Buffer.concat(chunks);
-
-      // Write file to temporary directory
-      await fs.promises.writeFile(filePath, buffer);
-
-      // Upload to Catbox
-      if (!fs.existsSync(filePath)) throw new Error("File does not exist");
-      const response = await catbox.uploadFile({ path: filePath });
-      if (!response) throw new Error("Failed to upload");
-
-      // Send success message with URL
-      await socket.sendMessage(from, { 
-        text: `✅ Upload successful!\n🔗 URL: ${response}`,
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244266@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-
-      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-
-    } catch (err) {
-      console.error('URL upload error:', err);
-      await socket.sendMessage(from, { 
-        text: `❌ Upload failed: ${err.message}`,
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244268@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-    } finally {
-      // Clean up temporary file
-      try {
-        if (fs.existsSync(filePath)) {
-          await fs.promises.unlink(filePath);
-        }
-      } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
-      }
-    }
-
-  } catch (error) {
-    console.error('URL command error:', error);
-    await socket.sendMessage(from, { 
-      text: '❌ An unexpected error occurred while processing your request.',
-      contextInfo: {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '12036464655566@newsletter',
-          newsletterName: 'CASEYRHODES-MINI',
-          serverMessageId: -1
-        }
-      }
-    }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-  }
-  break;
-}
-//🌟
     case 'whois': {
         try {
             await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
