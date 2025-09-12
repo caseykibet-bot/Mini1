@@ -1553,14 +1553,14 @@ case 'song': {
         return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
-    async function downloadAudio(videoUrl, outputPath) {
+    async function downloadYtAudio(videoUrl, outputPath) {
         return new Promise((resolve, reject) => {
-            // Use ytdl-core or similar library to download audio
-            // This is a simplified version - you might need to install ytdl-core
+            // Using yt-dlp to download audio (make sure it's installed on your system)
             const command = `yt-dlp -x --audio-format mp3 -o "${outputPath}" "${videoUrl}"`;
             
             exec(command, (error, stdout, stderr) => {
                 if (error) {
+                    console.error('YT-DLP Error:', error);
                     reject(error);
                 } else {
                     resolve(outputPath);
@@ -1610,8 +1610,7 @@ case 'song': {
 
     if (!q || q.trim() === '') {
         return await socket.sendMessage(sender, 
-            { text: '*🎵 Give me a song title or YouTube link, love 😘*' }, 
-            { quoted: fakevCard }
+            { text: '*🎵 Give me a song title or YouTube link, love 😘*' }
         );
     }
 
@@ -1626,8 +1625,7 @@ case 'song': {
         
         if (!videoInfo) {
             return await socket.sendMessage(sender, 
-                { text: '*❌ No songs found, darling! Try another? 💔*' }, 
-                { quoted: fakevCard }
+                { text: '*❌ No songs found, darling! Try another? 💔*' }
             );
         }
 
@@ -1646,45 +1644,19 @@ case 'song': {
 > Powered by music bot 🎶
 `;
 
-        // Send video info immediately
+        // Send video info immediately (without fakevCard)
         await socket.sendMessage(sender, {
             image: { url: videoInfo.thumbnail },
             caption: desc
-        }, { quoted: fakevCard });
+        });
 
         // Clean title for filename
         const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
         tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}.mp3`);
         compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp3`);
 
-        // Download audio using external service as fallback
-        try {
-            // Try to download using y2mate API or similar service
-            const apiUrl = `https://api.vevioz.com/api/button/mp3/${videoInfo.videoId}`;
-            const response = await axios.get(apiUrl);
-            
-            if (response.data && response.data.url) {
-                const audioResponse = await axios({
-                    method: 'GET',
-                    url: response.data.url,
-                    responseType: 'stream'
-                });
-                
-                const writer = require('fs').createWriteStream(tempFilePath);
-                audioResponse.data.pipe(writer);
-                
-                await new Promise((resolve, reject) => {
-                    writer.on('finish', resolve);
-                    writer.on('error', reject);
-                });
-            } else {
-                throw new Error('No download URL found');
-            }
-        } catch (downloadError) {
-            console.error('Download failed, using fallback:', downloadError);
-            // Fallback to system yt-dlp if available
-            await downloadAudio(videoInfo.url, tempFilePath);
-        }
+        // Download audio using yt-dlp
+        await downloadYtAudio(videoInfo.url, tempFilePath);
 
         // Check if file was downloaded successfully
         try {
@@ -1705,14 +1677,14 @@ case 'song': {
             }
         }
 
-        // Send the audio file
+        // Send the audio file (without fakevCard and with ptt: false)
         const audioBuffer = await fs.readFile(finalFilePath);
         await socket.sendMessage(sender, {
             audio: audioBuffer,
             mimetype: "audio/mpeg",
             fileName: `${cleanTitle}.mp3`,
             ptt: false
-        }, { quoted: fakevCard });
+        });
 
         // Cleanup
         await cleanupFiles(tempFilePath, compressedFilePath);
@@ -1721,8 +1693,7 @@ case 'song': {
         console.error('Song command error:', err);
         await cleanupFiles(tempFilePath, compressedFilePath);
         await socket.sendMessage(sender, 
-            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
-            { quoted: fakevCard }
+            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }
         );
     }
     break;
