@@ -1457,11 +1457,99 @@ case 'song': {
     }
     break;
 }
+case 'play':
+case 'song': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🎵", // Music note emoji
+            key: msg.key
+        }
+    });
 
-// Handle audio format selection
-case '!audio': {
+    const axios = require('axios');
+    const yts = require('yt-search');
+    const BASE_URL = 'https://noobs-api.top';
+
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1); // Remove the command prefix
+    const query = args.join(' ');
+
+    if (!query || query.trim() === '') {
+        return await socket.sendMessage(sender, {
+            text: '*🎵 Please provide a song name or YouTube link*'
+        }, { quoted: msg });
+    }
+
+    try {
+        console.log('[PLAY] Searching YT for:', query);
+        const search = await yts(query);
+        const video = search.videos[0];
+
+        if (!video) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ No songs found! Try another search?*'
+            }, { quoted: msg });
+        }
+
+        // Store the video info for later use
+        const videoData = {
+            id: video.videoId,
+            title: video.title,
+            duration: video.timestamp,
+            views: video.views.toLocaleString(),
+            uploaded: video.ago,
+            channel: video.author.name,
+            url: video.url,
+            thumbnail: video.thumbnail
+        };
+
+        // Send song info with image and interactive buttons
+        // Use the same prefix as your main command (likely . or !)
+        const message = {
+            image: { url: videoData.thumbnail },
+            caption: `*🎵 Music Player*\n\n` +
+                     `╭───────────────◆\n` +
+                     `│• *Title:* ${videoData.title}\n` +
+                     `│• *Duration:* ${videoData.duration}\n` +
+                     `│• *Views:* ${videoData.views}\n` +
+                     `│• *Uploaded:* ${videoData.uploaded}\n` +
+                     `│• *Channel:* ${videoData.channel}\n` +
+                     `╰────────────────◆\n\n` +
+                     `🔗 ${videoData.url}\n\n` +
+                     `*How would you like to receive this song?*`,
+            footer: 'Select an option below',
+            buttons: [
+                { buttonId: `.audio ${videoData.id}`, buttonText: { displayText: '🎧 Send as Audio' }, type: 1 },
+                { buttonId: `.document ${videoData.id}`, buttonText: { displayText: '📄 Send as Document' }, type: 1 }
+            ],
+            headerType: 4
+        };
+
+        await socket.sendMessage(sender, message, { quoted: msg });
+
+    } catch (err) {
+        console.error('[PLAY] Error:', err);
+        await socket.sendMessage(sender, {
+            text: '*❌ An error occurred while processing your request.*'
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// Handle audio format selection - MAKE SURE THIS IS ADDED TO YOUR COMMAND HANDLER
+case 'audio': {
     const videoId = args[0];
-    if (!videoId) return;
+    if (!videoId) {
+        return await socket.sendMessage(sender, {
+            text: '*❌ No video ID provided.*'
+        }, { quoted: msg });
+    }
 
     try {
         await socket.sendMessage(sender, {
@@ -1484,7 +1572,7 @@ case '!audio': {
         // Get video info for filename
         const search = await yts({ videoId: videoId });
         const video = search.videos[0];
-        const safeTitle = video ? video.title.replace(/[\\/:*?"<>|]/g, '') : 'audio';
+        const safeTitle = video ? video.title.replace(/[\\/:*?"<>|]/g, '').substring(0, 30) : 'audio';
         const fileName = `${safeTitle}.mp3`;
 
         // Download the audio as buffer
@@ -1521,10 +1609,14 @@ case '!audio': {
     break;
 }
 
-// Handle document format selection
-case '!document': {
+// Handle document format selection - MAKE SURE THIS IS ADDED TO YOUR COMMAND HANDLER
+case 'document': {
     const videoId = args[0];
-    if (!videoId) return;
+    if (!videoId) {
+        return await socket.sendMessage(sender, {
+            text: '*❌ No video ID provided.*'
+        }, { quoted: msg });
+    }
 
     try {
         await socket.sendMessage(sender, {
@@ -1547,7 +1639,7 @@ case '!document': {
         // Get video info for filename
         const search = await yts({ videoId: videoId });
         const video = search.videos[0];
-        const safeTitle = video ? video.title.replace(/[\\/:*?"<>|]/g, '') : 'song';
+        const safeTitle = video ? video.title.replace(/[\\/:*?"<>|]/g, '').substring(0, 30) : 'song';
         const fileName = `${safeTitle}.mp3`;
 
         // Download the audio as buffer
