@@ -27,6 +27,7 @@ const {
     generateWAMessageFromContent,
     S_WHATSAPP_NET
 } = require('@whiskeysockets/baileys');
+
 const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
@@ -769,8 +770,7 @@ case 'menu': {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
-                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },   
-                    { title: "🌸ғᴏʟʟᴏᴡ ᴄʜᴀɴɴᴇʟ", description: "support our channel", id: `${config.PREFIX}follow` }, 
+                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },    
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
@@ -787,9 +787,7 @@ case 'menu': {
                   title: "🎵 ᴍᴇᴅɪᴀ ᴛᴏᴏʟs",
                   highlight_label: 'New',
                   rows: [
-                    { title: "🎧 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
-                     { title: "📽️ video", description: "Download video from YouTube", id: `${config.PREFIX}video` }, 
-                    { title: "👀Details", description: "get any message details", id: `${config.PREFIX}details` },      
+                    { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
                     { title: "🎉play", description: "play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
@@ -877,14 +875,8 @@ case 'menu': {
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Menu command error:', error);
-    const startTime = socketCreationTime.get(number) || Date.now();
-    const uptime = Math.floor((Date.now() - startTime) / 1000);
-    const hours = Math.floor(uptime / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
-    const seconds = Math.floor(uptime % 60);
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
-    
     let fallbackMenuText = `
 *┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
@@ -896,17 +888,6 @@ case 'menu': {
 ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs 
 > *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
-
-    // Common message context
-    const messageContext = {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363402973786789@newsletter',
-            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-            serverMessageId: -1
-        }
-    };
 
     await socket.sendMessage(from, {
       image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
@@ -1522,100 +1503,227 @@ case 'lyrics': {
     }
     break;
 }
+//play command 
+//play command 
 case 'play':
 case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎵",
+            text: "🎵", // Music note emoji
             key: msg.key
         }
     });
 
-    const axios = require('axios');
+    // Import dependencies
     const yts = require('yt-search');
-    const BASE_URL = 'https://noobs-api.top';
+    const fs = require('fs').promises;
+    const path = require('path');
+    const { exec } = require('child_process');
+    const util = require('util');
+    const execPromise = util.promisify(exec);
+    const { existsSync, mkdirSync } = require('fs');
+    const axios = require('axios');
 
-    // Extract query from message - optimized extraction
+    // Constants
+    const TEMP_DIR = './temp';
+    const MAX_FILE_SIZE_MB = 15;
+    const TARGET_SIZE_MB = 14;
+
+    // Ensure temp directory exists
+    if (!existsSync(TEMP_DIR)) {
+        mkdirSync(TEMP_DIR, { recursive: true });
+    }
+
+    // Utility functions
+    function extractYouTubeId(url) {
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    }
+
+    function convertYouTubeLink(input) {
+        const videoId = extractYouTubeId(input);
+        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
+    }
+
+    function formatDuration(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    async function downloadAudio(videoUrl, outputPath) {
+        return new Promise((resolve, reject) => {
+            // Use ytdl-core or similar library to download audio
+            // This is a simplified version - you might need to install ytdl-core
+            const command = `yt-dlp -x --audio-format mp3 -o "${outputPath}" "${videoUrl}"`;
+            
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(outputPath);
+                }
+            });
+        });
+    }
+
+    async function compressAudio(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
+        try {
+            // Get audio duration using ffprobe
+            const { stdout: durationOutput } = await execPromise(
+                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
+            );
+            const duration = parseFloat(durationOutput) || 180;
+            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
+            const constrainedBitrate = Math.min(Math.max(targetBitrate, 64), 192);
+            
+            // Compress audio with ffmpeg
+            await execPromise(
+                `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
+            );
+            return true;
+        } catch (error) {
+            console.error('Audio compression failed:', error);
+            return false;
+        }
+    }
+
+    async function cleanupFiles(...filePaths) {
+        for (const filePath of filePaths) {
+            if (filePath) {
+                try {
+                    await fs.unlink(filePath);
+                } catch (err) {
+                    // Silent cleanup
+                }
+            }
+        }
+    }
+
+    // Extract query from message
     const q = msg.message?.conversation || 
               msg.message?.extendedTextMessage?.text || 
               msg.message?.imageMessage?.caption || 
               msg.message?.videoMessage?.caption || '';
-    
-    const query = q.split(' ').slice(1).join(' ').trim();
 
-    if (!query) {
-        return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*'
-        }, { quoted: msg });
+    if (!q || q.trim() === '') {
+        return await socket.sendMessage(sender, 
+            { text: '*🎵 Give me a song title or YouTube link, love 😘*' }, 
+            { quoted: fakevCard }
+        );
     }
 
+    const fixedQuery = convertYouTubeLink(q.trim());
+    let tempFilePath = '';
+    let compressedFilePath = '';
+
     try {
-        console.log('[PLAY] Searching YT for:', query);
+        // Search for the video
+        const search = await yts(fixedQuery);
+        const videoInfo = search.videos[0];
         
-        // Search and download in parallel for better performance
-        const [searchResult, apiResponse] = await Promise.allSettled([
-            yts(query),
-            axios.get(`${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(query)}&format=mp3`)
-        ]);
-
-        // Handle search failure
-        if (searchResult.status === 'rejected' || !searchResult.value?.videos?.length) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ No songs found! Try another search?*'
-            }, { quoted: msg });
-        }
-
-        const video = searchResult.value.videos[0];
-        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
-        const fileName = `${safeTitle}.mp3`;
-
-        // Use direct video ID if API call succeeded, otherwise fallback to search result
-        let downloadLink;
-        if (apiResponse.status === 'fulfilled' && apiResponse.value.data?.downloadLink) {
-            downloadLink = apiResponse.value.data.downloadLink;
-        } else {
-            // Fallback: use the video ID from search to construct download URL
-            downloadLink = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
+        if (!videoInfo) {
+            return await socket.sendMessage(sender, 
+                { text: '*❌ No songs found, darling! Try another? 💔*' }, 
+                { quoted: fakevCard }
+            );
         }
 
         // Format duration
-        const formatDuration = (seconds) => {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        };
+        const formattedDuration = formatDuration(videoInfo.seconds);
+        
+        // Create description without verification contacts
+        const desc = `*🎵 Music Player 🎵*
+├📝 *Title:* ${videoInfo.title}
+├👤 *Artist:* ${videoInfo.author.name}
+├⏱️ *Duration:* ${formattedDuration}
+├📅 *Uploaded:* ${videoInfo.ago}
+├👁️ *Views:* ${videoInfo.views.toLocaleString()}
+├🎵 *Format:* High Quality MP3
+╰────────────────────
+> Powered by music bot 🎶
+`;
 
         // Send video info immediately
-        const message = {
-            image: { url: video.thumbnail },
-            caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
-╭───────────────┈  ⊷
-├📝 *ᴛɪᴛʟᴇ:* ${video.title}
-├👤 *ᴀʀᴛɪsᴛ:* ${video.author.name}
-├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formatDuration(video.seconds)}
-├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}
-├👁️ *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}
-├🎵 *Format:* High Quality MP3
-╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟`
-        };
-
-        await socket.sendMessage(sender, message, { quoted: msg });
-
-        // Send audio as URL directly (faster than downloading buffer)
         await socket.sendMessage(sender, {
-            audio: { url: downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: fileName,
+            image: { url: videoInfo.thumbnail },
+            caption: desc
+        }, { quoted: fakevCard });
+
+        // Clean title for filename
+        const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
+        tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}.mp3`);
+        compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp3`);
+
+        // Download audio using external service as fallback
+        try {
+            // Try to download using y2mate API or similar service
+            const apiUrl = `https://api.vevioz.com/api/button/mp3/${videoInfo.videoId}`;
+            const response = await axios.get(apiUrl);
+            
+            if (response.data && response.data.url) {
+                const audioResponse = await axios({
+                    method: 'GET',
+                    url: response.data.url,
+                    responseType: 'stream'
+                });
+                
+                const writer = require('fs').createWriteStream(tempFilePath);
+                audioResponse.data.pipe(writer);
+                
+                await new Promise((resolve, reject) => {
+                    writer.on('finish', resolve);
+                    writer.on('error', reject);
+                });
+            } else {
+                throw new Error('No download URL found');
+            }
+        } catch (downloadError) {
+            console.error('Download failed, using fallback:', downloadError);
+            // Fallback to system yt-dlp if available
+            await downloadAudio(videoInfo.url, tempFilePath);
+        }
+
+        // Check if file was downloaded successfully
+        try {
+            await fs.access(tempFilePath);
+        } catch (err) {
+            throw new Error('Audio download failed');
+        }
+
+        // Check file size and compress if needed
+        const stats = await fs.stat(tempFilePath);
+        const fileSizeMB = stats.size / (1024 * 1024);
+        
+        let finalFilePath = tempFilePath;
+        if (fileSizeMB > MAX_FILE_SIZE_MB) {
+            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
+            if (compressionSuccess) {
+                finalFilePath = compressedFilePath;
+            }
+        }
+
+        // Send the audio file
+        const audioBuffer = await fs.readFile(finalFilePath);
+        await socket.sendMessage(sender, {
+            audio: audioBuffer,
+            mimetype: "audio/mpeg",
+            fileName: `${cleanTitle}.mp3`,
             ptt: false
-        }, { quoted: msg });
+        }, { quoted: fakevCard });
 
+        // Cleanup
+        await cleanupFiles(tempFilePath, compressedFilePath);
+        
     } catch (err) {
-        console.error('[PLAY] Error:', err);
-        await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*'
-        }, { quoted: msg });
+        console.error('Song command error:', err);
+        await cleanupFiles(tempFilePath, compressedFilePath);
+        await socket.sendMessage(sender, 
+            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
+            { quoted: fakevCard }
+        );
     }
     break;
 }
@@ -2706,6 +2814,74 @@ User Message: ${q}
 
 //===============================
 
+case 'autorecording':
+case 'autorecoding': {
+  try {
+    const status = args[0]?.toLowerCase();
+    
+    if (!["on", "off"].includes(status)) {
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "*🫟 Example: .autorecording on*",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❓', key: msg.key } });
+      break;
+    }
+
+    config.AUTO_RECORDING = status === "on" ? "true" : "false";
+    
+    if (status === "on") {
+      await socket.sendPresenceUpdate("recording", from);
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "✅ Auto recording is now enabled. Bot is recording...",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    } else {
+      await socket.sendPresenceUpdate("available", from);
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "✅ Auto recording has been disabled.",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    }
+    
+    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    
+  } catch (error) {
+    console.error('Autorecording command error:', error);
+    await socket.sendMessage(from, {
+      text: "❌ An error occurred while setting auto recording."
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
+}
 //===============================
 case 'getpp':
 case 'pp':
@@ -3640,7 +3816,139 @@ case 'savestatus': {
   }
   break;
 }
+//url test 
+case 'url': {
+  try {
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    const mediaMsg = quoted?.imageMessage || quoted?.videoMessage || quoted?.stickerMessage;
 
+    if (!mediaMsg) {
+      await socket.sendMessage(from, { 
+        text: '📁 Reply to an image, video, or sticker to upload to Catbox.',
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244269@newsletter',
+            newsletterName: 'CASEYRHODES-MIN',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+      break;
+    }
+
+    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
+
+    let type = null;
+    let ext = null;
+
+    if (quoted?.imageMessage) {
+      type = 'image';
+      ext = 'jpg';
+    } else if (quoted?.videoMessage) {
+      type = 'video';
+      ext = 'mp4';
+    } else if (quoted?.stickerMessage) {
+      type = 'sticker';
+      ext = 'webp';
+    }
+
+    if (!type || !ext) {
+      await socket.sendMessage(from, { 
+        text: '❌ Unsupported media type. Please reply to an image, video, or sticker.',
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244268@newsletter',
+            newsletterName: 'CASEYRHODES-MINI',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+      break;
+    }
+
+    const filePath = path.join(tmpdir(), `media_${Date.now()}.${ext}`);
+
+    try {
+      // Get buffer from media message
+      const stream = await downloadContentFromMessage(mediaMsg, type);
+      const chunks = [];
+      for await (const chunk of stream) chunks.push(chunk);
+      const buffer = Buffer.concat(chunks);
+
+      // Write file to temporary directory
+      await fs.promises.writeFile(filePath, buffer);
+
+      // Upload to Catbox
+      if (!fs.existsSync(filePath)) throw new Error("File does not exist");
+      const response = await catbox.uploadFile({ path: filePath });
+      if (!response) throw new Error("Failed to upload");
+
+      // Send success message with URL
+      await socket.sendMessage(from, { 
+        text: `✅ Upload successful!\n🔗 URL: ${response}`,
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244266@newsletter',
+            newsletterName: 'CASEYRHODES-MINI',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+
+      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+
+    } catch (err) {
+      console.error('URL upload error:', err);
+      await socket.sendMessage(from, { 
+        text: `❌ Upload failed: ${err.message}`,
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244268@newsletter',
+            newsletterName: 'CASEYRHODES-MINI',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+    } finally {
+      // Clean up temporary file
+      try {
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+        }
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
+    }
+
+  } catch (error) {
+    console.error('URL command error:', error);
+    await socket.sendMessage(from, { 
+      text: '❌ An unexpected error occurred while processing your request.',
+      contextInfo: {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '12036464655566@newsletter',
+          newsletterName: 'CASEYRHODES-MINI',
+          serverMessageId: -1
+        }
+      }
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
+}
+//🌟
     case 'whois': {
         try {
             await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
