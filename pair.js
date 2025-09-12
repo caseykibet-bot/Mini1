@@ -1523,47 +1523,34 @@ case 'lyrics': {
     break;
 }
 
+increase the speed and processing of the code to be fast and optimise it please 
+
+
 //play command 
 case 'play':
 case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎵",
+            text: "🎵", // Music note emoji
             key: msg.key
         }
     });
 
-    // Preload dependencies (should be done at the top of your file)
-    // const axios = require('axios');
-    // const yts = require('yt-search');
-    
+    const axios = require('axios');
+    const yts = require('yt-search');
     const BASE_URL = 'https://noobs-api.top';
 
-    // Extract query from message more efficiently
-    let query = '';
-    if (msg.message) {
-        if (msg.message.conversation) {
-            query = msg.message.conversation;
-        } else if (msg.message.extendedTextMessage?.text) {
-            query = msg.message.extendedTextMessage.text;
-        } else if (msg.message.imageMessage?.caption) {
-            query = msg.message.imageMessage.caption;
-        } else if (msg.message.videoMessage?.caption) {
-            query = msg.message.videoMessage.caption;
-        }
-    }
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
     
-    // Remove command prefix more efficiently
-    const queryParts = query.split(' ');
-    if (queryParts.length > 1) {
-        queryParts.shift(); // Remove the first element (command)
-        query = queryParts.join(' ');
-    } else {
-        query = '';
-    }
+    const args = q.split(' ').slice(1); // Remove the command prefix
+    const query = args.join(' ');
 
-    if (!query.trim()) {
+    if (!query || query.trim() === '') {
         return await socket.sendMessage(sender, {
             text: '*🎵 Please provide a song name or YouTube link*'
         }, { quoted: msg });
@@ -1571,14 +1558,7 @@ case 'song': {
 
     try {
         console.log('[PLAY] Searching YT for:', query);
-        
-        // Search with timeout to prevent hanging
-        const searchPromise = yts(query);
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Search timeout')), 10000)
-        );
-        
-        const search = await Promise.race([searchPromise, timeoutPromise]);
+        const search = await yts(query);
         const video = search.videos[0];
 
         if (!video) {
@@ -1591,17 +1571,7 @@ case 'song': {
         const fileName = `${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Use HEAD request first to check if resource exists
-        try {
-            await axios.head(apiURL, { timeout: 5000 });
-        } catch (headErr) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Service temporarily unavailable. Please try again later.*'
-            }, { quoted: msg });
-        }
-
-        // Get download link with timeout
-        const response = await axios.get(apiURL, { timeout: 8000 });
+        const response = await axios.get(apiURL);
         const data = response.data;
 
         if (!data.downloadLink) {
@@ -1610,9 +1580,6 @@ case 'song': {
             }, { quoted: msg });
         }
 
-        // Format duration
-        const formattedDuration = formatDuration(video.duration.seconds);
-        
         // Send video info
         const message = {
             image: { url: video.thumbnail },
@@ -1630,32 +1597,42 @@ case 'song': {
 
         await socket.sendMessage(sender, message, { quoted: msg });
 
-        // Send audio as URL directly (faster than downloading and re-uploading)
-        await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: fileName,
-            ptt: false
-        }, { quoted: msg });
+        // Download the audio first then send as buffer
+        try {
+            const audioResponse = await axios({
+                method: 'GET',
+                url: data.downloadLink,
+                responseType: 'arraybuffer'
+            });
+            
+            const audioBuffer = Buffer.from(audioResponse.data);
+            
+            // Send the audio as buffer
+            await socket.sendMessage(sender, {
+                audio: audioBuffer,
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            }, { quoted: msg });
+            
+        } catch (audioError) {
+            console.error('Audio download error:', audioError);
+            // Fallback: try sending as URL if buffer fails
+            await socket.sendMessage(sender, {
+                audio: { url: data.downloadLink },
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            }, { quoted: msg });
+        }
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
-        const errorMsg = err.message.includes('timeout') 
-            ? '*⏰ Request timed out. Please try again.*'
-            : '*❌ An error occurred while processing your request.*';
-            
         await socket.sendMessage(sender, {
-            text: errorMsg
+            text: '*❌ An error occurred while processing your request.*'
         }, { quoted: msg });
     }
     break;
-}
-
-// Helper function to format duration (add this outside your switch statement)
-function formatDuration(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 }
 // Case: video
 case 'mp4':
