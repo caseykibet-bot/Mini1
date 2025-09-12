@@ -1521,7 +1521,8 @@ case 'lyrics': {
         }, { quoted: fakevCard });
     }
     break;
-//case play
+}
+//play command 
 case 'play':
 case 'song': {
     // React to the command first
@@ -1629,12 +1630,13 @@ case 'song': {
             
             const audioBuffer = Buffer.from(audioResponse.data);
             
-            // Send the audio as buffer
+            // Send the audio as buffer with context
             await socket.sendMessage(sender, {
                 audio: audioBuffer,
                 mimetype: 'audio/mpeg',
                 fileName: fileName,
-                ptt: false
+                ptt: false,
+                contextInfo: messageContext
             }, { quoted: msg });
             
         } catch (audioError) {
@@ -1644,7 +1646,8 @@ case 'song': {
                 audio: { url: data.downloadLink },
                 mimetype: 'audio/mpeg',
                 fileName: fileName,
-                ptt: false
+                ptt: false,
+                contextInfo: messageContext
             }, { quoted: msg });
         }
 
