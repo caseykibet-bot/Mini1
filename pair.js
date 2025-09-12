@@ -1522,10 +1522,6 @@ case 'lyrics': {
     }
     break;
 }
-
-increase the speed and processing of the code to be fast and optimise it please 
-
-
 //play command 
 case 'play':
 case 'song': {
