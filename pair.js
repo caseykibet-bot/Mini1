@@ -1504,7 +1504,6 @@ case 'lyrics': {
     break;
 }
 //play command 
-//play command 
 case 'play':
 case 'song': {
     // React to the command first
@@ -1515,186 +1514,99 @@ case 'song': {
         }
     });
 
-    // Import dependencies
-    const yts = require('yt-search');
-    const fs = require('fs').promises;
-    const path = require('path');
-    const { exec } = require('child_process');
-    const util = require('util');
-    const execPromise = util.promisify(exec);
-    const { existsSync, mkdirSync } = require('fs');
     const axios = require('axios');
-
-    // Constants
-    const TEMP_DIR = './temp';
-    const MAX_FILE_SIZE_MB = 15;
-    const TARGET_SIZE_MB = 14;
-
-    // Ensure temp directory exists
-    if (!existsSync(TEMP_DIR)) {
-        mkdirSync(TEMP_DIR, { recursive: true });
-    }
-
-    // Utility functions
-    function extractYouTubeId(url) {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-        const match = url.match(regex);
-        return match ? match[1] : null;
-    }
-
-    function convertYouTubeLink(input) {
-        const videoId = extractYouTubeId(input);
-        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
-    }
-
-    function formatDuration(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-
-    async function downloadYtAudio(videoUrl, outputPath) {
-        return new Promise((resolve, reject) => {
-            // Using yt-dlp to download audio (make sure it's installed on your system)
-            const command = `yt-dlp -x --audio-format mp3 -o "${outputPath}" "${videoUrl}"`;
-            
-            exec(command, (error, stdout, stderr) => {
-                if (error) {
-                    console.error('YT-DLP Error:', error);
-                    reject(error);
-                } else {
-                    resolve(outputPath);
-                }
-            });
-        });
-    }
-
-    async function compressAudio(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
-        try {
-            // Get audio duration using ffprobe
-            const { stdout: durationOutput } = await execPromise(
-                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
-            );
-            const duration = parseFloat(durationOutput) || 180;
-            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
-            const constrainedBitrate = Math.min(Math.max(targetBitrate, 64), 192);
-            
-            // Compress audio with ffmpeg
-            await execPromise(
-                `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
-            );
-            return true;
-        } catch (error) {
-            console.error('Audio compression failed:', error);
-            return false;
-        }
-    }
-
-    async function cleanupFiles(...filePaths) {
-        for (const filePath of filePaths) {
-            if (filePath) {
-                try {
-                    await fs.unlink(filePath);
-                } catch (err) {
-                    // Silent cleanup
-                }
-            }
-        }
-    }
+    const yts = require('yt-search');
+    const BASE_URL = 'https://noobs-api.top';
 
     // Extract query from message
     const q = msg.message?.conversation || 
               msg.message?.extendedTextMessage?.text || 
               msg.message?.imageMessage?.caption || 
               msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1); // Remove the command prefix
+    const query = args.join(' ');
 
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, 
-            { text: '*🎵 Give me a song title or YouTube link, love 😘*' }
-        );
+    if (!query || query.trim() === '') {
+        return await socket.sendMessage(sender, {
+            text: '*🎵 Please provide a song name or YouTube link*'
+        }, { quoted: msg });
     }
 
-    const fixedQuery = convertYouTubeLink(q.trim());
-    let tempFilePath = '';
-    let compressedFilePath = '';
-
     try {
-        // Search for the video
-        const search = await yts(fixedQuery);
-        const videoInfo = search.videos[0];
-        
-        if (!videoInfo) {
-            return await socket.sendMessage(sender, 
-                { text: '*❌ No songs found, darling! Try another? 💔*' }
-            );
+        console.log('[PLAY] Searching YT for:', query);
+        const search = await yts(query);
+        const video = search.videos[0];
+
+        if (!video) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ No songs found! Try another search?*'
+            }, { quoted: msg });
         }
 
-        // Format duration
-        const formattedDuration = formatDuration(videoInfo.seconds);
-        
-        // Create description without verification contacts
-        const desc = `*🎵 Music Player 🎵*
-├📝 *Title:* ${videoInfo.title}
-├👤 *Artist:* ${videoInfo.author.name}
-├⏱️ *Duration:* ${formattedDuration}
-├📅 *Uploaded:* ${videoInfo.ago}
-├👁️ *Views:* ${videoInfo.views.toLocaleString()}
-├🎵 *Format:* High Quality MP3
-╰────────────────────
-> Powered by music bot 🎶
-`;
+        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
+        const fileName = `${safeTitle}.mp3`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Send video info immediately (without fakevCard)
-        await socket.sendMessage(sender, {
-            image: { url: videoInfo.thumbnail },
-            caption: desc
-        });
+        const response = await axios.get(apiURL);
+        const data = response.data;
 
-        // Clean title for filename
-        const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
-        tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}.mp3`);
-        compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp3`);
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
 
-        // Download audio using yt-dlp
-        await downloadYtAudio(videoInfo.url, tempFilePath);
+        // Send video info
+        const message = {
+            image: { url: video.thumbnail },
+            caption: `*🌸 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🌸*\n\n` +
+                     `╭───────────────◆\n` +
+                     `│• *ᴛɪᴛʟᴇ:* ${video.title}\n` +
+                     `│• *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
+                     `│• *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
+                     `│• *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
+                     `│• *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
+                     `╰────────────────◆\n\n` +
+                     `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʜᴏᴅᴇs ᴛᴇᴄʜ🌟`
+        };
 
-        // Check if file was downloaded successfully
+        await socket.sendMessage(sender, message, { quoted: msg });
+
+        // Download the audio first then send as buffer
         try {
-            await fs.access(tempFilePath);
-        } catch (err) {
-            throw new Error('Audio download failed');
+            const audioResponse = await axios({
+                method: 'GET',
+                url: data.downloadLink,
+                responseType: 'arraybuffer'
+            });
+            
+            const audioBuffer = Buffer.from(audioResponse.data);
+            
+            // Send the audio as buffer
+            await socket.sendMessage(sender, {
+                audio: audioBuffer,
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            }, { quoted: msg });
+            
+        } catch (audioError) {
+            console.error('Audio download error:', audioError);
+            // Fallback: try sending as URL if buffer fails
+            await socket.sendMessage(sender, {
+                audio: { url: data.downloadLink },
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            }, { quoted: msg });
         }
 
-        // Check file size and compress if needed
-        const stats = await fs.stat(tempFilePath);
-        const fileSizeMB = stats.size / (1024 * 1024);
-        
-        let finalFilePath = tempFilePath;
-        if (fileSizeMB > MAX_FILE_SIZE_MB) {
-            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
-            if (compressionSuccess) {
-                finalFilePath = compressedFilePath;
-            }
-        }
-
-        // Send the audio file (without fakevCard and with ptt: false)
-        const audioBuffer = await fs.readFile(finalFilePath);
-        await socket.sendMessage(sender, {
-            audio: audioBuffer,
-            mimetype: "audio/mpeg",
-            fileName: `${cleanTitle}.mp3`,
-            ptt: false
-        });
-
-        // Cleanup
-        await cleanupFiles(tempFilePath, compressedFilePath);
-        
     } catch (err) {
-        console.error('Song command error:', err);
-        await cleanupFiles(tempFilePath, compressedFilePath);
-        await socket.sendMessage(sender, 
-            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }
-        );
+        console.error('[PLAY] Error:', err);
+        await socket.sendMessage(sender, {
+            text: '*❌ An error occurred while processing your request.*'
+        }, { quoted: msg });
     }
     break;
 }
