@@ -1522,231 +1522,118 @@ case 'lyrics': {
     }
     break;
 }
-//play command 
 case 'play':
 case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎵", // Music note emoji
+            text: "🎵",
             key: msg.key
         }
     });
 
-    // Import dependencies
+    const axios = require('axios');
     const yts = require('yt-search');
-    const ytdl = require('ytdl-core');
-    const fs = require('fs').promises;
-    const path = require('path');
-    const { exec } = require('child_process');
-    const util = require('util');
-    const execPromise = util.promisify(exec);
-    const { existsSync, mkdirSync } = require('fs');
-
-    // Constants
-    const TEMP_DIR = './temp';
-    const MAX_FILE_SIZE_MB = 15;
-    const TARGET_SIZE_MB = 14;
-
-    // Ensure temp directory exists
-    if (!existsSync(TEMP_DIR)) {
-        mkdirSync(TEMP_DIR, { recursive: true });
-    }
-
-    // Utility functions
-    function extractYouTubeId(url) {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-        const match = url.match(regex);
-        return match ? match[1] : null;
-    }
-
-    function convertYouTubeLink(input) {
-        const videoId = extractYouTubeId(input);
-        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
-    }
-
-    function formatDuration(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-
-    async function compressAudio(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
-        try {
-            const { stdout: durationOutput } = await execPromise(
-                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
-            );
-            const duration = parseFloat(durationOutput) || 180;
-            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
-            const constrainedBitrate = Math.min(Math.max(targetBitrate, 64), 192);
-            
-            await execPromise(
-                `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
-            );
-            return true;
-        } catch (error) {
-            console.error('Audio compression failed:', error);
-            return false;
-        }
-    }
-
-    async function cleanupFiles(...filePaths) {
-        for (const filePath of filePaths) {
-            if (filePath) {
-                try {
-                    await fs.unlink(filePath);
-                } catch (err) {
-                    // Silent cleanup
-                }
-            }
-        }
-    }
+    const BASE_URL = 'https://noobs-api.top';
 
     // Extract query from message
     const q = msg.message?.conversation || 
               msg.message?.extendedTextMessage?.text || 
               msg.message?.imageMessage?.caption || 
               msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1);
+    const query = args.join(' ').trim();
 
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, 
-            { text: '*🎵 Give me a song title or YouTube link, love 😘*' }, 
-            { quoted: fakevCard }
-        );
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: '*🎵 Please provide a song name or YouTube link*'
+        }, { quoted: msg });
     }
 
-    const query = q.trim();
-    let tempFilePath = '';
-    let compressedFilePath = '';
-
     try {
-        // Search for the video
+        console.log('[PLAY] Searching YT for:', query);
         const search = await yts(query);
-        const videoInfo = search.videos[0];
-        
-        if (!videoInfo) {
-            return await socket.sendMessage(sender, 
-                { text: '*❌ No songs found, darling! Try another? 💔*' }, 
-                { quoted: fakevCard }
-            );
+        const video = search.videos[0];
+
+        if (!video) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ No songs found! Try another search?*'
+            }, { quoted: msg });
         }
 
-        // Format duration
-        const formattedDuration = formatDuration(videoInfo.seconds);
-        
-        // Create description
-        const desc = `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
-╭───────────────┈  ⊷
-├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
-├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
-├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
-├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
-├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
-├🎵 *Format:* High Quality MP3
-╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟
-`;
+        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
+        const fileName = `${safeTitle}.mp3`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Send video info immediately
-        await socket.sendMessage(sender, {
-            image: { url: videoInfo.thumbnail },
-            caption: desc
-        }, { quoted: fakevCard });
+        // Send video info immediately while processing audio
+        const message = {
+            image: { url: video.thumbnail },
+            caption: `*🎵 Music Player*\n\n` +
+                     `╭───────────────◆\n` +
+                     `│• *Title:* ${video.title}\n` +
+                     `│• *Duration:* ${video.timestamp}\n` +
+                     `│• *Views:* ${video.views.toLocaleString()}\n` +
+                     `│• *Uploaded:* ${video.ago}\n` +
+                     `│• *Channel:* ${video.author.name}\n` +
+                     `╰────────────────◆\n\n` +
+                     `🔗 ${video.url}`
+        };
 
-        // Clean title for filename
-        const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
-        tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_original.mp3`);
-        compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp3`);
+        await socket.sendMessage(sender, message, { quoted: msg });
 
-        // Download audio using ytdl-core
-        return new Promise(async (resolve, reject) => {
+        // Get download link and send audio in parallel
+        const response = await axios.get(apiURL, { timeout: 10000 });
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
+
+        // Try to send as URL first (faster)
+        try {
+            await socket.sendMessage(sender, {
+                audio: { url: data.downloadLink },
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            }, { quoted: msg });
+            
+        } catch (urlError) {
+            console.error('URL send failed, trying buffer:', urlError);
+            // Fallback to buffer if URL fails
             try {
-                const audioStream = ytdl(videoInfo.url, {
-                    filter: 'audioonly',
-                    quality: 'highestaudio'
+                const audioResponse = await axios({
+                    method: 'GET',
+                    url: data.downloadLink,
+                    responseType: 'arraybuffer',
+                    timeout: 30000
                 });
                 
-                const writeStream = require('fs').createWriteStream(tempFilePath);
-                audioStream.pipe(writeStream);
+                const audioBuffer = Buffer.from(audioResponse.data);
                 
-                writeStream.on('finish', async () => {
-                    try {
-                        // Check file size and compress if needed
-                        const stats = await fs.stat(tempFilePath);
-                        const fileSizeMB = stats.size / (1024 * 1024);
-                        
-                        let finalFilePath = tempFilePath;
-                        
-                        if (fileSizeMB > MAX_FILE_SIZE_MB) {
-                            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
-                            if (compressionSuccess) {
-                                finalFilePath = compressedFilePath;
-                                await cleanupFiles(tempFilePath);
-                            }
-                        }
-
-                        // Send the audio file
-                        await socket.sendMessage(sender, {
-                            audio: { url: finalFilePath },
-                            mimetype: "audio/mpeg",
-                            fileName: `${cleanTitle}.mp3`,
-                            ptt: false
-                        }, { quoted: fakevCard });
-
-                        // Cleanup after a delay
-                        setTimeout(async () => {
-                            await cleanupFiles(tempFilePath, compressedFilePath);
-                        }, 10000);
-                        
-                        resolve();
-                    } catch (error) {
-                        console.error('Error processing audio:', error);
-                        await cleanupFiles(tempFilePath, compressedFilePath);
-                        await socket.sendMessage(sender, 
-                            { text: "*❌ Error processing the audio. Please try again.*" }, 
-                            { quoted: fakevCard }
-                        );
-                        reject(error);
-                    }
-                });
+                await socket.sendMessage(sender, {
+                    audio: audioBuffer,
+                    mimetype: 'audio/mpeg',
+                    fileName: fileName,
+                    ptt: false
+                }, { quoted: msg });
                 
-                writeStream.on('error', async (error) => {
-                    console.error('Error writing audio file:', error);
-                    await cleanupFiles(tempFilePath, compressedFilePath);
-                    await socket.sendMessage(sender, 
-                        { text: "*❌ Error downloading the audio. Please try again.*" }, 
-                        { quoted: fakevCard }
-                    );
-                    reject(error);
-                });
-                
-                audioStream.on('error', async (error) => {
-                    console.error('Error downloading audio:', error);
-                    await cleanupFiles(tempFilePath, compressedFilePath);
-                    await socket.sendMessage(sender, 
-                        { text: "*❌ Error downloading the audio. Please try again.*" }, 
-                        { quoted: fakevCard }
-                    );
-                    reject(error);
-                });
-            } catch (error) {
-                console.error('Error in audio download:', error);
-                await cleanupFiles(tempFilePath, compressedFilePath);
-                await socket.sendMessage(sender, 
-                    { text: "*❌ Error downloading the audio. Please try again.*" }, 
-                    { quoted: fakevCard }
-                );
-                reject(error);
+            } catch (audioError) {
+                console.error('Audio download error:', audioError);
+                await socket.sendMessage(sender, {
+                    text: '*❌ Failed to send audio. Please try again.*'
+                }, { quoted: msg });
             }
-        });
-        
+        }
+
     } catch (err) {
-        console.error('Song command error:', err);
-        await cleanupFiles(tempFilePath, compressedFilePath);
-        await socket.sendMessage(sender, 
-            { text: "*❌ Oh no, the music stopped, love! 😢 Try again?*" }, 
-            { quoted: fakevCard }
-        );
+        console.error('[PLAY] Error:', err);
+        await socket.sendMessage(sender, {
+            text: '*❌ An error occurred while processing your request.*'
+        }, { quoted: msg });
     }
     break;
 }
