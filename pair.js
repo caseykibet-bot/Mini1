@@ -1527,7 +1527,7 @@ case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎵", // Music note emoji
+            text: "🎵",
             key: msg.key
         }
     });
@@ -1536,16 +1536,15 @@ case 'song': {
     const yts = require('yt-search');
     const BASE_URL = 'https://noobs-api.top';
 
-    // Extract query from message
+    // Extract query from message - optimized extraction
     const q = msg.message?.conversation || 
               msg.message?.extendedTextMessage?.text || 
               msg.message?.imageMessage?.caption || 
               msg.message?.videoMessage?.caption || '';
     
-    const args = q.split(' ').slice(1); // Remove the command prefix
-    const query = args.join(' ');
+    const query = q.split(' ').slice(1).join(' ').trim();
 
-    if (!query || query.trim() === '') {
+    if (!query) {
         return await socket.sendMessage(sender, {
             text: '*🎵 Please provide a song name or YouTube link*'
         }, { quoted: msg });
@@ -1553,72 +1552,64 @@ case 'song': {
 
     try {
         console.log('[PLAY] Searching YT for:', query);
-        const search = await yts(query);
-        const video = search.videos[0];
+        
+        // Search and download in parallel for better performance
+        const [searchResult, apiResponse] = await Promise.allSettled([
+            yts(query),
+            axios.get(`${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(query)}&format=mp3`)
+        ]);
 
-        if (!video) {
+        // Handle search failure
+        if (searchResult.status === 'rejected' || !searchResult.value?.videos?.length) {
             return await socket.sendMessage(sender, {
                 text: '*❌ No songs found! Try another search?*'
             }, { quoted: msg });
         }
 
+        const video = searchResult.value.videos[0];
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        const response = await axios.get(apiURL);
-        const data = response.data;
-
-        if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
+        // Use direct video ID if API call succeeded, otherwise fallback to search result
+        let downloadLink;
+        if (apiResponse.status === 'fulfilled' && apiResponse.value.data?.downloadLink) {
+            downloadLink = apiResponse.value.data.downloadLink;
+        } else {
+            // Fallback: use the video ID from search to construct download URL
+            downloadLink = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
         }
 
-        // Send video info
+        // Format duration
+        const formatDuration = (seconds) => {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        };
+
+        // Send video info immediately
         const message = {
             image: { url: video.thumbnail },
-            caption: `*🎵 Music Player*\n\n` +
-                     `╭───────────────◆\n` +
-                     `│• *Title:* ${video.title}\n` +
-                     `│• *Duration:* ${video.timestamp}\n` +
-                     `│• *Views:* ${video.views.toLocaleString()}\n` +
-                     `│• *Uploaded:* ${video.ago}\n` +
-                     `│• *Channel:* ${video.author.name}\n` +
-                     `╰────────────────◆\n\n` +
-                     `> 🔗 ${video.url}`
+            caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
+╭───────────────┈  ⊷
+├📝 *ᴛɪᴛʟᴇ:* ${video.title}
+├👤 *ᴀʀᴛɪsᴛ:* ${video.author.name}
+├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formatDuration(video.seconds)}
+├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}
+├👁️ *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}
+├🎵 *Format:* High Quality MP3
+╰───────────────┈ ⊷
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟`
         };
 
         await socket.sendMessage(sender, message, { quoted: msg });
 
-        // Download the audio first then send as buffer
-        try {
-            const audioResponse = await axios({
-                method: 'GET',
-                url: data.downloadLink,
-                responseType: 'arraybuffer'
-            });
-            
-            const audioBuffer = Buffer.from(audioResponse.data);
-            
-            // Send the audio as buffer
-            await socket.sendMessage(sender, {
-                audio: audioBuffer,
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false
-            }, { quoted: msg });
-            
-        } catch (audioError) {
-            console.error('Audio download error:', audioError);
-            // Fallback: try sending as URL if buffer fails
-            await socket.sendMessage(sender, {
-                audio: { url: data.downloadLink },
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false
-            }, { quoted: msg });
-        }
+        // Send audio as URL directly (faster than downloading buffer)
+        await socket.sendMessage(sender, {
+            audio: { url: downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false
+        }, { quoted: msg });
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
