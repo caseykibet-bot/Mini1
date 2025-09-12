@@ -877,8 +877,14 @@ case 'menu': {
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Menu command error:', error);
+    const startTime = socketCreationTime.get(number) || Date.now();
+    const uptime = Math.floor((Date.now() - startTime) / 1000);
+    const hours = Math.floor(uptime / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);
+    const seconds = Math.floor(uptime % 60);
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
+    
     let fallbackMenuText = `
 *┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
@@ -890,6 +896,17 @@ case 'menu': {
 ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs 
 > *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
+
+    // Common message context
+    const messageContext = {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363402973786789@newsletter',
+            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+            serverMessageId: -1
+        }
+    };
 
     await socket.sendMessage(from, {
       image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
@@ -4184,12 +4201,13 @@ async function EmpirePair(number, res) {
 const groupStatus = groupResult.status === 'success'
     ? 'ᴊᴏɪɴᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ'
     : `ғᴀɪʟᴇᴅ ᴛᴏ ᴊᴏɪɴ ɢʀᴏᴜᴘ: ${groupResult.error}`;
-// Fixed template literal and formatting with added buttons
+
+// Fixed template literal and formatting
 await socket.sendMessage(userJid, {
     image: { url: config.RCD_IMAGE_PATH },
     caption: formatMessage(
         '👻 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ 👻',
-        `✅ Successfully connected!🎉\n\n` +
+        `✅ Successfully connected!\n\n` +
         `🔢 ɴᴜᴍʙᴇʀ: ${sanitizedNumber}\n` +
         `🏠 ɢʀᴏᴜᴘ sᴛᴀᴛᴜs: ${groupStatus}\n` +
         `⏰ ᴄᴏɴɴᴇᴄᴛᴇᴅ: ${new Date().toLocaleString()}\n\n` +
@@ -4197,23 +4215,9 @@ await socket.sendMessage(userJid, {
         `https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T\n\n` +
         `🤖 ᴛʏᴘᴇ *${config.PREFIX}menu* ᴛᴏ ɢᴇᴛ sᴛᴀʀᴛᴇᴅ!`,
         '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ'
-    ),
-    buttons: [
-        { buttonId: '.owner', buttonText: { displayText: '👤 Owner' }, type: 1 },
-        { buttonId: '.follow', buttonText: { displayText: '📢 Follow Channel' }, type: 1 },
-        { buttonId: '.alive', buttonText: { displayText: '🤖 Alive' }, type: 1 }
-    ],
-    footer: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ɪɴᴄ',
-    contextInfo: {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244263@newsletter',
-            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🎉',
-            serverMessageId: -1
-        }
-    }
+    )
 });
+
 await sendAdminConnectMessage(socket, sanitizedNumber, groupResult);
 
 // Improved file handling with error checking
@@ -4557,4 +4561,17 @@ async function autoReconnectFromGitHub() {
     }
 }
 
+autoReconnectFromGitHub();
+
+module.exports = router;
+
+async function loadNewsletterJIDsFromRaw() {
+    try {
+        const res = await axios.get('https://raw.githubusercontent.com/caseytech001/database/refs/heads/main/newsletter_list.json');
+        return Array.isArray(res.data) ? res.data : [];
+    } catch (err) {
+        console.error('❌ Failed to load newsletter list from GitHub:', err.message);
+        return [];
+    }
+}
 
