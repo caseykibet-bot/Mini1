@@ -1522,6 +1522,8 @@ case 'lyrics': {
     }
     break;
 }
+
+//play command 
 //play command 
 case 'play':
 case 'song': {
@@ -1535,7 +1537,10 @@ case 'song': {
 
     const axios = require('axios');
     const yts = require('yt-search');
-    const BASE_URL = 'https://noobs-api.top';
+    
+    // Kaiz-API configuration
+    const KAIZ_API_KEY = 'cf2ca612-296f-45ba-abbc-473f18f991eb';
+    const KAIZ_API_URL = 'https://kaiz-apis.gleeze.com/api/ytdown-mp3';
 
     // Extract query from message
     const q = msg.message?.conversation || 
@@ -1565,12 +1570,21 @@ case 'song': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        const response = await axios.get(apiURL);
+        // Use Kaiz-API to fetch the audio
+        const response = await axios.get(KAIZ_API_URL, {
+            params: {
+                url: `https://www.youtube.com/watch?v=${video.videoId}`,
+                apikey: KAIZ_API_KEY
+            },
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
         const data = response.data;
 
-        if (!data.downloadLink) {
+        if (!data.status || !data.result) {
             return await socket.sendMessage(sender, {
                 text: '*❌ Failed to retrieve the MP3 download link.*'
             }, { quoted: msg });
@@ -1579,26 +1593,28 @@ case 'song': {
         // Send video info
         const message = {
             image: { url: video.thumbnail },
-            caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
-╭───────────────┈  ⊷
-├📝 *ᴛɪᴛʟᴇ:* ${video.title}
-├👤 *ᴀʀᴛɪsᴛ:* ${video.author.name}
-├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
-├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}
-├👁️ *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}
-├🎵 *Format:* High Quality MP3
-╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟`
+            caption: `*🌸 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🌸*\n\n` +
+                     `╭───────────────◆\n` +
+                     `│• *ᴛɪᴛʟᴇ:* ${video.title}\n` +
+                     `│• *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
+                     `│• *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
+                     `│• *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
+                     `│• *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
+                     `╰────────────────◆\n\n` +
+                     `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʜᴏᴅᴇs ᴛᴇᴄʜ🌟`
         };
 
         await socket.sendMessage(sender, message, { quoted: msg });
 
-        // Download the audio first then send as buffer
+        // Download the audio using Kaiz-API's direct link
         try {
             const audioResponse = await axios({
                 method: 'GET',
-                url: data.downloadLink,
-                responseType: 'arraybuffer'
+                url: data.result,
+                responseType: 'arraybuffer',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
             });
             
             const audioBuffer = Buffer.from(audioResponse.data);
@@ -1615,7 +1631,7 @@ case 'song': {
             console.error('Audio download error:', audioError);
             // Fallback: try sending as URL if buffer fails
             await socket.sendMessage(sender, {
-                audio: { url: data.downloadLink },
+                audio: { url: data.result },
                 mimetype: 'audio/mpeg',
                 fileName: fileName,
                 ptt: false
