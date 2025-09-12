@@ -1522,7 +1522,6 @@ case 'lyrics': {
     }
     break;
 //case play
-
 case 'play':
 case 'song': {
     // React to the command first
