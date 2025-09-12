@@ -1535,7 +1535,7 @@ case 'song': {
 
     // Import dependencies
     const yts = require('yt-search');
-    const ytdl = require('ytdl-core'); // Using ytdl-core instead of denethdev-ytmp3
+    const ytdl = require('ytdl-core');
     const fs = require('fs').promises;
     const path = require('path');
     const { exec } = require('child_process');
@@ -1545,7 +1545,7 @@ case 'song': {
 
     // Constants
     const TEMP_DIR = './temp';
-    const MAX_FILE_SIZE_MB = 15; // Increased limit for WhatsApp
+    const MAX_FILE_SIZE_MB = 15;
     const TARGET_SIZE_MB = 14;
 
     // Ensure temp directory exists
@@ -1578,7 +1578,7 @@ case 'song': {
             );
             const duration = parseFloat(durationOutput) || 180;
             const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
-            const constrainedBitrate = Math.min(Math.max(targetBitrate, 64), 192); // Increased minimum bitrate
+            const constrainedBitrate = Math.min(Math.max(targetBitrate, 64), 192);
             
             await execPromise(
                 `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -vn -y "${outputPath}"`
@@ -1596,7 +1596,7 @@ case 'song': {
                 try {
                     await fs.unlink(filePath);
                 } catch (err) {
-                    // Silent cleanup - no error reporting needed
+                    // Silent cleanup
                 }
             }
         }
@@ -1615,13 +1615,13 @@ case 'song': {
         );
     }
 
-    const fixedQuery = convertYouTubeLink(q.trim());
+    const query = q.trim();
     let tempFilePath = '';
     let compressedFilePath = '';
 
     try {
         // Search for the video
-        const search = await yts(fixedQuery);
+        const search = await yts(query);
         const videoInfo = search.videos[0];
         
         if (!videoInfo) {
@@ -1658,48 +1658,87 @@ case 'song': {
         tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_original.mp3`);
         compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp3`);
 
-        // Download audio using ytdl-core directly
-        const audioStream = ytdl(videoInfo.url, {
-            filter: 'audioonly',
-            quality: 'highestaudio'
-        });
-        
-        // Write stream to file
-        const writeStream = require('fs').createWriteStream(tempFilePath);
-        audioStream.pipe(writeStream);
-        
-        // Wait for download to complete
-        await new Promise((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-        });
+        // Download audio using ytdl-core
+        return new Promise(async (resolve, reject) => {
+            try {
+                const audioStream = ytdl(videoInfo.url, {
+                    filter: 'audioonly',
+                    quality: 'highestaudio'
+                });
+                
+                const writeStream = require('fs').createWriteStream(tempFilePath);
+                audioStream.pipe(writeStream);
+                
+                writeStream.on('finish', async () => {
+                    try {
+                        // Check file size and compress if needed
+                        const stats = await fs.stat(tempFilePath);
+                        const fileSizeMB = stats.size / (1024 * 1024);
+                        
+                        let finalFilePath = tempFilePath;
+                        
+                        if (fileSizeMB > MAX_FILE_SIZE_MB) {
+                            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
+                            if (compressionSuccess) {
+                                finalFilePath = compressedFilePath;
+                                await cleanupFiles(tempFilePath);
+                            }
+                        }
 
-        // Check file size and compress if needed
-        const stats = await fs.stat(tempFilePath);
-        const fileSizeMB = stats.size / (1024 * 1024);
-        
-        let finalFilePath = tempFilePath;
-        
-        if (fileSizeMB > MAX_FILE_SIZE_MB) {
-            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
-            if (compressionSuccess) {
-                finalFilePath = compressedFilePath;
-                await cleanupFiles(tempFilePath);
+                        // Send the audio file
+                        await socket.sendMessage(sender, {
+                            audio: { url: finalFilePath },
+                            mimetype: "audio/mpeg",
+                            fileName: `${cleanTitle}.mp3`,
+                            ptt: false
+                        }, { quoted: fakevCard });
+
+                        // Cleanup after a delay
+                        setTimeout(async () => {
+                            await cleanupFiles(tempFilePath, compressedFilePath);
+                        }, 10000);
+                        
+                        resolve();
+                    } catch (error) {
+                        console.error('Error processing audio:', error);
+                        await cleanupFiles(tempFilePath, compressedFilePath);
+                        await socket.sendMessage(sender, 
+                            { text: "*❌ Error processing the audio. Please try again.*" }, 
+                            { quoted: fakevCard }
+                        );
+                        reject(error);
+                    }
+                });
+                
+                writeStream.on('error', async (error) => {
+                    console.error('Error writing audio file:', error);
+                    await cleanupFiles(tempFilePath, compressedFilePath);
+                    await socket.sendMessage(sender, 
+                        { text: "*❌ Error downloading the audio. Please try again.*" }, 
+                        { quoted: fakevCard }
+                    );
+                    reject(error);
+                });
+                
+                audioStream.on('error', async (error) => {
+                    console.error('Error downloading audio:', error);
+                    await cleanupFiles(tempFilePath, compressedFilePath);
+                    await socket.sendMessage(sender, 
+                        { text: "*❌ Error downloading the audio. Please try again.*" }, 
+                        { quoted: fakevCard }
+                    );
+                    reject(error);
+                });
+            } catch (error) {
+                console.error('Error in audio download:', error);
+                await cleanupFiles(tempFilePath, compressedFilePath);
+                await socket.sendMessage(sender, 
+                    { text: "*❌ Error downloading the audio. Please try again.*" }, 
+                    { quoted: fakevCard }
+                );
+                reject(error);
             }
-        }
-
-        // Send the audio file
-        await socket.sendMessage(sender, {
-            audio: { url: finalFilePath }, // Send as file path instead of buffer
-            mimetype: "audio/mpeg",
-            fileName: `${cleanTitle}.mp3`,
-            ptt: false
-        }, { quoted: fakevCard });
-
-        // Cleanup after a delay to ensure file is sent
-        setTimeout(async () => {
-            await cleanupFiles(tempFilePath, compressedFilePath);
-        }, 10000);
+        });
         
     } catch (err) {
         console.error('Song command error:', err);
