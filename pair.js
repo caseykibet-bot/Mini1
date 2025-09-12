@@ -1527,7 +1527,7 @@ case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎵",
+            text: "🎵", // Music note emoji
             key: msg.key
         }
     });
@@ -1542,10 +1542,10 @@ case 'song': {
               msg.message?.imageMessage?.caption || 
               msg.message?.videoMessage?.caption || '';
     
-    const args = q.split(' ').slice(1);
-    const query = args.join(' ').trim();
+    const args = q.split(' ').slice(1); // Remove the command prefix
+    const query = args.join(' ');
 
-    if (!query) {
+    if (!query || query.trim() === '') {
         return await socket.sendMessage(sender, {
             text: '*🎵 Please provide a song name or YouTube link*'
         }, { quoted: msg });
@@ -1566,7 +1566,16 @@ case 'song': {
         const fileName = `${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Send video info immediately while processing audio
+        const response = await axios.get(apiURL);
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
+
+        // Send video info
         const message = {
             image: { url: video.thumbnail },
             caption: `*🎵 Music Player*\n\n` +
@@ -1577,56 +1586,38 @@ case 'song': {
                      `│• *Uploaded:* ${video.ago}\n` +
                      `│• *Channel:* ${video.author.name}\n` +
                      `╰────────────────◆\n\n` +
-                     `🔗 ${video.url}`
+                     `> 🔗 ${video.url}`
         };
 
         await socket.sendMessage(sender, message, { quoted: msg });
 
-        // Get download link and send audio in parallel
-        const response = await axios.get(apiURL, { timeout: 10000 });
-        const data = response.data;
-
-        if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
-        }
-
-        // Try to send as URL first (faster)
+        // Download the audio first then send as buffer
         try {
+            const audioResponse = await axios({
+                method: 'GET',
+                url: data.downloadLink,
+                responseType: 'arraybuffer'
+            });
+            
+            const audioBuffer = Buffer.from(audioResponse.data);
+            
+            // Send the audio as buffer
+            await socket.sendMessage(sender, {
+                audio: audioBuffer,
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            }, { quoted: msg });
+            
+        } catch (audioError) {
+            console.error('Audio download error:', audioError);
+            // Fallback: try sending as URL if buffer fails
             await socket.sendMessage(sender, {
                 audio: { url: data.downloadLink },
                 mimetype: 'audio/mpeg',
                 fileName: fileName,
                 ptt: false
             }, { quoted: msg });
-            
-        } catch (urlError) {
-            console.error('URL send failed, trying buffer:', urlError);
-            // Fallback to buffer if URL fails
-            try {
-                const audioResponse = await axios({
-                    method: 'GET',
-                    url: data.downloadLink,
-                    responseType: 'arraybuffer',
-                    timeout: 30000
-                });
-                
-                const audioBuffer = Buffer.from(audioResponse.data);
-                
-                await socket.sendMessage(sender, {
-                    audio: audioBuffer,
-                    mimetype: 'audio/mpeg',
-                    fileName: fileName,
-                    ptt: false
-                }, { quoted: msg });
-                
-            } catch (audioError) {
-                console.error('Audio download error:', audioError);
-                await socket.sendMessage(sender, {
-                    text: '*❌ Failed to send audio. Please try again.*'
-                }, { quoted: msg });
-            }
         }
 
     } catch (err) {
