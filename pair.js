@@ -1529,28 +1529,41 @@ case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎵", // Music note emoji
+            text: "🎵",
             key: msg.key
         }
     });
 
-    const axios = require('axios');
-    const yts = require('yt-search');
+    // Preload dependencies (should be done at the top of your file)
+    // const axios = require('axios');
+    // const yts = require('yt-search');
     
-    // Kaiz-API configuration
-    const KAIZ_API_KEY = 'cf2ca612-296f-45ba-abbc-473f18f991eb';
-    const KAIZ_API_URL = 'https://kaiz-apis.gleeze.com/api/ytdown-mp3';
+    const BASE_URL = 'https://noobs-api.top';
 
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
+    // Extract query from message more efficiently
+    let query = '';
+    if (msg.message) {
+        if (msg.message.conversation) {
+            query = msg.message.conversation;
+        } else if (msg.message.extendedTextMessage?.text) {
+            query = msg.message.extendedTextMessage.text;
+        } else if (msg.message.imageMessage?.caption) {
+            query = msg.message.imageMessage.caption;
+        } else if (msg.message.videoMessage?.caption) {
+            query = msg.message.videoMessage.caption;
+        }
+    }
     
-    const args = q.split(' ').slice(1); // Remove the command prefix
-    const query = args.join(' ');
+    // Remove command prefix more efficiently
+    const queryParts = query.split(' ');
+    if (queryParts.length > 1) {
+        queryParts.shift(); // Remove the first element (command)
+        query = queryParts.join(' ');
+    } else {
+        query = '';
+    }
 
-    if (!query || query.trim() === '') {
+    if (!query.trim()) {
         return await socket.sendMessage(sender, {
             text: '*🎵 Please provide a song name or YouTube link*'
         }, { quoted: msg });
@@ -1558,7 +1571,14 @@ case 'song': {
 
     try {
         console.log('[PLAY] Searching YT for:', query);
-        const search = await yts(query);
+        
+        // Search with timeout to prevent hanging
+        const searchPromise = yts(query);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Search timeout')), 10000)
+        );
+        
+        const search = await Promise.race([searchPromise, timeoutPromise]);
         const video = search.videos[0];
 
         if (!video) {
@@ -1569,29 +1589,30 @@ case 'song': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Use Kaiz-API to fetch the audio
-        const response = await axios.get(KAIZ_API_URL, {
-            params: {
-                url: `https://www.youtube.com/watch?v=${video.videoId}`,
-                apikey: KAIZ_API_KEY
-            },
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+        // Use HEAD request first to check if resource exists
+        try {
+            await axios.head(apiURL, { timeout: 5000 });
+        } catch (headErr) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Service temporarily unavailable. Please try again later.*'
+            }, { quoted: msg });
+        }
 
+        // Get download link with timeout
+        const response = await axios.get(apiURL, { timeout: 8000 });
         const data = response.data;
 
-        if (!data.status || !data.result) {
+        if (!data.downloadLink) {
             return await socket.sendMessage(sender, {
                 text: '*❌ Failed to retrieve the MP3 download link.*'
             }, { quoted: msg });
         }
 
-        // Format duration for better display
-        const formattedDuration = video.timestamp || 'Unknown';
-
+        // Format duration
+        const formattedDuration = formatDuration(video.duration.seconds);
+        
         // Send video info
         const message = {
             image: { url: video.thumbnail },
@@ -1604,50 +1625,37 @@ case 'song': {
 ├👁️ *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}
 ├🎵 *Format:* High Quality MP3
 ╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ🌟`
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟`
         };
 
         await socket.sendMessage(sender, message, { quoted: msg });
 
-        // Download the audio using Kaiz-API's direct link
-        try {
-            const audioResponse = await axios({
-                method: 'GET',
-                url: data.result,
-                responseType: 'arraybuffer',
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            });
-            
-            const audioBuffer = Buffer.from(audioResponse.data);
-            
-            // Send the audio as buffer
-            await socket.sendMessage(sender, {
-                audio: audioBuffer,
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false
-            }, { quoted: msg });
-            
-        } catch (audioError) {
-            console.error('Audio download error:', audioError);
-            // Fallback: try sending as URL if buffer fails
-            await socket.sendMessage(sender, {
-                audio: { url: data.result },
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false
-            }, { quoted: msg });
-        }
+        // Send audio as URL directly (faster than downloading and re-uploading)
+        await socket.sendMessage(sender, {
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false
+        }, { quoted: msg });
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
+        const errorMsg = err.message.includes('timeout') 
+            ? '*⏰ Request timed out. Please try again.*'
+            : '*❌ An error occurred while processing your request.*';
+            
         await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*'
+            text: errorMsg
         }, { quoted: msg });
     }
     break;
+}
+
+// Helper function to format duration (add this outside your switch statement)
+function formatDuration(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 }
 // Case: video
 case 'mp4':
