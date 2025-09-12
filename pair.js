@@ -1443,13 +1443,34 @@ case 'song': {
 
         await socket.sendMessage(sender, message, { quoted: msg });
 
-        // Send the audio
-        await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: fileName,
-            caption: 'Enjoy your music! 🎧'
-        }, { quoted: msg });
+        // Download the audio first then send as buffer
+        try {
+            const audioResponse = await axios({
+                method: 'GET',
+                url: data.downloadLink,
+                responseType: 'arraybuffer'
+            });
+            
+            const audioBuffer = Buffer.from(audioResponse.data);
+            
+            // Send the audio as buffer
+            await socket.sendMessage(sender, {
+                audio: audioBuffer,
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            }, { quoted: msg });
+            
+        } catch (audioError) {
+            console.error('Audio download error:', audioError);
+            // Fallback: try sending as URL if buffer fails
+            await socket.sendMessage(sender, {
+                audio: { url: data.downloadLink },
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            }, { quoted: msg });
+        }
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
