@@ -1504,107 +1504,92 @@ case 'lyrics': {
     break;
 }
 //play command 
-case 'play': {
-  if (!text) return reply('Please provide a song name or query!\nExample: .play Shape of You');
+case 'play':
+case 'song': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🎵",
+            key: msg.key
+        }
+    });
 
-  try {
-    await conn.sendMessage(m.chat, { react: { text: "🎵", key: m.key } });
+    const axios = require('axios');
+    const yts = require('yt-search');
+    const BASE_URL = 'https://noobs-api.top';
 
-    const apiUrl = `https://api.diioffc.web.id/api/search/ytplay?query=${encodeURIComponent(text)}`;
-    const { data } = await axios.get(apiUrl);
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1);
+    const query = args.join(' ').trim();
 
-    if (!data.status || !data.result) return reply('Failed to fetch song. Try another query.');
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: '*🎵 Please provide a song name or YouTube link*'
+        }, { quoted: msg });
+    }
 
-    const res = data.result;
-    // Store last search result for button handlers (per chat)
-    global.lastPlayResult = global.lastPlayResult || {};
-    global.lastPlayResult[m.chat] = res;
+    try {
+        console.log('[PLAY] Searching YT for:', query);
+        const search = await yts(query);
+        const video = search.videos[0];
 
-    const info = `
-*🌸 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🌸*
+        if (!video) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ No songs found! Try another search?*'
+            }, { quoted: msg });
+        }
 
-🎵 *Title*: ${res.title}
-👤 *Author*: ${res.author?.name || '-'}
-🔗 *YouTube*: ${res.url}
-🕒 *Duration*: ${res.duration?.timestamp || '-'}
-👁️ *Views*: ${res.views}
-📅 *Uploaded*: ${res.ago}
+        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
+        const fileName = `${safeTitle}.mp3`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʜᴏᴅᴇs ᴛᴇᴄʜ🌟
-`;
-    const buttons = [
-      {buttonId: `.playdoc`, buttonText: {displayText: "Document"}, type: 1},
-      {buttonId: `.playaudio`, buttonText: {displayText: "Audio"}, type: 1},
-      {buttonId: `.playvn`, buttonText: {displayText: "Voice Note"}, type: 1}
-    ];
+        // Send video info immediately
+        const message = {
+            image: { url: video.thumbnail },
+            caption: `*🎵 Music Player*\n\n` +
+                     `╭───────────────◆\n` +
+                     `│• *Title:* ${video.title}\n` +
+                     `│• *Duration:* ${video.timestamp}\n` +
+                     `│• *Views:* ${video.views.toLocaleString()}\n` +
+                     `│• *Uploaded:* ${video.ago}\n` +
+                     `│• *Channel:* ${video.author.name}\n` +
+                     `╰────────────────◆\n\n` +
+                     `🔗 ${video.url}`
+        };
 
-    await conn.sendMessage(m.chat, {
-        image: { url: res.thumbnail },
-        caption: info,
-        footer: "Choose format below:",
-        buttons: buttons,
-        headerType: 4
-    }, { quoted: m });
+        await socket.sendMessage(sender, message, { quoted: msg });
 
-  } catch (err) {
-    console.error(err);
-    reply('❌ Error fetching song data.');
-  }
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 10000 });
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
+
+        // Send audio directly as URL (faster)
+        await socket.sendMessage(sender, {
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false
+        }, { quoted: msg });
+
+    } catch (err) {
+        console.error('[PLAY] Error:', err);
+        await socket.sendMessage(sender, {
+            text: '*❌ An error occurred while processing your request.*'
+        }, { quoted: msg });
+    }
+    break;
 }
-break;
-
-case 'playdoc': {
-  let res = global.lastPlayResult?.[m.chat];
-  if (!res) return reply('No song found. Use .play <songname> first.');
-  
-  try {
-    await conn.sendMessage(m.chat, {
-      document: { url: res.download.url },
-      fileName: res.download.filename,
-      mimetype: "audio/mpeg",
-      caption: `${res.title}`
-    }, { quoted: m });
-  } catch (err) {
-    console.error(err);
-    reply('❌ Error sending audio document.');
-  }
-}
-break;
-
-case 'playaudio': {
-  let res = global.lastPlayResult?.[m.chat];
-  if (!res) return reply('No song found. Use .play <songname> first.');
-  
-  try {
-    await conn.sendMessage(m.chat, {
-      audio: { url: res.download.url },
-      mimetype: "audio/mpeg",
-      fileName: res.download.filename
-    }, { quoted: m });
-  } catch (err) {
-    console.error(err);
-    reply('❌ Error sending audio.');
-  }
-}
-break;
-
-case 'playvn': {
-  let res = global.lastPlayResult?.[m.chat];
-  if (!res) return reply('No song found. Use .play <songname> first.');
-  
-  try {
-    await conn.sendMessage(m.chat, {
-      audio: { url: res.download.url },
-      mimetype: "audio/mpeg",
-      ptt: true,
-      fileName: res.download.filename
-    }, { quoted: m });
-  } catch (err) {
-    console.error(err);
-    reply('❌ Error sending voice note.');
-  }
-}
-break;
 // Case: video
 case 'mp4':
 case 'video': {
