@@ -27,6 +27,7 @@ const {
     generateWAMessageFromContent,
     S_WHATSAPP_NET
 } = require('@whiskeysockets/baileys');
+
 const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
@@ -717,7 +718,7 @@ case 'info': {
     break;
 }
          // Case: menu
-         case 'menu': {
+case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -769,8 +770,7 @@ case 'info': {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
-                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },   
-                    { title: "🌸ғᴏʟʟᴏᴡ ᴄʜᴀɴɴᴇʟ", description: "support our channel", id: `${config.PREFIX}follow` }, 
+                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },    
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
@@ -787,9 +787,7 @@ case 'info': {
                   title: "🎵 ᴍᴇᴅɪᴀ ᴛᴏᴏʟs",
                   highlight_label: 'New',
                   rows: [
-                    { title: "🎧 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
-                     { title: "📽️ video", description: "Download video from YouTube", id: `${config.PREFIX}video` }, 
-                    { title: "👀Details", description: "get any message details", id: `${config.PREFIX}details` },      
+                    { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
                     { title: "🎉play", description: "play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
@@ -877,14 +875,8 @@ case 'info': {
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Menu command error:', error);
-    const startTime = socketCreationTime.get(number) || Date.now();
-    const uptime = Math.floor((Date.now() - startTime) / 1000);
-    const hours = Math.floor(uptime / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
-    const seconds = Math.floor(uptime % 60);
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
-    
     let fallbackMenuText = `
 *┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
@@ -896,17 +888,6 @@ case 'info': {
 ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs 
 > *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
-
-    // Common message context
-    const messageContext = {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363402973786789@newsletter',
-            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-            serverMessageId: -1
-        }
-    };
 
     await socket.sendMessage(from, {
       image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
@@ -1522,130 +1503,108 @@ case 'lyrics': {
     }
     break;
 }
-
 //play command 
-//play command 
-case 'play':
-case 'song': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🎵", // Music note emoji
-            key: msg.key
-        }
-    });
+case 'play': {
+  if (!text) return reply('Please provide a song name or query!\nExample: .play Shape of You');
 
-    const axios = require('axios');
-    const yts = require('yt-search');
-    
-    // Kaiz-API configuration
-    const KAIZ_API_KEY = 'cf2ca612-296f-45ba-abbc-473f18f991eb';
-    const KAIZ_API_URL = 'https://kaiz-apis.gleeze.com/api/ytdown-mp3';
+  try {
+    await conn.sendMessage(m.chat, { react: { text: "🎵", key: m.key } });
 
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
-    
-    const args = q.split(' ').slice(1); // Remove the command prefix
-    const query = args.join(' ');
+    const apiUrl = `https://api.diioffc.web.id/api/search/ytplay?query=${encodeURIComponent(text)}`;
+    const { data } = await axios.get(apiUrl);
 
-    if (!query || query.trim() === '') {
-        return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*'
-        }, { quoted: msg });
-    }
+    if (!data.status || !data.result) return reply('Failed to fetch song. Try another query.');
 
-    try {
-        console.log('[PLAY] Searching YT for:', query);
-        const search = await yts(query);
-        const video = search.videos[0];
+    const res = data.result;
+    // Store last search result for button handlers (per chat)
+    global.lastPlayResult = global.lastPlayResult || {};
+    global.lastPlayResult[m.chat] = res;
 
-        if (!video) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ No songs found! Try another search?*'
-            }, { quoted: msg });
-        }
+    const info = `
+*🌸 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🌸*
 
-        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
-        const fileName = `${safeTitle}.mp3`;
+🎵 *Title*: ${res.title}
+👤 *Author*: ${res.author?.name || '-'}
+🔗 *YouTube*: ${res.url}
+🕒 *Duration*: ${res.duration?.timestamp || '-'}
+👁️ *Views*: ${res.views}
+📅 *Uploaded*: ${res.ago}
 
-        // Use Kaiz-API to fetch the audio
-        const response = await axios.get(KAIZ_API_URL, {
-            params: {
-                url: `https://www.youtube.com/watch?v=${video.videoId}`,
-                apikey: KAIZ_API_KEY
-            },
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʜᴏᴅᴇs ᴛᴇᴄʜ🌟
+`;
+    const buttons = [
+      {buttonId: `.playdoc`, buttonText: {displayText: "Document"}, type: 1},
+      {buttonId: `.playaudio`, buttonText: {displayText: "Audio"}, type: 1},
+      {buttonId: `.playvn`, buttonText: {displayText: "Voice Note"}, type: 1}
+    ];
 
-        const data = response.data;
+    await conn.sendMessage(m.chat, {
+        image: { url: res.thumbnail },
+        caption: info,
+        footer: "Choose format below:",
+        buttons: buttons,
+        headerType: 4
+    }, { quoted: m });
 
-        if (!data.status || !data.result) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
-        }
-
-        // Send video info
-        const message = {
-            image: { url: video.thumbnail },
-            caption: `*🌸 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🌸*\n\n` +
-                     `╭───────────────◆\n` +
-                     `│• *ᴛɪᴛʟᴇ:* ${video.title}\n` +
-                     `│• *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
-                     `│• *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
-                     `│• *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
-                     `│• *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
-                     `╰────────────────◆\n\n` +
-                     `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʜᴏᴅᴇs ᴛᴇᴄʜ🌟`
-        };
-
-        await socket.sendMessage(sender, message, { quoted: msg });
-
-        // Download the audio using Kaiz-API's direct link
-        try {
-            const audioResponse = await axios({
-                method: 'GET',
-                url: data.result,
-                responseType: 'arraybuffer',
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            });
-            
-            const audioBuffer = Buffer.from(audioResponse.data);
-            
-            // Send the audio as buffer
-            await socket.sendMessage(sender, {
-                audio: audioBuffer,
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false
-            }, { quoted: msg });
-            
-        } catch (audioError) {
-            console.error('Audio download error:', audioError);
-            // Fallback: try sending as URL if buffer fails
-            await socket.sendMessage(sender, {
-                audio: { url: data.result },
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false
-            }, { quoted: msg });
-        }
-
-    } catch (err) {
-        console.error('[PLAY] Error:', err);
-        await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*'
-        }, { quoted: msg });
-    }
-    break;
+  } catch (err) {
+    console.error(err);
+    reply('❌ Error fetching song data.');
+  }
 }
+break;
+
+case 'playdoc': {
+  let res = global.lastPlayResult?.[m.chat];
+  if (!res) return reply('No song found. Use .play <songname> first.');
+  
+  try {
+    await conn.sendMessage(m.chat, {
+      document: { url: res.download.url },
+      fileName: res.download.filename,
+      mimetype: "audio/mpeg",
+      caption: `${res.title}`
+    }, { quoted: m });
+  } catch (err) {
+    console.error(err);
+    reply('❌ Error sending audio document.');
+  }
+}
+break;
+
+case 'playaudio': {
+  let res = global.lastPlayResult?.[m.chat];
+  if (!res) return reply('No song found. Use .play <songname> first.');
+  
+  try {
+    await conn.sendMessage(m.chat, {
+      audio: { url: res.download.url },
+      mimetype: "audio/mpeg",
+      fileName: res.download.filename
+    }, { quoted: m });
+  } catch (err) {
+    console.error(err);
+    reply('❌ Error sending audio.');
+  }
+}
+break;
+
+case 'playvn': {
+  let res = global.lastPlayResult?.[m.chat];
+  if (!res) return reply('No song found. Use .play <songname> first.');
+  
+  try {
+    await conn.sendMessage(m.chat, {
+      audio: { url: res.download.url },
+      mimetype: "audio/mpeg",
+      ptt: true,
+      fileName: res.download.filename
+    }, { quoted: m });
+  } catch (err) {
+    console.error(err);
+    reply('❌ Error sending voice note.');
+  }
+}
+break;
 // Case: video
 case 'mp4':
 case 'video': {
@@ -2733,6 +2692,74 @@ User Message: ${q}
 
 //===============================
 
+case 'autorecording':
+case 'autorecoding': {
+  try {
+    const status = args[0]?.toLowerCase();
+    
+    if (!["on", "off"].includes(status)) {
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "*🫟 Example: .autorecording on*",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❓', key: msg.key } });
+      break;
+    }
+
+    config.AUTO_RECORDING = status === "on" ? "true" : "false";
+    
+    if (status === "on") {
+      await socket.sendPresenceUpdate("recording", from);
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "✅ Auto recording is now enabled. Bot is recording...",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    } else {
+      await socket.sendPresenceUpdate("available", from);
+      await socket.sendMessage(from, {
+        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+        caption: "✅ Auto recording has been disabled.",
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363302677217436@newsletter',
+            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+            serverMessageId: 143
+          }
+        }
+      }, { quoted: msg });
+    }
+    
+    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    
+  } catch (error) {
+    console.error('Autorecording command error:', error);
+    await socket.sendMessage(from, {
+      text: "❌ An error occurred while setting auto recording."
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
+}
 //===============================
 case 'getpp':
 case 'pp':
@@ -3667,7 +3694,139 @@ case 'savestatus': {
   }
   break;
 }
+//url test 
+case 'url': {
+  try {
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    const mediaMsg = quoted?.imageMessage || quoted?.videoMessage || quoted?.stickerMessage;
 
+    if (!mediaMsg) {
+      await socket.sendMessage(from, { 
+        text: '📁 Reply to an image, video, or sticker to upload to Catbox.',
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244269@newsletter',
+            newsletterName: 'CASEYRHODES-MIN',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+      break;
+    }
+
+    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
+
+    let type = null;
+    let ext = null;
+
+    if (quoted?.imageMessage) {
+      type = 'image';
+      ext = 'jpg';
+    } else if (quoted?.videoMessage) {
+      type = 'video';
+      ext = 'mp4';
+    } else if (quoted?.stickerMessage) {
+      type = 'sticker';
+      ext = 'webp';
+    }
+
+    if (!type || !ext) {
+      await socket.sendMessage(from, { 
+        text: '❌ Unsupported media type. Please reply to an image, video, or sticker.',
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244268@newsletter',
+            newsletterName: 'CASEYRHODES-MINI',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+      break;
+    }
+
+    const filePath = path.join(tmpdir(), `media_${Date.now()}.${ext}`);
+
+    try {
+      // Get buffer from media message
+      const stream = await downloadContentFromMessage(mediaMsg, type);
+      const chunks = [];
+      for await (const chunk of stream) chunks.push(chunk);
+      const buffer = Buffer.concat(chunks);
+
+      // Write file to temporary directory
+      await fs.promises.writeFile(filePath, buffer);
+
+      // Upload to Catbox
+      if (!fs.existsSync(filePath)) throw new Error("File does not exist");
+      const response = await catbox.uploadFile({ path: filePath });
+      if (!response) throw new Error("Failed to upload");
+
+      // Send success message with URL
+      await socket.sendMessage(from, { 
+        text: `✅ Upload successful!\n🔗 URL: ${response}`,
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244266@newsletter',
+            newsletterName: 'CASEYRHODES-MINI',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+
+      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+
+    } catch (err) {
+      console.error('URL upload error:', err);
+      await socket.sendMessage(from, { 
+        text: `❌ Upload failed: ${err.message}`,
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363238139244268@newsletter',
+            newsletterName: 'CASEYRHODES-MINI',
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: msg });
+      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+    } finally {
+      // Clean up temporary file
+      try {
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+        }
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
+    }
+
+  } catch (error) {
+    console.error('URL command error:', error);
+    await socket.sendMessage(from, { 
+      text: '❌ An unexpected error occurred while processing your request.',
+      contextInfo: {
+        forwardingScore: 1,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '12036464655566@newsletter',
+          newsletterName: 'CASEYRHODES-MINI',
+          serverMessageId: -1
+        }
+      }
+    }, { quoted: msg });
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
+}
+//🌟
     case 'whois': {
         try {
             await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
