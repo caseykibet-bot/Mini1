@@ -1551,15 +1551,15 @@ case 'song': {
         // Send video info immediately
         const message = {
             image: { url: video.thumbnail },
-            caption: `*🎵 Music Player*\n\n` +
-                     `╭───────────────◆\n` +
-                     `│• *Title:* ${video.title}\n` +
-                     `│• *Duration:* ${video.timestamp}\n` +
-                     `│• *Views:* ${video.views.toLocaleString()}\n` +
-                     `│• *Uploaded:* ${video.ago}\n` +
-                     `│• *Channel:* ${video.author.name}\n` +
-                     `╰────────────────◆\n\n` +
-                     `🔗 ${video.url}`
+            caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*\n\n` +
+                     `╭────────────────◆\n` +
+                     `├*🌟ᴛɪᴛʟᴇ:* ${video.title}\n` +
+                     `├*📅ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
+                     `├*🔮ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
+                     `├*♻️ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
+                     `├*🚩ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
+                     `╰─────────────────◆\n\n` +
+                     `> 𝐏𝐎𝐖𝐄𝐑𝐄𝐃 𝐁𝐘 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒🌟`
         };
 
         await socket.sendMessage(sender, message, { quoted: msg });
