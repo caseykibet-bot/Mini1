@@ -1563,7 +1563,7 @@ case 'song': {
                      `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
             footer: 'Click the button below for all commands',
             buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
+                { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
             ],
             headerType: 4
         };
