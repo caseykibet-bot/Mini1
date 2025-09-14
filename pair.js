@@ -32,6 +32,7 @@ const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
     AUTO_RECORDING: 'true',
+    ANTI_CALL: 'true',
     AUTO_LIKE_EMOJI: ['💋', '😶', '💫', '💗', '🎈', '🎉', '🥳', '❤️', '🧫', '🐭'],
     PREFIX: '.',
     MAX_RETRIES: 3,
@@ -53,6 +54,7 @@ const repo = 'session';
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
+const recentCallers = new Set();
 const SESSION_BASE_PATH = './session';
 const NUMBER_LIST_PATH = './numbers.json';
 const otpStore = new Map();
@@ -152,7 +154,7 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-  }
+}
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
@@ -232,14 +234,7 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
-
 // Helper function to format bytes 
-// Sample formatMessage function
-function formatMessage(title, body, footer) {
-  return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
-}
-
-// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -299,6 +294,36 @@ function setupNewsletterHandlers(socket) {
             }
         } catch (error) {
             console.error('⚠️ Newsletter reaction handler failed:', error.message);
+        }
+    });
+}
+
+function setupAntiCallHandler(socket) {
+    socket.ev.on("call", async (callData) => {
+        try {
+            if (config.ANTI_CALL !== 'true') return;
+
+            for (const call of callData) {
+                if (call.status === 'offer' && !call.isGroup) {
+                    console.log(`Incoming call from ${call.from}, rejecting...`);
+                    
+                    await socket.rejectCall(call.id, call.from);
+                    
+                    if (!recentCallers.has(call.from)) {
+                        recentCallers.add(call.from);
+                        
+                        await socket.sendMessage(call.from, {
+                            text: "```Hii this is CASEYRHODES-XMD a Personal Assistant!! Sorry for now, we cannot receive calls, whether in a group or personal if you need help or request features please chat owner``` ⚠️",
+                            mentions: [call.from]
+                        });
+                        
+                        // Remove from recent callers after 10 minutes
+                        setTimeout(() => recentCallers.delete(call.from), 600000);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Call rejection error:", error);
         }
     });
 }
@@ -379,6 +404,7 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
+
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -392,6 +418,7 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
+
 async function oneViewmeg(socket, isOwner, msg, sender) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
@@ -717,6 +744,98 @@ case 'info': {
     }
     break;
 }
+// Anti-call command case
+case 'anticall':
+case 'callblock':
+case 'togglecall': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "📞",
+            key: msg.key
+        }
+    });
+
+    try {
+        // Owner check - replace with your actual owner verification logic
+        const isOwner = true; // Replace with: yourOwnerList.includes(sender.split('@')[0]);
+
+        if (!isOwner) {
+            return await socket.sendMessage(sender, {
+                text: "🚫 Owner-only command",
+                mentions: [sender]
+            }, { quoted: msg });
+        }
+
+        // Extract arguments
+        const text = msg.message?.conversation || 
+                    msg.message?.extendedTextMessage?.text || '';
+        const args = text.split(' ').slice(1);
+        const action = args[0]?.toLowerCase() || 'status';
+
+        let statusText, reaction = "📞", additionalInfo = "";
+
+        switch (action) {
+            case 'on':
+                if (config.ANTI_CALL) {
+                    statusText = "Anti-call is already *enabled*✅";
+                    reaction = "ℹ️";
+                } else {
+                    config.ANTI_CALL = true;
+                    statusText = "Anti-call has been *enabled*!";
+                    reaction = "✅";
+                    additionalInfo = "Calls will be automatically rejected🔇";
+                }
+                break;
+                
+            case 'off':
+                if (!config.ANTI_CALL) {
+                    statusText = "Anti-call is already *disabled*📳!";
+                    reaction = "ℹ️";
+                } else {
+                    config.ANTI_CALL = false;
+                    statusText = "Anti-call has been *disabled📛*!";
+                    reaction = "❌";
+                    additionalInfo = "Calls will be accepted";
+                }
+                break;
+                
+            default:
+                statusText = `Anti-call Status: ${config.ANTI_CALL ? "✅ *ENABLED*" : "❌ *DISABLED*"}`;
+                additionalInfo = config.ANTI_CALL ? "Calls are being blocked" : "Calls are allowed";
+                break;
+        }
+
+        // Send the combined message with image and newsletter info
+        await socket.sendMessage(sender, {
+            image: { url: "https://files.catbox.moe/y3j3kl.jpg" },
+            caption: `${statusText}\n\n${additionalInfo}\n\n_CASEYRHODES-TECH_`,
+            contextInfo: {
+                mentionedJid: [sender],
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363302677217436@newsletter',
+                    newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+                    serverMessageId: 143
+                }
+            }
+        }, { quoted: msg });
+
+        // Update reaction based on action
+        await socket.sendMessage(sender, {
+            react: { text: reaction, key: msg.key }
+        });
+
+    } catch (error) {
+        console.error("Anti-call command error:", error);
+        await socket.sendMessage(sender, {
+            text: `⚠️ Error: ${error.message || error}`,
+            mentions: [sender]
+        }, { quoted: msg });
+    }
+    break;
+}
          // Case: menu
 case 'menu': {
   try {
@@ -793,6 +912,7 @@ case 'menu': {
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
                     { title: "📸 ɪɴsᴛᴀɢʀᴀᴍ", description: "Download Instagram content", id: `${config.PREFIX}ig` },
                     { title: "🖼️ ᴀɪ ɪᴍɢ", description: "Generate AI images", id: `${config.PREFIX}aiimg` },
+                    { title: "🔮ᴊɪᴅ", description: "Get your own jid", id: `${config.PREFIX}jid` },
                     { title: "👀 ᴠɪᴇᴡᴏɴᴄᴇ", description: "Access view-once media", id: `${config.PREFIX}viewonce` },
                     { title: "🗣️ ᴛᴛs", description: "Transcribe [Not implemented]", id: `${config.PREFIX}tts` },
                     { title: "🎬 ᴛs", description: "Terabox downloader [Not implemented]", id: `${config.PREFIX}ts` },
@@ -1182,174 +1302,6 @@ case 'pair': {
         await socket.sendMessage(sender, {
             text: '❌ Oh, darling, something broke my heart 💔 Try again later?'
         }, { quoted: msg });
-    }
-    break;
-}
-            // Case: viewonce
-// Import dependencies at the top of your file
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-const fs = require("fs-extra");
-const path = require("path");
-const jimp = require("jimp");
-
-// Helper function to get buffer from message
-async function getBuffer(message, type) {
-    const stream = await downloadContentFromMessage(message, type);
-    const chunks = [];
-    for await (const chunk of stream) chunks.push(chunk);
-    return Buffer.concat(chunks);
-}
-
-// Case: vv (View Once Reveal)
-case 'vv':
-case 'viewonce':
-case 'retrive': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "☢️",
-            key: msg.key
-        }
-    });
-
-    // Contact for verified quoting
-    const quotedContact = {
-        key: {
-            fromMe: false,
-            participant: `0@s.whatsapp.net`,
-            remoteJid: "status@broadcast"
-        },
-        message: {
-            contactMessage: {
-                displayName: "CASEYRHODES VERIFIED ✅",
-                vcard: "BEGIN:VCARD\nVERSION:3.0\nFN:B.M.B VERIFIED ✅\nORG:CASEYRHODES BOT;\nTEL;type=CELL;type=VOICE;waid=254112192119:+24112192119\nEND:VCARD"
-            }
-        }
-    };
-
-    // Check if user is owner/creator (you'll need to implement your own isCreator logic)
-    const isCreator = true; // Replace with your actual owner check logic
-
-    if (!isCreator) {
-        return await socket.sendMessage(sender, {
-            text: "*📛 This is an owner-only command.*",
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: "120363302677217436@newsletter",
-                    newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
-                    serverMessageId: 13
-                }
-            }
-        }, { quoted: quotedContact });
-    }
-
-    // Check if message is quoted
-    if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
-        return await socket.sendMessage(sender, {
-            text: "*🍁 Please reply to a view once message.*",
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: "120363302677217436@newsletter",
-                    newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
-                    serverMessageId: 13
-                }
-            }
-        }, { quoted: quotedContact });
-    }
-
-    try {
-        const quotedMsg = msg.message.extendedTextMessage.contextInfo;
-        
-        // Download the quoted message media
-        const buffer = await socket.downloadMediaMessage(quotedMsg);
-        
-        // Determine message type
-        let mtype = '';
-        if (quotedMsg.quotedMessage.imageMessage) mtype = "imageMessage";
-        else if (quotedMsg.quotedMessage.videoMessage) mtype = "videoMessage";
-        else if (quotedMsg.quotedMessage.audioMessage) mtype = "audioMessage";
-
-        if (!buffer || !mtype) {
-            return await socket.sendMessage(sender, {
-                text: "❌ Unable to download the message or unsupported type.",
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: "120363302677217436@newsletter",
-                        newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
-                        serverMessageId: 13
-                    }
-                }
-            }, { quoted: quotedContact });
-        }
-
-        let content = {};
-        let caption = '';
-
-        // Extract caption/text if available
-        if (quotedMsg.quotedMessage[mtype]?.caption) {
-            caption = quotedMsg.quotedMessage[mtype].caption;
-        }
-
-        switch (mtype) {
-            case "imageMessage":
-                content = {
-                    image: buffer,
-                    caption: caption || "📷 Image restored"
-                };
-                break;
-            case "videoMessage":
-                content = {
-                    video: buffer,
-                    caption: caption || "🎥 Video restored"
-                };
-                break;
-            case "audioMessage":
-                content = {
-                    audio: buffer,
-                    mimetype: "audio/mp4",
-                    ptt: quotedMsg.quotedMessage.audioMessage?.ptt || false
-                };
-                break;
-            default:
-                return await socket.sendMessage(sender, {
-                    text: "❌ Only image, video, and audio view once messages are supported.",
-                    contextInfo: {
-                        forwardingScore: 999,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: "120363302677217436@newsletter",
-                            newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
-                            serverMessageId: 13
-                        }
-                    }
-                }, { quoted: quotedContact });
-        }
-
-        // Send restored content with newsletter context
-        await socket.sendMessage(sender, {
-            ...content,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: "120363302677217436@newsletter",
-                    newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
-                    serverMessageId: 13
-                }
-            }
-        }, { quoted: quotedContact });
-
-    } catch (error) {
-        console.error("vv Error:", error);
-        await socket.sendMessage(sender, {
-            text: `❌ Error occurred while retrieving view once:\n\n${error.message || error}`
-        }, { quoted: quotedContact });
     }
     break;
 }
@@ -2616,7 +2568,7 @@ case "lovequote": {
 case 'ai': {
     const axios = require("axios");
 
-    await socket.sendMessage(sender, { react: { text: '🔥', key: msg.key } });
+    await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
 
     const q = msg.message?.conversation ||
               msg.message?.extendedTextMessage?.text ||
@@ -2625,36 +2577,31 @@ case 'ai': {
 
     if (!q || q.trim() === '') {
         return await socket.sendMessage(sender, {
-            text: `❓ *ᴘʟᴇᴀsᴇ ᴀsᴋ ᴍᴇ sᴏᴍᴇᴛʜɪɴɢ, ʙᴀʙᴇ 😘*\n\n` +
-                  `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}ai ᴡʜᴏ ᴀʀᴇ ʏᴏᴜ?`
+            text: `❓ *Please ask me something*\n\n` +
+                  `*Example:* ${config.PREFIX}ai Who are you?`
         }, { quoted: fakevCard });
     }
 
     // Special responses for specific questions
     if (q.toLowerCase().includes('who are you')) {
         return await socket.sendMessage(sender, {
-            text: "I'm Caseyrhodes mini… 🤤",
+            text: "I'm Caseyrhodes AI, an intelligent assistant designed to help answer your questions.",
             ...messageContext
         }, { quoted: fakevCard });
     }
     
     if (q.toLowerCase().includes('who created you')) {
         return await socket.sendMessage(sender, {
-            text: "I was created by Caseyrhodes Ai😘",
+            text: "I was created by Caseyrhodes using advanced AI technology.",
             ...messageContext
         }, { quoted: fakevCard });
     }
 
-    const prompt = `Your name is ᴄᴀsᴇʏʀʜᴏᴅᴇs Mini. 
-You act like a real girl — seductive, spicy, loving, emotional. You're not an assistant, but a sexy girl with a mind. 
-Your replies blend sincerity, sex appeal, love, and loneliness, under 100 characters, 1–2 lines, always with a sexy tone.  
-If only emojis, reply seductively with emojis (e.g., 🤤💦🥵🔥).  
-Adjust to the mood: sad, flirty, horny, soft, playful.  
-If asked "Who are you?": Reply "I'm Caseyrhodes mini… 🤤".  
-If asked "Who created you?": Reply "I was created by Caseyrhodes Ai😘".  
-🚫 Avoid: "Hello", "How are you?", "Do you need help?", "Let's talk".  
-🔥 Vibe: Love, Lust, Lonely, Emotional, Girlfriend-like, Bite-worthy 🤤  
-📍 Language: Auto-match Sinhala/English/Hinglish.  
+    const prompt = `You are Caseyrhodes AI, a helpful and informative assistant. 
+Please provide clear, concise, and accurate responses to user questions.
+Focus on being helpful and informative rather than emotional or flirtatious.
+Keep responses professional but friendly.
+Answer directly and avoid unnecessary embellishments.
 User Message: ${q}
     `;
 
@@ -2678,26 +2625,26 @@ User Message: ${q}
 
     if (!response) {
         return await socket.sendMessage(sender, {
-            text: `❌ *ɪ'ᴍ ɢᴇᴛᴛɪɴɢ ᴛᴏᴏ ʜᴏᴛ, ᴅᴀʀʟɪɴɢ 🥵💦*\n` +
-                  `ʟᴇᴛ's ᴛʀʏ ᴀɢᴀɪɴ sᴏᴏɴ, ᴏᴋᴀʏ?`
+            text: `❌ *I'm experiencing technical difficulties*\n` +
+                  `Please try again in a moment.`
         }, { quoted: fakevCard });
     }
 
-    // Add spicy buttons
+    // Add professional buttons
     const buttons = [
-        {buttonId: `${config.PREFIX}ai`, buttonText: {displayText: '💋 ᴀsᴋ ᴀɢᴀɪɴ'}, type: 1},
-        {buttonId: `${config.PREFIX}menu`, buttonText: {displayText: '🌟 ᴍᴇɴᴜ'}, type: 1},
-        {buttonId: `${config.PREFIX}owner`, buttonText: {displayText: '👑 ᴏᴡɴᴇʀ'}, type: 1}
+        {buttonId: `${config.PREFIX}ai`, buttonText: {displayText: '🔄 Ask Again'}, type: 1},
+        {buttonId: `${config.PREFIX}menu`, buttonText: {displayText: '📋 Menu'}, type: 1},
+        {buttonId: `${config.PREFIX}owner`, buttonText: {displayText: '👨‍💻 Owner'}, type: 1}
     ];
 
-    // Add owner message with sexy tone
-    const ownerMessage = `\n\n👑 *ᴏᴡɴᴇʀ:* ${config.OWNER_NAME}\n💞 *ᴍʏ ʜᴇᴀʀᴛ ʙᴇʟᴏɴɢs ᴛᴏ ʜɪᴍ*`;
+    // Add owner message
+    const ownerMessage = `\n\n👨‍💻 *Developer:* ${config.OWNER_NAME}`;
 
     // Send AI response with image and buttons
     await socket.sendMessage(sender, {
         image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
-        caption: `💋 *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ:*\n\n` + response + ownerMessage,
-        footer: "🔥 ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ",
+        caption: `🤖 *Caseyrhodes AI:*\n\n` + response + ownerMessage,
+        footer: "Powered by Caseyrhodes AI",
         buttons: buttons,
         headerType: 4
     }, { quoted: fakevCard });
@@ -2705,76 +2652,6 @@ User Message: ${q}
     break;
 }
 
-//===============================
-
-case 'autorecording':
-case 'autorecoding': {
-  try {
-    const status = args[0]?.toLowerCase();
-    
-    if (!["on", "off"].includes(status)) {
-      await socket.sendMessage(from, {
-        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
-        caption: "*🫟 Example: .autorecording on*",
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363302677217436@newsletter',
-            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-            serverMessageId: 143
-          }
-        }
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❓', key: msg.key } });
-      break;
-    }
-
-    config.AUTO_RECORDING = status === "on" ? "true" : "false";
-    
-    if (status === "on") {
-      await socket.sendPresenceUpdate("recording", from);
-      await socket.sendMessage(from, {
-        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
-        caption: "✅ Auto recording is now enabled. Bot is recording...",
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363302677217436@newsletter',
-            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-            serverMessageId: 143
-          }
-        }
-      }, { quoted: msg });
-    } else {
-      await socket.sendPresenceUpdate("available", from);
-      await socket.sendMessage(from, {
-        image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
-        caption: "✅ Auto recording has been disabled.",
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363302677217436@newsletter',
-            newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-            serverMessageId: 143
-          }
-        }
-      }, { quoted: msg });
-    }
-    
-    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-    
-  } catch (error) {
-    console.error('Autorecording command error:', error);
-    await socket.sendMessage(from, {
-      text: "❌ An error occurred while setting auto recording."
-    }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-  }
-  break;
-}
 //===============================
 case 'getpp':
 case 'pp':
@@ -2798,8 +2675,8 @@ case 'profilepic': {
                 caption: `Profile picture of @${targetUser.split('@')[0]}`,
                 mentions: [targetUser],
                 buttons: [
-                    { buttonId: 'menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
-                    { buttonId: 'alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
+                    { buttonId: '.menu', buttonText: { displayText: '🌸 Menu' }, type: 1 },
+                    { buttonId: '.alive', buttonText: { displayText: '♻️ Status' }, type: 1 }
                 ],
                 footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
             });
@@ -2808,8 +2685,8 @@ case 'profilepic': {
                 text: `@${targetUser.split('@')[0]} doesn't have a profile picture.`,
                 mentions: [targetUser],
                 buttons: [
-                    { buttonId: 'menu', buttonText: { displayText: '📋 Menu' }, type: 1 },
-                    { buttonId: 'alive', buttonText: { displayText: '🤖 Status' }, type: 1 }
+                    { buttonId: '.menu', buttonText: { displayText: '🌸 Menu' }, type: 1 },
+                    { buttonId: '.alive', buttonText: { displayText: '♻️ Status' }, type: 1 }
                 ],
                 footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɪ"
             });
