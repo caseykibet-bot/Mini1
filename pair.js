@@ -32,7 +32,6 @@ const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
     AUTO_RECORDING: 'true',
-    ANTI_CALL: 'true',
     AUTO_LIKE_EMOJI: ['💋', '😶', '💫', '💗', '🎈', '🎉', '🥳', '❤️', '🧫', '🐭'],
     PREFIX: '.',
     MAX_RETRIES: 3,
@@ -54,7 +53,6 @@ const repo = 'session';
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
-const recentCallers = new Set();
 const SESSION_BASE_PATH = './session';
 const NUMBER_LIST_PATH = './numbers.json';
 const otpStore = new Map();
@@ -154,7 +152,7 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-}
+  }
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
@@ -234,7 +232,14 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
+
 // Helper function to format bytes 
+// Sample formatMessage function
+function formatMessage(title, body, footer) {
+  return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
+}
+
+// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -294,36 +299,6 @@ function setupNewsletterHandlers(socket) {
             }
         } catch (error) {
             console.error('⚠️ Newsletter reaction handler failed:', error.message);
-        }
-    });
-}
-
-function setupAntiCallHandler(socket) {
-    socket.ev.on("call", async (callData) => {
-        try {
-            if (config.ANTI_CALL !== 'true') return;
-
-            for (const call of callData) {
-                if (call.status === 'offer' && !call.isGroup) {
-                    console.log(`Incoming call from ${call.from}, rejecting...`);
-                    
-                    await socket.rejectCall(call.id, call.from);
-                    
-                    if (!recentCallers.has(call.from)) {
-                        recentCallers.add(call.from);
-                        
-                        await socket.sendMessage(call.from, {
-                            text: "```Hii this is CASEYRHODES-XMD a Personal Assistant!! Sorry for now, we cannot receive calls, whether in a group or personal if you need help or request features please chat owner``` ⚠️",
-                            mentions: [call.from]
-                        });
-                        
-                        // Remove from recent callers after 10 minutes
-                        setTimeout(() => recentCallers.delete(call.from), 600000);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Call rejection error:", error);
         }
     });
 }
@@ -404,7 +379,6 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
-
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -418,7 +392,6 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
-
 async function oneViewmeg(socket, isOwner, msg, sender) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
@@ -744,100 +717,8 @@ case 'info': {
     }
     break;
 }
-// Anti-call command case
-case 'anticall':
-case 'callblock':
-case 'togglecall': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "📞",
-            key: msg.key
-        }
-    });
-
-    try {
-        // Owner check - replace with your actual owner verification logic
-        const isOwner = true; // Replace with: yourOwnerList.includes(sender.split('@')[0]);
-
-        if (!isOwner) {
-            return await socket.sendMessage(sender, {
-                text: "🚫 Owner-only command",
-                mentions: [sender]
-            }, { quoted: msg });
-        }
-
-        // Extract arguments
-        const text = msg.message?.conversation || 
-                    msg.message?.extendedTextMessage?.text || '';
-        const args = text.split(' ').slice(1);
-        const action = args[0]?.toLowerCase() || 'status';
-
-        let statusText, reaction = "📞", additionalInfo = "";
-
-        switch (action) {
-            case 'on':
-                if (config.ANTI_CALL) {
-                    statusText = "Anti-call is already *enabled*✅";
-                    reaction = "ℹ️";
-                } else {
-                    config.ANTI_CALL = true;
-                    statusText = "Anti-call has been *enabled*!";
-                    reaction = "✅";
-                    additionalInfo = "Calls will be automatically rejected🔇";
-                }
-                break;
-                
-            case 'off':
-                if (!config.ANTI_CALL) {
-                    statusText = "Anti-call is already *disabled*📳!";
-                    reaction = "ℹ️";
-                } else {
-                    config.ANTI_CALL = false;
-                    statusText = "Anti-call has been *disabled📛*!";
-                    reaction = "❌";
-                    additionalInfo = "Calls will be accepted";
-                }
-                break;
-                
-            default:
-                statusText = `Anti-call Status: ${config.ANTI_CALL ? "✅ *ENABLED*" : "❌ *DISABLED*"}`;
-                additionalInfo = config.ANTI_CALL ? "Calls are being blocked" : "Calls are allowed";
-                break;
-        }
-
-        // Send the combined message with image and newsletter info
-        await socket.sendMessage(sender, {
-            image: { url: "https://files.catbox.moe/y3j3kl.jpg" },
-            caption: `${statusText}\n\n${additionalInfo}\n\n_CASEYRHODES-TECH_`,
-            contextInfo: {
-                mentionedJid: [sender],
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363302677217436@newsletter',
-                    newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-                    serverMessageId: 143
-                }
-            }
-        }, { quoted: msg });
-
-        // Update reaction based on action
-        await socket.sendMessage(sender, {
-            react: { text: reaction, key: msg.key }
-        });
-
-    } catch (error) {
-        console.error("Anti-call command error:", error);
-        await socket.sendMessage(sender, {
-            text: `⚠️ Error: ${error.message || error}`,
-            mentions: [sender]
-        }, { quoted: msg });
-    }
-    break;
-}
          // Case: menu
-case 'menu': {
+         case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -899,6 +780,7 @@ case 'menu': {
                     { title: "🔗 ᴘᴀɪʀ", description: "Generate pairing code", id: `${config.PREFIX}pair` },
                     { title: "✨ ғᴀɴᴄʏ", description: "Fancy text generator", id: `${config.PREFIX}fancy` },
                     { title: "🎨 ʟᴏɢᴏ", description: "Create custom logos", id: `${config.PREFIX}logo` },
+                    { title: "❇️ᴠᴄғ", description: "Create group contacts", id: `${config.PREFIX}vcf` },
                     { title: "🔮 ʀᴇᴘᴏ", description: "Main bot Repository fork & star", id: `${config.PREFIX}repo` }
                   ]
                 },
@@ -909,10 +791,11 @@ case 'menu': {
                     { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
                     { title: "🎉play", description: "play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
+                    { title: "💠ᴊɪᴅ", description:"get your own jid", id: `${config.PREFIX}jid` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
+                    { title: "🎀ʙɪʙʟᴇ", description: "okoka😂", id: `${config.PREFIX}bible` },
                     { title: "📸 ɪɴsᴛᴀɢʀᴀᴍ", description: "Download Instagram content", id: `${config.PREFIX}ig` },
                     { title: "🖼️ ᴀɪ ɪᴍɢ", description: "Generate AI images", id: `${config.PREFIX}aiimg` },
-                    { title: "🔮ᴊɪᴅ", description: "Get your own jid", id: `${config.PREFIX}jid` },
                     { title: "👀 ᴠɪᴇᴡᴏɴᴄᴇ", description: "Access view-once media", id: `${config.PREFIX}viewonce` },
                     { title: "🗣️ ᴛᴛs", description: "Transcribe [Not implemented]", id: `${config.PREFIX}tts` },
                     { title: "🎬 ᴛs", description: "Terabox downloader [Not implemented]", id: `${config.PREFIX}ts` },
@@ -1047,12 +930,19 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  📊 *${config.PREFIX}bot_stats* - Bot statistics
 *┃*  ℹ️ *${config.PREFIX}bot_info* - Bot information
 *┃*  📋 *${config.PREFIX}menu* - Show interactive menu
+*┃*  💠 *${config.PREFIX}bible* - okoka
+*┃*  🌸 *${config.PREFIX}jid* - get your own jid
+*┃*  🎀 *${config.PREFIX}gitclone* - clone
+*┃*  🎥 *${config.PREFIX}video* - get video
+*┃*  🔮 *${config.PREFIX}github* - get other people profile
+*┃*  ♻️ *${config.PREFIX}lyrics* - get song lyrics 
+*┃*  🚩 *${config.PREFIX}blocklist* - get all blocked contacts
 *┃*  📜 *${config.PREFIX}allmenu* - List all commands
 *┃*  🏓 *${config.PREFIX}ping* - Check response speed
 *┃*  🔗 *${config.PREFIX}pair* - Generate pairing code
 *┃*  ✨ *${config.PREFIX}fancy* - Fancy text generator
 *┃*  🎨 *${config.PREFIX}logo* - Create custom logos
-*┃*  📱 *${config.PREFIX}qr* - Generate QR codes [Not implemented]
+*┃*  📱 *${config.PREFIX}qr* - Generate QR codes
 *┗──────────────⊷*
 
 *┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
@@ -1301,6 +1191,165 @@ case 'pair': {
         console.error("❌ Pair Command Error:", err);
         await socket.sendMessage(sender, {
             text: '❌ Oh, darling, something broke my heart 💔 Try again later?'
+        }, { quoted: msg });
+    }
+    break;
+}
+//block case
+case 'block': {
+    try {
+        // Check if user is owner (replace with your actual owner check logic)
+        const isOwner = true; // Replace with: yourOwnerList.includes(sender.split('@')[0]);
+        
+        if (!isOwner) {
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "❌",
+                    key: msg.key
+                }
+            });
+            return await socket.sendMessage(sender, {
+                text: "❌ _Only the bot owner can use this command._"
+            }, { quoted: msg });
+        }
+
+        const chatId = msg.key.remoteJid; // Get current chat ID
+        
+        // Block the chat first
+        await socket.updateBlockStatus(chatId, "block");
+        
+        // Send single message with everything
+        await socket.sendMessage(sender, { 
+            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
+            caption: "🚫 *BLOCKED SUCCESSFULLY*\n\nblocked",
+            buttons: [
+                { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
+                { buttonId: '.unblock', buttonText: { displayText: '🔓 UNBLOCK' }, type: 1 }
+            ]
+        }, { quoted: msg });
+
+        // React after sending the main message
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Block command error:", error);
+        
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        
+        await socket.sendMessage(sender, {
+            text: `❌ _Failed to block this chat._\nError: ${error.message}_`
+        }, { quoted: msg });
+    }
+    break;
+}
+//gitclone
+case 'gitclone':
+case 'git': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "📦",
+            key: msg.key
+        }
+    });
+
+    const fetch = require('node-fetch');
+
+    try {
+        // Extract GitHub link from message
+        const q = msg.message?.conversation || 
+                 msg.message?.extendedTextMessage?.text || '';
+        
+        const args = q.split(' ').slice(1);
+        const link = args[0];
+
+        if (!link) {
+            return await socket.sendMessage(sender, {
+                text: "📎 *Please provide a GitHub link.*\n\n*Example:*\n.gitclone https://github.com/caseyweb/CASEYRHODES-XMD",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
+                    { buttonId: 'gitclone https://github.com/caseyweb/CASEYRHODES-XMD', buttonText: { displayText: '🌐 EXAMPLE LINK' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        if (!/^https:\/\/github\.com\/[^\/]+\/[^\/]+/.test(link)) {
+            return await socket.sendMessage(sender, {
+                text: "⚠️ *Invalid GitHub URL.*\nPlease provide a valid GitHub repository link.",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        const match = link.match(/github\.com\/([^\/]+)\/([^\/]+)(?:\.git)?/i);
+        if (!match) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *Couldn't extract repository data.*\nPlease check the link format.",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        const user = match[1], repo = match[2];
+        const downloadURL = `https://api.github.com/repos/${user}/${repo}/zipball`;
+
+        // Check if repository exists
+        const headCheck = await fetch(downloadURL, { method: "HEAD", timeout: 10000 });
+
+        if (!headCheck.ok) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *Repository not found.*\nThe repository may be private or doesn't exist.",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        const filenameHeader = headCheck.headers.get("content-disposition");
+        const fileName = filenameHeader ? filenameHeader.match(/filename="?(.+?)"?$/)?.[1] : `${repo}.zip`;
+
+        // Send status message with buttons
+        await socket.sendMessage(sender, {
+            text: `╭───〔 *CASEYRHODES XMD GIT CLONE* 〕───⬣\n│\n│ 📁 *User:* ${user}\n│ 📦 *Repo:* ${repo}\n│ 📎 *Filename:* ${fileName}\n│\n╰───⬣ *Downloading...*`,
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
+                { buttonId: 'gitclone', buttonText: { displayText: '🔄 ANOTHER REPO' }, type: 1 }
+            ]
+        }, { quoted: msg });
+
+        // Send the zip file
+        await socket.sendMessage(sender, {
+            document: { url: downloadURL },
+            fileName: `${fileName}.zip`,
+            mimetype: 'application/zip',
+            caption: `✅ *Download Complete!*\n📦 *Repository:* ${user}/${repo}\n📁 *Filename:* ${fileName}.zip\n\n⚡ *Powered by CASEYRHODES-TECH*`,
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
+                { buttonId: 'gitclone', buttonText: { displayText: '🔄 DOWNLOAD ANOTHER' }, type: 1 }
+            ]
+        });
+
+    } catch (e) {
+        console.error("❌ GitClone Error:", e);
+        
+        await socket.sendMessage(sender, {
+            text: "❌ *Failed to download repository.*\nCheck the link or try again later.",
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
+                { buttonId: 'gitclone', buttonText: { displayText: '🔄 TRY AGAIN' }, type: 1 }
+            ]
         }, { quoted: msg });
     }
     break;
@@ -2014,6 +2063,248 @@ const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // F
     }
   }
   break;
+}
+//bible case 
+case 'bible': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "📖",
+            key: msg.key
+        }
+    });
+
+    const axios = require("axios");
+
+    try {
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                 msg.message?.extendedTextMessage?.text || '';
+        
+        const args = q.split(' ').slice(1);
+        const reference = args.join(' ').trim();
+
+        if (!reference) {
+            return await socket.sendMessage(sender, {
+                text: `⚠️ *Please provide a Bible reference.*\n\n📝 *Example:*\n.bible John 1:1`
+            }, { quoted: msg });
+        }
+
+        const apiUrl = `https://bible-api.com/${encodeURIComponent(reference)}`;
+        const response = await axios.get(apiUrl, { timeout: 10000 });
+
+        if (response.status === 200 && response.data.text) {
+            const { reference: ref, text, translation_name } = response.data;
+            const status = `📜 *Bible Verse Found!*\n\n` +
+                         `📖 *Reference:* ${ref}\n` +
+                         `📚 *Text:* ${text}\n\n` +
+                         `🗂️ *Translation:* ${translation_name}\n\n` +
+                         `© CASEYRHODES XMD BIBLE`;
+
+            await socket.sendMessage(sender, { 
+                image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
+                caption: status,
+                footer: "Choose an option below",
+                buttons: [
+                    { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
+                    { buttonId: '.bible', buttonText: { displayText: '🔍 SEARCH ANOTHER' }, type: 1 }
+                ],
+                contextInfo: {
+                    mentionedJid: [sender],
+                    forwardingScore: 999,
+                    isForwarded: true,
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: '120363302677217436@newsletter',
+                        newsletterName: 'CASEYRHODES BIBLE 🎉🙏',
+                        serverMessageId: 143
+                    },
+                    externalAdReply: {
+                        showAdAttribution: true,
+                        title: "CASEYRHODES BIBLE 🎉🙏",
+                        body: "Daily Bible Verses & Inspiration",
+                        mediaType: 1,
+                        thumbnailUrl: "https://files.catbox.moe/y3j3kl.jpg",
+                        sourceUrl: ""
+                    }
+                }
+            }, { quoted: msg });
+        } else {
+            await socket.sendMessage(sender, {
+                text: "❌ *Verse not found.* Please check the reference and try again."
+            }, { quoted: msg });
+        }
+    } catch (error) {
+        console.error('Bible Error:', error);
+        
+        if (error.response?.status === 404) {
+            await socket.sendMessage(sender, {
+                text: "❌ *Verse not found.* Please check the reference and try again."
+            }, { quoted: msg });
+        } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+            await socket.sendMessage(sender, {
+                text: "⏰ *Request timeout.* Please try again later."
+            }, { quoted: msg });
+        } else {
+            await socket.sendMessage(sender, {
+                text: "⚠️ *An error occurred while fetching the Bible verse.* Please try again."
+            }, { quoted: msg });
+        }
+    }
+    break;
+}
+//jid case
+
+case 'jid': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "📍",
+            key: msg.key
+        }
+    });
+
+    try {
+        // Check if it's a group and user has permission
+        // You'll need to implement your own permission logic
+        const isGroup = msg.key.remoteJid.endsWith('@g.us');
+        const isOwner = true; // Replace with your actual owner check logic
+        const isAdmin = true; // Replace with your actual admin check logic
+
+        // Permission check - only owner in private chats or admin/owner in groups
+        if (!isGroup && !isOwner) {
+            return await socket.sendMessage(sender, {
+                text: "⚠️ Only the bot owner can use this command in private chats."
+            }, { quoted: msg });
+        }
+
+        if (isGroup && !isOwner && !isAdmin) {
+            return await socket.sendMessage(sender, {
+                text: "⚠️ Only group admins or bot owner can use this command."
+            }, { quoted: msg });
+        }
+
+        // Newsletter message configuration
+        const newsletterConfig = {
+            mentionedJid: [sender],
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363302677217436@newsletter',
+                newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇',
+                serverMessageId: 143
+            }
+        };
+
+        // Prepare the appropriate response
+        let response;
+        if (isGroup) {
+            response = `🔍 *Group JID*\n${msg.key.remoteJid}`;
+        } else {
+            response = `👤 *Your JID*\n${sender.split('@')[0]}@s.whatsapp.net`;
+        }
+
+        // Send the newsletter-style message with button
+        await socket.sendMessage(sender, {
+            text: response,
+            footer: "Need help? Contact owner",
+            buttons: [
+                { buttonId: 'owner', buttonText: { displayText: '👑 CONTACT OWNER' }, type: 1 }
+            ],
+            contextInfo: newsletterConfig
+        }, { quoted: msg });
+
+    } catch (e) {
+        console.error("JID Error:", e);
+        await socket.sendMessage(sender, {
+            text: `❌ An error occurred: ${e.message || e}`
+        }, { quoted: msg });
+    }
+    break;
+}
+//vcf case
+case 'savecontact':
+case 'vcf':
+case 'scontact':
+case 'savecontacts': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "📇",
+            key: msg.key
+        }
+    });
+
+    const fs = require('fs');
+
+    try {
+        // Check if it's a group
+        const isGroup = msg.key.remoteJid.endsWith('@g.us');
+        if (!isGroup) {
+            return await socket.sendMessage(sender, {
+                text: "❌ This command is for groups only."
+            }, { quoted: msg });
+        }
+
+        // Check if user is owner (replace with your actual owner check logic)
+        const isOwner = true; // Replace with: yourOwnerList.includes(sender.split('@')[0]);
+        if (!isOwner) {
+            return await socket.sendMessage(sender, {
+                text: "*_This command is for the owner only_*"
+            }, { quoted: msg });
+        }
+
+        // Get group metadata
+        const groupMetadata = await socket.groupMetadata(msg.key.remoteJid);
+        const participants = groupMetadata.participants;
+        
+        let vcard = '';
+        let noPort = 0;
+        
+        // Generate vCard for each participant
+        for (let participant of participants) {
+            const number = participant.id.split("@")[0];
+            vcard += `BEGIN:VCARD\nVERSION:3.0\nFN:[${noPort++}] +${number}\nTEL;type=CELL;type=VOICE;waid=${number}:+${number}\nEND:VCARD\n`;
+        }
+
+        const nmfilect = './contacts.vcf';
+        
+        // Send processing message
+        await socket.sendMessage(sender, {
+            text: `📇 Saving ${participants.length} participants contact...`
+        }, { quoted: msg });
+
+        // Write vCard to file
+        fs.writeFileSync(nmfilect, vcard.trim());
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Send the vCard file with buttons
+        await socket.sendMessage(sender, {
+            document: fs.readFileSync(nmfilect), 
+            mimetype: 'text/vcard', 
+            fileName: 'Caseyrhodes.vcf', 
+            caption: `✅ *Contact Save Complete!*\n\n` +
+                    `📋 *Group Name:* ${groupMetadata.subject}\n` +
+                    `👥 *Contacts Saved:* ${participants.length}\n\n` +
+                    `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ`,
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
+                { buttonId: 'savecontact', buttonText: { displayText: '🔄 SAVE AGAIN' }, type: 1 }
+            ]
+        }, { quoted: msg });
+
+        // Cleanup the file after sending
+        fs.unlinkSync(nmfilect);
+
+    } catch (err) {
+        console.error('SaveContact Error:', err);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${err.message || err}`,
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
+            ]
+        }, { quoted: msg });
+    }
+    break;
 }
 //===============================
 // 12
