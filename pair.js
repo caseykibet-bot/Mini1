@@ -1201,139 +1201,158 @@ async function getBuffer(message, type) {
 }
 
 // Case: vv (View Once Reveal)
-case 'vv': {
+case 'vv':
+case 'viewonce':
+case 'retrive': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "👁️", // Eye emoji
+            text: "☢️",
             key: msg.key
         }
     });
 
-    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    
-    if (!quoted) {
+    // Contact for verified quoting
+    const quotedContact = {
+        key: {
+            fromMe: false,
+            participant: `0@s.whatsapp.net`,
+            remoteJid: "status@broadcast"
+        },
+        message: {
+            contactMessage: {
+                displayName: "CASEYRHODES VERIFIED ✅",
+                vcard: "BEGIN:VCARD\nVERSION:3.0\nFN:B.M.B VERIFIED ✅\nORG:CASEYRHODES BOT;\nTEL;type=CELL;type=VOICE;waid=254112192119:+24112192119\nEND:VCARD"
+            }
+        }
+    };
+
+    // Check if user is owner/creator (you'll need to implement your own isCreator logic)
+    const isCreator = true; // Replace with your actual owner check logic
+
+    if (!isCreator) {
         return await socket.sendMessage(sender, {
-            text: '👁️ *Please reply to a view-once message!*\n\n' +
-                  'How to use:\n' +
-                  '1. Find a view-once image/video/audio\n' +
-                  '2. Reply to it with *.vv*\n' +
-                  '3. I\'ll reveal the hidden content'
-        }, { quoted: fakevCard });
+            text: "*📛 This is an owner-only command.*",
+            contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: "120363302677217436@newsletter",
+                    newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
+                    serverMessageId: 13
+                }
+            }
+        }, { quoted: quotedContact });
     }
 
-    const viewOnceMedia = quoted.imageMessage?.viewOnce || quoted.videoMessage?.viewOnce || quoted.audioMessage?.viewOnce;
-    
-    if (!viewOnceMedia) {
+    // Check if message is quoted
+    if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
         return await socket.sendMessage(sender, {
-            text: '❌ *This is not a view-once message!*\n\n' +
-                  'Please reply to a message with the "view once" icon.'
-        }, { quoted: fakevCard });
+            text: "*🍁 Please reply to a view once message.*",
+            contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: "120363302677217436@newsletter",
+                    newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
+                    serverMessageId: 13
+                }
+            }
+        }, { quoted: quotedContact });
     }
 
     try {
-        let sendMsg;
-        if (quoted.imageMessage) {
-            const buffer = await getBuffer(quoted.imageMessage, 'image');
-            sendMsg = {
-                image: buffer,
-                caption: quoted.imageMessage.caption || '*👁️ Revealed by CaseyRhodes Tech* 🌟'
-            };
-        } else if (quoted.videoMessage) {
-            const buffer = await getBuffer(quoted.videoMessage, 'video');
-            sendMsg = {
-                video: buffer,
-                caption: quoted.videoMessage.caption || '*👁️ Revealed by CaseyRhodes Tech* 🌟'
-            };
-        } else if (quoted.audioMessage) {
-            const buffer = await getBuffer(quoted.audioMessage, 'audio');
-            sendMsg = {
-                audio: buffer,
-                mimetype: 'audio/mp4',
-                caption: '*👁️ Revealed by CaseyRhodes Tech* 🌟'
-            };
+        const quotedMsg = msg.message.extendedTextMessage.contextInfo;
+        
+        // Download the quoted message media
+        const buffer = await socket.downloadMediaMessage(quotedMsg);
+        
+        // Determine message type
+        let mtype = '';
+        if (quotedMsg.quotedMessage.imageMessage) mtype = "imageMessage";
+        else if (quotedMsg.quotedMessage.videoMessage) mtype = "videoMessage";
+        else if (quotedMsg.quotedMessage.audioMessage) mtype = "audioMessage";
+
+        if (!buffer || !mtype) {
+            return await socket.sendMessage(sender, {
+                text: "❌ Unable to download the message or unsupported type.",
+                contextInfo: {
+                    forwardingScore: 999,
+                    isForwarded: true,
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: "120363302677217436@newsletter",
+                        newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
+                        serverMessageId: 13
+                    }
+                }
+            }, { quoted: quotedContact });
         }
 
-        if (sendMsg) {
-            await socket.sendMessage(sender, sendMsg, { quoted: fakevCard });
+        let content = {};
+        let caption = '';
+
+        // Extract caption/text if available
+        if (quotedMsg.quotedMessage[mtype]?.caption) {
+            caption = quotedMsg.quotedMessage[mtype].caption;
         }
-    } catch (err) {
-        console.error('vv command error:', err);
+
+        switch (mtype) {
+            case "imageMessage":
+                content = {
+                    image: buffer,
+                    caption: caption || "📷 Image restored"
+                };
+                break;
+            case "videoMessage":
+                content = {
+                    video: buffer,
+                    caption: caption || "🎥 Video restored"
+                };
+                break;
+            case "audioMessage":
+                content = {
+                    audio: buffer,
+                    mimetype: "audio/mp4",
+                    ptt: quotedMsg.quotedMessage.audioMessage?.ptt || false
+                };
+                break;
+            default:
+                return await socket.sendMessage(sender, {
+                    text: "❌ Only image, video, and audio view once messages are supported.",
+                    contextInfo: {
+                        forwardingScore: 999,
+                        isForwarded: true,
+                        forwardedNewsletterMessageInfo: {
+                            newsletterJid: "120363302677217436@newsletter",
+                            newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
+                            serverMessageId: 13
+                        }
+                    }
+                }, { quoted: quotedContact });
+        }
+
+        // Send restored content with newsletter context
         await socket.sendMessage(sender, {
-            text: '❌ *Failed to reveal the view-once content!*\n\n' +
-                  'The message may have expired or there was an error processing it.'
-        }, { quoted: fakevCard });
-    }
-    break;
-}
+            ...content,
+            contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: "120363302677217436@newsletter",
+                    newsletterName: "𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃👻⚡",
+                    serverMessageId: 13
+                }
+            }
+        }, { quoted: quotedContact });
 
-// Case: vv2 (View Once to Bot)
-case 'vv2': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🤖", // Robot emoji
-            key: msg.key
-        }
-    });
-
-    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    
-    if (!quoted) {
-        return await socket.sendMessage(sender, {
-            text: '🤖 *Please reply to a view-once message!*\n\n' +
-                  'This command will send the content to the bot itself.'
-        }, { quoted: fakevCard });
-    }
-
-    const viewOnceMedia = quoted.imageMessage?.viewOnce || quoted.videoMessage?.viewOnce || quoted.audioMessage?.viewOnce;
-    
-    if (!viewOnceMedia) {
-        return await socket.sendMessage(sender, {
-            text: '❌ *This is not a view-once message!*'
-        }, { quoted: fakevCard });
-    }
-
-    try {
-        let sendMsg;
-        if (quoted.imageMessage) {
-            const buffer = await getBuffer(quoted.imageMessage, 'image');
-            sendMsg = {
-                image: buffer,
-                caption: quoted.imageMessage.caption || '*🤖 Sent to bot by CaseyRhodes Tech* 🌟'
-            };
-        } else if (quoted.videoMessage) {
-            const buffer = await getBuffer(quoted.videoMessage, 'video');
-            sendMsg = {
-                video: buffer,
-                caption: quoted.videoMessage.caption || '*🤖 Sent to bot by CaseyRhodes Tech* 🌟'
-            };
-        } else if (quoted.audioMessage) {
-            const buffer = await getBuffer(quoted.audioMessage, 'audio');
-            sendMsg = {
-                audio: buffer,
-                mimetype: 'audio/mp4',
-                caption: '*🤖 Sent to bot by CaseyRhodes Tech* 🌟'
-            };
-        }
-
-        if (sendMsg) {
-            // Send to the bot's own JID
-            const botJid = socket.user?.id;
-            await socket.sendMessage(botJid, sendMsg);
-            await socket.sendMessage(sender, {
-                text: '✅ *View-once content has been sent to the bot!* 🌟'
-            }, { quoted: fakevCard });
-        }
     } catch (error) {
-        console.error('vv2Command error:', error);
+        console.error("vv Error:", error);
         await socket.sendMessage(sender, {
-            text: '❌ *Failed to process the view-once content!*'
-        }, { quoted: fakevCard });
+            text: `❌ Error occurred while retrieving view once:\n\n${error.message || error}`
+        }, { quoted: quotedContact });
     }
     break;
 }
-
 // Case: details (Message Details)
 case 'details': {
     // React to the command first
@@ -3652,6 +3671,7 @@ case 'climate': {
     }
     break;
 }
+//status
 case 'savestatus': {
   try {
     await socket.sendMessage(sender, { react: { text: '💾', key: msg.key } });
@@ -3691,138 +3711,202 @@ case 'savestatus': {
   break;
 }
 //url test 
-case 'url': {
-  try {
-    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    const mediaMsg = quoted?.imageMessage || quoted?.videoMessage || quoted?.stickerMessage;
-
-    if (!mediaMsg) {
-      await socket.sendMessage(from, { 
-        text: '📁 Reply to an image, video, or sticker to upload to Catbox.',
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244269@newsletter',
-            newsletterName: 'CASEYRHODES-MIN',
-            serverMessageId: -1
-          }
+case 'tourl':
+case 'imgtourl':
+case 'imgurl':
+case 'url':
+case 'geturl':
+case 'upload': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "✅",
+            key: msg.key
         }
-      }, { quoted: msg });
-      break;
-    }
+    });
 
-    await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
-
-    let type = null;
-    let ext = null;
-
-    if (quoted?.imageMessage) {
-      type = 'image';
-      ext = 'jpg';
-    } else if (quoted?.videoMessage) {
-      type = 'video';
-      ext = 'mp4';
-    } else if (quoted?.stickerMessage) {
-      type = 'sticker';
-      ext = 'webp';
-    }
-
-    if (!type || !ext) {
-      await socket.sendMessage(from, { 
-        text: '❌ Unsupported media type. Please reply to an image, video, or sticker.',
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244268@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
-        }
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-      break;
-    }
-
-    const filePath = path.join(tmpdir(), `media_${Date.now()}.${ext}`);
+    const axios = require("axios");
+    const FormData = require('form-data');
+    const fs = require('fs');
+    const os = require('os');
+    const path = require("path");
 
     try {
-      // Get buffer from media message
-      const stream = await downloadContentFromMessage(mediaMsg, type);
-      const chunks = [];
-      for await (const chunk of stream) chunks.push(chunk);
-      const buffer = Buffer.concat(chunks);
+        // Check if message is quoted
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage ? msg : null;
+        const messageToUse = quotedMsg || msg;
 
-      // Write file to temporary directory
-      await fs.promises.writeFile(filePath, buffer);
-
-      // Upload to Catbox
-      if (!fs.existsSync(filePath)) throw new Error("File does not exist");
-      const response = await catbox.uploadFile({ path: filePath });
-      if (!response) throw new Error("Failed to upload");
-
-      // Send success message with URL
-      await socket.sendMessage(from, { 
-        text: `✅ Upload successful!\n🔗 URL: ${response}`,
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244266@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
+        // Get mime type from message
+        let mimeType = '';
+        if (messageToUse.message?.imageMessage) {
+            mimeType = messageToUse.message.imageMessage.mimetype;
+        } else if (messageToUse.message?.videoMessage) {
+            mimeType = messageToUse.message.videoMessage.mimetype;
+        } else if (messageToUse.message?.audioMessage) {
+            mimeType = messageToUse.message.audioMessage.mimetype;
+        } else if (messageToUse.message?.documentMessage) {
+            mimeType = messageToUse.message.documentMessage.mimetype;
         }
-      }, { quoted: msg });
 
-      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+        if (!mimeType) {
+            return await socket.sendMessage(sender, {
+                text: "*❌ Please reply to an image, video, or audio file*"
+            }, { quoted: msg });
+        }
 
-    } catch (err) {
-      console.error('URL upload error:', err);
-      await socket.sendMessage(from, { 
-        text: `❌ Upload failed: ${err.message}`,
-        contextInfo: {
-          forwardingScore: 1,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363238139244268@newsletter',
-            newsletterName: 'CASEYRHODES-MINI',
-            serverMessageId: -1
-          }
+        // Download the media
+        const mediaBuffer = await socket.downloadMediaMessage(messageToUse);
+        
+        if (!mediaBuffer) {
+            return await socket.sendMessage(sender, {
+                text: "*❌ Failed to download the media file*"
+            }, { quoted: msg });
         }
-      }, { quoted: msg });
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-    } finally {
-      // Clean up temporary file
-      try {
-        if (fs.existsSync(filePath)) {
-          await fs.promises.unlink(filePath);
+
+        const tempFilePath = path.join(os.tmpdir(), `catbox_upload_${Date.now()}`);
+        fs.writeFileSync(tempFilePath, mediaBuffer);
+
+        // Get file extension based on mime type
+        let extension = '';
+        if (mimeType.includes('image/jpeg')) extension = '.jpg';
+        else if (mimeType.includes('image/png')) extension = '.png';
+        else if (mimeType.includes('video')) extension = '.mp4';
+        else if (mimeType.includes('audio')) extension = '.mp3';
+        else extension = '.bin';
+        
+        const fileName = `file${extension}`;
+
+        // Prepare form data for Catbox
+        const form = new FormData();
+        form.append('fileToUpload', fs.createReadStream(tempFilePath), fileName);
+        form.append('reqtype', 'fileupload');
+
+        // Upload to Catbox
+        const response = await axios.post("https://catbox.moe/user/api.php", form, {
+            headers: form.getHeaders(),
+            timeout: 30000
+        });
+
+        if (!response.data) {
+            fs.unlinkSync(tempFilePath);
+            return await socket.sendMessage(sender, {
+                text: "*❌ Error uploading to Catbox*"
+            }, { quoted: msg });
         }
-      } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
-      }
+
+        const mediaUrl = response.data;
+        fs.unlinkSync(tempFilePath);
+
+        // Determine media type for response
+        let mediaType = 'File';
+        if (mimeType.includes('image')) mediaType = 'Image';
+        else if (mimeType.includes('video')) mediaType = 'Video';
+        else if (mimeType.includes('audio')) mediaType = 'Audio';
+
+        // Format bytes function
+        const formatBytes = (bytes) => {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+
+        // Create the status message
+        const status = `*${mediaType} ᴜᴘʟᴏᴀᴅᴇᴅ sᴜᴄᴄᴇsғᴜʟʟʏ ✅*\n\n` +
+            `*Size:* ${formatBytes(mediaBuffer.length)}\n` +
+            `*URL:* ${mediaUrl}\n\n` +
+            `> ᴜᴘʟᴏᴀᴅᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟`;
+
+        // Send response with newsletter context
+        await socket.sendMessage(sender, { 
+            image: { url: `https://i.ibb.co/wN6Gw0ZF/lordcasey.jpg` },  
+            caption: status,
+            contextInfo: {
+                mentionedJid: [sender],
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363302677217436@newsletter',
+                    newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
+                    serverMessageId: 143
+                }
+            }
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Tourl Error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ Error:* ${error.message || error}`
+        }, { quoted: msg });
     }
-
-  } catch (error) {
-    console.error('URL command error:', error);
-    await socket.sendMessage(from, { 
-      text: '❌ An unexpected error occurred while processing your request.',
-      contextInfo: {
-        forwardingScore: 1,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '12036464655566@newsletter',
-          newsletterName: 'CASEYRHODES-MINI',
-          serverMessageId: -1
-        }
-      }
-    }, { quoted: msg });
-    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-  }
-  break;
+    break;
 }
 //🌟
+case 'jid': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "📍",
+            key: msg.key
+        }
+    });
+
+    try {
+        // Check if it's a group and user has permission
+        // You'll need to implement your own permission logic
+        const isGroup = msg.key.remoteJid.endsWith('@g.us');
+        const isOwner = true; // Replace with your actual owner check logic
+        const isAdmin = true; // Replace with your actual admin check logic
+
+        // Permission check - only owner in private chats or admin/owner in groups
+        if (!isGroup && !isOwner) {
+            return await socket.sendMessage(sender, {
+                text: "⚠️ Only the bot owner can use this command in private chats."
+            }, { quoted: msg });
+        }
+
+        if (isGroup && !isOwner && !isAdmin) {
+            return await socket.sendMessage(sender, {
+                text: "⚠️ Only group admins or bot owner can use this command."
+            }, { quoted: msg });
+        }
+
+        // Newsletter message configuration
+        const newsletterConfig = {
+            mentionedJid: [sender],
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363302677217436@newsletter',
+                newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇',
+                serverMessageId: 143
+            }
+        };
+
+        // Prepare the appropriate response
+        let response;
+        if (isGroup) {
+            response = `🔍 *Group JID*\n${msg.key.remoteJid}`;
+        } else {
+            response = `👤 *Your JID*\n${sender.split('@')[0]}@s.whatsapp.net`;
+        }
+
+        // Send the newsletter-style message
+        await socket.sendMessage(sender, {
+            text: response,
+            contextInfo: newsletterConfig
+        }, { quoted: msg });
+
+    } catch (e) {
+        console.error("JID Error:", e);
+        await socket.sendMessage(sender, {
+            text: `❌ An error occurred: ${e.message || e}`
+        }, { quoted: msg });
+    }
+    break;
+}
+//Helloo
     case 'whois': {
         try {
             await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
