@@ -1504,6 +1504,7 @@ case 'lyrics': {
     break;
 }
 //play command 
+//play command 
 case 'play':
 case 'song': {
     // React to the command first
@@ -1548,8 +1549,8 @@ case 'song': {
         const fileName = `${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Send video info immediately
-        const message = {
+        // Create allmenu button
+        const buttonMessage = {
             image: { url: video.thumbnail },
             caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*\n\n` +
                      `╭────────────────◆\n` +
@@ -1559,13 +1560,23 @@ case 'song': {
                      `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
                      `╰─────────────────◆\n\n` +
-                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
+            footer: 'Click the button below for all commands',
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
+            ],
+            headerType: 4
         };
 
-        await socket.sendMessage(sender, message, { quoted: msg });
+        await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link
-        const response = await axios.get(apiURL, { timeout: 10000 });
+        // Get download link in parallel with sending the message
+        const [response] = await Promise.all([
+            axios.get(apiURL, { timeout: 10000 }),
+            // Add a small delay to ensure the info message is sent first
+            new Promise(resolve => setTimeout(resolve, 500))
+        ]);
+
         const data = response.data;
 
         if (!data.downloadLink) {
