@@ -1457,31 +1457,16 @@ case 'song': {
               msg.message?.videoMessage?.caption || '';
     
     const args = q.split(' ').slice(1);
-    let query = args.join(' ').trim();
-    let formatType = 'audio'; // Default format
-
-    // Check if user specified format
-    if (query.includes('|doc') || query.includes('|document')) {
-        formatType = 'document';
-        query = query.replace(/\|(doc|document)/g, '').trim();
-    } else if (query.includes('|audio') || query.includes('|mp3')) {
-        formatType = 'audio';
-        query = query.replace(/\|(audio|mp3)/g, '').trim();
-    }
+    const query = args.join(' ').trim();
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*\n\n' +
-                  `*Usage:* ${prefix}song <query> [|audio|doc]\n` +
-                  '*Examples:*\n' +
-                  `• ${prefix}song shape of you\n` +
-                  `• ${prefix}song shape of you |audio\n` +
-                  `• ${prefix}song shape of you |doc`
+            text: '*🎵 Please provide a song name or YouTube link*'
         }, { quoted: msg });
     }
 
     try {
-        console.log('[PLAY] Searching YT for:', query, 'Format:', formatType);
+        console.log('[PLAY] Searching YT for:', query);
         
         // Show searching emoji
         await socket.sendMessage(sender, {
@@ -1508,17 +1493,8 @@ case 'song': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${GLOBAL_PREFIX}${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Show processing emoji
-        await socket.sendMessage(sender, {
-            react: {
-                text: "⏳",
-                key: msg.key
-            }
-        });
-
-        // Send song info first with format options
+        // Send song info first with audio confirmation button
         const buttonMessage = {
             image: { url: video.thumbnail },
             caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*\n\n` +
@@ -1528,15 +1504,13 @@ case 'song': {
                      `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
                      `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
-                     `├📦 *ꜰᴏʀᴍᴀᴛ:* ${formatType === 'audio' ? 'Audio 🎵' : 'Document 📄'}\n` +
                      `├🏷️ *ᴘʀᴇꜰɪx:* ${GLOBAL_PREFIX}\n` +
                      `╰─────────────────◆\n\n` +
                      `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟\n\n` +
-                     `*Usage:* Add |audio or |doc to specify format`,
-            footer: 'Click the buttons below to change format',
+                     `*Click the button below to download this audio*`,
+            footer: 'Confirmation required before download',
             buttons: [
-                { buttonId: `${prefix}song ${query} |audio`, buttonText: { displayText: '🎵 ᴀᴜᴅɪᴏ' }, type: 1 },
-                { buttonId: `${prefix}song ${query} |doc`, buttonText: { displayText: '📄 ᴅᴏᴄᴜᴍᴇɴᴛ' }, type: 1 },
+                { buttonId: `${prefix}audio ${video.videoId}`, buttonText: { displayText: '🎵 ᴅᴏᴡɴʟᴏᴀᴅ ᴀᴜᴅɪᴏ' }, type: 1 },
                 { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🎀 ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
             ],
             headerType: 4
@@ -1544,10 +1518,63 @@ case 'song': {
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
+        // Show ready emoji
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (err) {
+        console.error('[PLAY] Error:', err);
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        await socket.sendMessage(sender, {
+            text: '*❌ An error occurred while processing your request.*'
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// Add this new case for handling audio download confirmation
+case 'audio': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "⬇️",
+            key: msg.key
+        }
+    });
+
+    const axios = require('axios');
+    const BASE_URL = 'https://noobs-api.top';
+    const GLOBAL_PREFIX = `${prefix}`;
+
+    // Extract video ID from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || '';
+    
+    const args = q.split(' ').slice(1);
+    const videoId = args[0];
+
+    if (!videoId) {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Invalid audio request.*'
+        }, { quoted: msg });
+    }
+
+    try {
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(videoId)}&format=mp3`;
+
         // Show downloading emoji
         await socket.sendMessage(sender, {
             react: {
-                text: "⬇️",
+                text: "⏳",
                 key: msg.key
             }
         });
@@ -1568,75 +1595,30 @@ case 'song': {
             }, { quoted: msg });
         }
 
-        // Fetch thumbnail for the context info
-        let thumbnailBuffer;
-        try {
-            const thumbnailResponse = await axios.get(video.thumbnail, { 
-                responseType: 'arraybuffer',
-                timeout: 5000
-            });
-            thumbnailBuffer = Buffer.from(thumbnailResponse.data);
-        } catch (err) {
-            console.error('[PLAY] Error fetching thumbnail:', err);
-            // Continue without thumbnail if there's an error
-        }
-
-        // Send audio with appropriate format
-        if (formatType === 'document') {
-            // Show uploading emoji for document
-            await socket.sendMessage(sender, {
-                react: {
-                    text: "📤",
-                    key: msg.key
+        // Show uploading emoji
+        await socket.sendMessage(sender, {
+            react: {
+                text: "📤",
+                key: msg.key
+            }
+        });
+        
+        // Send as audio
+        await socket.sendMessage(sender, {
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: `${GLOBAL_PREFIX}audio.mp3`,
+            ptt: false,
+            contextInfo: {
+                externalAdReply: {
+                    title: 'Audio Download',
+                    body: 'Powered by CASEYRHODES API',
+                    mediaType: 1,
+                    sourceUrl: `https://youtube.com/watch?v=${videoId}`,
+                    renderLargerThumbnail: true
                 }
-            });
-            
-            // Send as document
-            await socket.sendMessage(sender, {
-                document: { url: data.downloadLink },
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                caption: `*${video.title}*\n📄 *Sent as document*\n🏷️ *Prefix:* ${GLOBAL_PREFIX}`,
-                contextInfo: {
-                    externalAdReply: {
-                        title: video.title.substring(0, 30),
-                        body: 'Powered by CASEYRHODES API',
-                        mediaType: 1,
-                        sourceUrl: video.url,
-                        thumbnail: thumbnailBuffer,
-                        renderLargerThumbnail: false,
-                        mediaUrl: video.url
-                    }
-                }
-            });
-        } else {
-            // Show uploading emoji for audio
-            await socket.sendMessage(sender, {
-                react: {
-                    text: "📤",
-                    key: msg.key
-                }
-            });
-            
-            // Send as audio
-            await socket.sendMessage(sender, {
-                audio: { url: data.downloadLink },
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false,
-                contextInfo: {
-                    externalAdReply: {
-                        title: video.title.substring(0, 30),
-                        body: 'Powered by CASEYRHODES API',
-                        mediaType: 1,
-                        sourceUrl: video.url,
-                        thumbnail: thumbnailBuffer,
-                        renderLargerThumbnail: false,
-                        mediaUrl: video.url
-                    }
-                }
-            });
-        }
+            }
+        });
 
         // Show success emoji
         await socket.sendMessage(sender, {
@@ -1647,7 +1629,7 @@ case 'song': {
         });
 
     } catch (err) {
-        console.error('[PLAY] Error:', err);
+        console.error('[AUDIO] Error:', err);
         await socket.sendMessage(sender, {
             react: {
                 text: "❌",
@@ -1655,12 +1637,7 @@ case 'song': {
             }
         });
         await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*\n\n' +
-                  '*Possible reasons:*\n' +
-                  '• YouTube link is invalid\n' +
-                  '• Server is busy\n' +
-                  '• Video is too long\n\n' +
-                  'Please try again with a different query.'
+            text: '*❌ An error occurred while downloading the audio.*'
         }, { quoted: msg });
     }
     break;
