@@ -1113,7 +1113,7 @@ case 'ping': {
                 `🕒 *ᴛɪᴍᴇsᴛᴀᴍᴘ:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC', hour12: true })}\n\n` +
                 `*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
                 `*┃*    ᴄᴏɴɴᴇᴄᴛɪᴏɴ sᴛᴀᴛᴜs  \n` +
-                `*┗──────────────⊷.`,
+                `*┗──────────────⊷*`,
             buttons: [
                 { buttonId: `${prefix}active`, buttonText: { displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' }, type: 1 },
                 { buttonId: `${prefix}session`, buttonText: { displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' }, type: 1 }
@@ -1203,10 +1203,10 @@ case 'block': {
         // Send success message immediately
         await socket.sendMessage(sender, { 
             image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
-            caption: "🚫 *BLOCKED SUCCESSFULLY*\n\nblocked",
+            caption: "🚫 *ʙʟᴏᴄᴋᴇᴅ sᴜᴄᴄᴇsғᴜʟʟʏ✅*\n\nblocked",
             buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
-                { buttonId: '.unblock', buttonText: { displayText: '🔓 UNBLOCK' }, type: 1 }
+                { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: '.owner', buttonText: { displayText: '🎀ᴏᴡɴᴇʀ' }, type: 1 }
             ]
         }, { quoted: msg });
 
@@ -1798,7 +1798,6 @@ case 'video': {
                     }
                     break;
                     }
-                
 case 'tiktok':
 case 'tiktoks':
 case 'tiks': {
@@ -1822,7 +1821,7 @@ case 'tiks': {
 
         if (!query) {
             return await socket.sendMessage(sender, {
-                text: "🌸 *What do you want to search on TikTok?*\n\n*Usage Example:*\n.tiktok <query>"
+                text: "🌸 *What do you want to search on TikTok?*\n\n*Usage Examples:*\n.tiktok <query>\n.tiktok <URL or Link>"
             }, { quoted: msg });
         }
 
@@ -1830,9 +1829,72 @@ case 'tiks': {
             text: `🔎 *Searching TikTok for:* ${query}`
         }, { quoted: msg });
 
-        const response = await fetch(`https://api.diioffc.web.id/api/search/tiktok?query=${encodeURIComponent(query)}`);
+        // Check if it's a URL or a search query
+        let apiUrl;
+        if (query.includes('tiktok.com') || query.includes('vt.tiktok')) {
+            // It's a URL - use download API
+            apiUrl = `https://api.diioffc.web.id/api/download/tiktok?url=${encodeURIComponent(query)}`;
+        } else {
+            // It's a search query
+            apiUrl = `https://api.diioffc.web.id/api/search/tiktok?query=${encodeURIComponent(query)}`;
+        }
+
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`API returned status: ${response.status}`);
+        }
+        
         const data = await response.json();
 
+        // Handle URL download response
+        if (query.includes('tiktok.com') || query.includes('vt.tiktok')) {
+            if (!data?.status || !data?.result) {
+                await socket.sendMessage(sender, {
+                    react: {
+                        text: "❌",
+                        key: msg.key
+                    }
+                });
+                return await socket.sendMessage(sender, {
+                    text: "❌ *Could not download this TikTok.* The link might be invalid or the video might be unavailable."
+                }, { quoted: msg });
+            }
+
+            const video = data.result;
+            const caption = 
+                `🎬 *TikTok Video*\n` +
+                `👤 @${video.author?.username || 'unknown'}\n` +
+                `❤️ ${video.stats?.like || 0} likes | ⏱️ ${video.duration || 0}s\n` +
+                `🔗 ${query}`;
+
+            if (video.media?.no_watermark) {
+                await socket.sendMessage(sender, {
+                    video: { url: video.media.no_watermark },
+                    caption: caption
+                }, { quoted: msg });
+            } else if (video.media?.watermark) {
+                await socket.sendMessage(sender, {
+                    video: { url: video.media.watermark },
+                    caption: caption + '\n\n⚠️ *Watermarked version (no watermark unavailable)*'
+                }, { quoted: msg });
+            } else {
+                await socket.sendMessage(sender, {
+                    text: `❌ *Couldn't retrieve video.*\n${caption}`
+                }, { quoted: msg });
+            }
+            
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "✅",
+                    key: msg.key
+                }
+            });
+            
+            return;
+        }
+
+        // Handle search response
         if (!data?.status || !data?.result?.length) {
             await socket.sendMessage(sender, {
                 react: {
@@ -1851,7 +1913,7 @@ case 'tiks': {
         // Send each video
         for (const video of results) {
             const caption = 
-                `🎬 *${video.title}*\n` +
+                `🎬 *${video.title || 'TikTok Video'}*\n` +
                 `👤 @${video.author?.username || 'unknown'}\n` +
                 `❤️ ${video.stats?.like || 0} likes | ⏱️ ${video.duration || 0}s\n` +
                 `🔗 https://www.tiktok.com/@${video.author?.username}/video/${video.video_id}`;
@@ -1860,6 +1922,11 @@ case 'tiks': {
                 await socket.sendMessage(sender, {
                     video: { url: video.media.no_watermark },
                     caption: caption
+                }, { quoted: msg });
+            } else if (video.media?.watermark) {
+                await socket.sendMessage(sender, {
+                    video: { url: video.media.watermark },
+                    caption: caption + '\n\n⚠️ *Watermarked version (no watermark unavailable)*'
                 }, { quoted: msg });
             } else {
                 await socket.sendMessage(sender, {
@@ -1886,8 +1953,19 @@ case 'tiks': {
                 key: msg.key
             }
         });
+        
+        let errorMessage = "❌ *An error occurred while processing your TikTok request.* Please try again later.";
+        
+        if (error.message.includes("API returned status: 5")) {
+            errorMessage = "❌ *TikTok API is currently unavailable.* Please try again in a few minutes.";
+        } else if (error.message.includes("API returned status: 4")) {
+            errorMessage = "❌ *Invalid request.* Please check your query or URL and try again.";
+        } else if (error.message.includes("fetch failed")) {
+            errorMessage = "❌ *Network error.* Please check your connection and try again.";
+        }
+        
         await socket.sendMessage(sender, {
-            text: "❌ *An error occurred while searching TikTok.* Please try again later."
+            text: errorMessage
         }, { quoted: msg });
     }
     break;
@@ -2081,15 +2159,15 @@ case 'bible': {
                          `📖 *Reference:* ${ref}\n` +
                          `📚 *Text:* ${text}\n\n` +
                          `🗂️ *Translation:* ${translation_name}\n\n` +
-                         `© CASEYRHODES XMD BIBLE`;
+                         `> © CASEYRHODES XMD BIBLE`;
 
             await socket.sendMessage(sender, { 
                 image: { url: `https://files.catbox.moe/y3j3kl.jpg` },
                 caption: status,
                 footer: "Choose an option below",
                 buttons: [
-                    { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
-                    { buttonId: '.bible', buttonText: { displayText: '🔍 SEARCH ANOTHER' }, type: 1 }
+                    { buttonId: '.allmenu', buttonText: { displayText: '🎀ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: '.bible', buttonText: { displayText: '🔍 sᴇᴀʀᴄʜ ᴀɴᴏᴛʜᴇʀ' }, type: 1 }
                 ],
                 contextInfo: {
                     mentionedJid: [sender],
@@ -2191,94 +2269,6 @@ case 'jid': {
         console.error("JID Error:", e);
         await socket.sendMessage(sender, {
             text: `❌ An error occurred: ${e.message || e}`
-        }, { quoted: msg });
-    }
-    break;
-}
-//support case
-case 'support':
-case 'casey': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🫅",
-            key: msg.key
-        }
-    });
-
-    const os = require("os");
-    const axios = require('axios');
-    const more = String.fromCharCode(8206);
-    const readMore = more.repeat(4001);
-
-    try {
-        // Runtime function (you'll need to implement this or use your existing one)
-        const runtime = (seconds) => {
-            const days = Math.floor(seconds / (24 * 60 * 60));
-            seconds %= 24 * 60 * 60;
-            const hours = Math.floor(seconds / (60 * 60));
-            seconds %= 60 * 60;
-            const minutes = Math.floor(seconds / 60);
-            seconds = Math.floor(seconds % 60);
-            return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-        };
-
-        let dec = `    
-⟣──────────────────⟢
-▧ *ᴄʀᴇᴀᴛᴏʀ* : *ᴍʀ ᴄᴀsᴇʏʀʜᴏᴅᴇs (🇰🇪)*
-▧ *ᴍᴏᴅᴇ* : *${config.MODE}*
-▧ *ᴘʀᴇғɪx* : *${config.PREFIX}*
-▧ *ʀᴀᴍ* : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(os.totalmem() / 1024 / 1024)}MB
-▧ *ᴠᴇʀsɪᴏɴ* : *V.5* ⚡
-▧ *ᴜᴘᴛɪᴍᴇ* : ${runtime(process.uptime())}
-
-⟣──────────────────⟢
-
-> 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃 
-
-⟣──────────────────⟢
-${readMore}
-\`CHANNEL🛠️\`
-https://tinyurl.com/26kh6jss
-
-\`GROUP\` 👥
-
-https://tinyurl.com/26kh6jss
-
-\`𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐗𝐌𝐃\` *Dev🧑‍💻*
-
-wa.me/+254112192119?text=Support!
-
-⟣──────────────────⟢
-
-`;
-
-        // Send the main support message with image
-        await socket.sendMessage(sender, {
-            image: { url: `https://i.ibb.co/NdGZ99mN/705f0162-de6f-4fb8-a78f-6c563969093c.jpg` },
-            caption: dec,
-            buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                { buttonId: '.support', buttonText: { displayText: '🔄 ʀᴇғʀᴇsʜ' }, type: 1 }
-            ]
-        }, { quoted: msg });
-
-        // Send audio
-        await socket.sendMessage(sender, {
-            audio: { url: 'https://files.catbox.moe/a1sh4u.mp3' },
-            mimetype: 'audio/mp4',
-            ptt: true,
-            caption: "🎵 *CaseyRhodes XMD Theme*"
-        }, { quoted: msg });
-        
-    } catch (e) {
-        console.error('Support Command Error:', e);
-        await socket.sendMessage(sender, {
-            text: `❌ *Error:* ${e.message || e}`,
-            buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                { buttonId: '.support', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
-            ]
         }, { quoted: msg });
     }
     break;
