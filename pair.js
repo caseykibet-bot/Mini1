@@ -1491,9 +1491,6 @@ case 'song': {
             }, { quoted: msg });
         }
 
-        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
-        const fileName = `${GLOBAL_PREFIX}${safeTitle}.mp3`;
-
         // Send song info first with audio confirmation button
         const buttonMessage = {
             image: { url: video.thumbnail },
@@ -1510,7 +1507,7 @@ case 'song': {
                      `*Click the button below to download this audio*`,
             footer: 'Confirmation required before download',
             buttons: [
-                { buttonId: `${prefix}audio ${video.videoId}`, buttonText: { displayText: '🎵 ᴅᴏᴡɴʟᴏᴀᴅ ᴀᴜᴅɪᴏ' }, type: 1 },
+                { buttonId: `.audio ${video.videoId}`, buttonText: { displayText: '🎵 ᴅᴏᴡɴʟᴏᴀᴅ ᴀᴜᴅɪᴏ' }, type: 1 },
                 { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🎀 ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
             ],
             headerType: 4
@@ -1543,102 +1540,118 @@ case 'song': {
 
 // Add this new case for handling audio download confirmation
 case 'audio': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "⬇️",
-            key: msg.key
-        }
-    });
-
-    const axios = require('axios');
-    const BASE_URL = 'https://noobs-api.top';
-    const GLOBAL_PREFIX = `${prefix}`;
-
-    // Extract video ID from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || '';
+    // Check if this is a button response
+    const isButtonResponse = msg.message?.buttonsResponseMessage;
     
-    const args = q.split(' ').slice(1);
-    const videoId = args[0];
+    if (isButtonResponse) {
+        // Extract video ID from button response
+        const selectedButtonId = msg.message.buttonsResponseMessage.selectedButtonId;
+        const videoId = selectedButtonId.replace('!audio ', '').trim();
+        
+        if (!videoId) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Invalid audio request. Please try searching again.*'
+            }, { quoted: msg });
+        }
 
-    if (!videoId) {
-        return await socket.sendMessage(sender, {
-            text: '*❌ Invalid audio request.*'
-        }, { quoted: msg });
-    }
-
-    try {
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(videoId)}&format=mp3`;
-
-        // Show downloading emoji
+        // React to the command first
         await socket.sendMessage(sender, {
             react: {
-                text: "⏳",
+                text: "⬇️",
                 key: msg.key
             }
         });
 
-        // Get download link
-        const response = await axios.get(apiURL, { timeout: 10000 });
-        const data = response.data;
+        const axios = require('axios');
+        const BASE_URL = 'https://noobs-api.top';
+        const GLOBAL_PREFIX = `${prefix}`;
 
-        if (!data.downloadLink) {
+        try {
+            const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(videoId)}&format=mp3`;
+
+            // Show downloading emoji
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "⏳",
+                    key: msg.key
+                }
+            });
+
+            // Get download link
+            const response = await axios.get(apiURL, { timeout: 10000 });
+            const data = response.data;
+
+            if (!data.downloadLink) {
+                await socket.sendMessage(sender, {
+                    react: {
+                        text: "❌",
+                        key: msg.key
+                    }
+                });
+                return await socket.sendMessage(sender, {
+                    text: '*❌ Failed to retrieve the MP3 download link.*'
+                }, { quoted: msg });
+            }
+
+            // Show uploading emoji
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "📤",
+                    key: msg.key
+                }
+            });
+            
+            // Get video info for file name
+            const yts = require('yt-search');
+            const videoInfo = await yts({ videoId });
+            const safeTitle = videoInfo.title ? videoInfo.title.replace(/[\\/:*?"<>|]/g, '') : 'audio';
+            const fileName = `${GLOBAL_PREFIX}${safeTitle}.mp3`;
+            
+            // Send as audio
+            await socket.sendMessage(sender, {
+                audio: { url: data.downloadLink },
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
+            });
+
+            // Show success emoji
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "✅",
+                    key: msg.key
+                }
+            });
+
+        } catch (err) {
+            console.error('[AUDIO] Error:', err);
             await socket.sendMessage(sender, {
                 react: {
                     text: "❌",
                     key: msg.key
                 }
             });
+            await socket.sendMessage(sender, {
+                text: '*❌ An error occurred while downloading the audio.*'
+            }, { quoted: msg });
+        }
+    } else {
+        // Handle regular audio command (not from button)
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || '';
+        
+        const args = q.split(' ').slice(1);
+        const query = args.join(' ').trim();
+
+        if (!query) {
             return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
+                text: '*🎵 Please provide a song name or YouTube link*\n\n' +
+                      `*Usage:* ${prefix}audio <song name>`
             }, { quoted: msg });
         }
 
-        // Show uploading emoji
-        await socket.sendMessage(sender, {
-            react: {
-                text: "📤",
-                key: msg.key
-            }
-        });
-        
-        // Send as audio
-        await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: `${GLOBAL_PREFIX}audio.mp3`,
-            ptt: false,
-            contextInfo: {
-                externalAdReply: {
-                    title: 'Audio Download',
-                    body: 'Powered by CASEYRHODES API',
-                    mediaType: 1,
-                    sourceUrl: `https://youtube.com/watch?v=${videoId}`,
-                    renderLargerThumbnail: true
-                }
-            }
-        });
-
-        // Show success emoji
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (err) {
-        console.error('[AUDIO] Error:', err);
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌",
-                key: msg.key
-            }
-        });
-        await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while downloading the audio.*'
-        }, { quoted: msg });
+        // If it's a regular audio command, redirect to song handler
+        await this.handleCommand(socket, { ...msg, message: { conversation: `${prefix}song ${query}` } }, prefix);
     }
     break;
 }
