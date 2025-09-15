@@ -1435,6 +1435,7 @@ case 'lyrics': {
     }
     break;
 }
+//xasey video 
 case 'play':
 case 'song': {
     // React to the command first
@@ -1448,7 +1449,6 @@ case 'song': {
     const axios = require('axios');
     const yts = require('yt-search');
     const BASE_URL = 'https://noobs-api.top';
-    const GLOBAL_PREFIX = `${prefix}`; // Dynamic prefix from config
 
     // Extract query from message
     const q = msg.message?.conversation || 
@@ -1457,31 +1457,16 @@ case 'song': {
               msg.message?.videoMessage?.caption || '';
     
     const args = q.split(' ').slice(1);
-    let query = args.join(' ').trim();
-    let formatType = 'audio'; // Default format
-
-    // Check if user specified format
-    if (query.includes('|doc') || query.includes('|document')) {
-        formatType = 'document';
-        query = query.replace(/\|(doc|document)/g, '').trim();
-    } else if (query.includes('|audio') || query.includes('|mp3')) {
-        formatType = 'audio';
-        query = query.replace(/\|(audio|mp3)/g, '').trim();
-    }
+    const query = args.join(' ').trim();
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*\n\n' +
-                  `*Usage:* ${prefix}song <query> [|audio|doc]\n` +
-                  '*Examples:*\n' +
-                  `• ${prefix}song shape of you\n` +
-                  `• ${prefix}song shape of you |audio\n` +
-                  `• ${prefix}song shape of you |doc`
+            text: '*🎵 Please provide a song name or YouTube link*'
         }, { quoted: msg });
     }
 
     try {
-        console.log('[PLAY] Searching YT for:', query, 'Format:', formatType);
+        console.log('[PLAY] Searching YT for:', query);
         const search = await yts(query);
         const video = search.videos[0];
 
@@ -1492,37 +1477,40 @@ case 'song': {
         }
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
-        const fileName = `${GLOBAL_PREFIX}${safeTitle}.mp3`;
+        const fileName = `${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Send song info first with format options
+        // Send song info first
         const buttonMessage = {
             image: { url: video.thumbnail },
-            caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*\n\n` +
+            caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎀*\n\n` +
                      `╭────────────────◆\n` +
                      `├🌟 *ᴛɪᴛʟᴇ:* ${video.title}\n` +
                      `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
                      `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
-                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
+                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
-                     `├📦 *ꜰᴏʀᴍᴀᴛ:* ${formatType === 'audio' ? 'Audio' : 'Document'}\n` +
-                     `├🏷️ *ᴘʀᴇꜰɪx:* ${GLOBAL_PREFIX}\n` +
                      `╰─────────────────◆\n\n` +
-                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟\n\n` +
-                     `*Usage:* Add |audio or |doc to specify format`,
-            footer: 'Click the buttons below to change format',
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
+            footer: 'Click the button below for all commands',
             buttons: [
-                { buttonId: `${prefix}${args[0]} |audio`, buttonText: { displayText: '🎵 ᴀᴜᴅɪᴏ' }, type: 1 },
-                { buttonId: `${prefix}${args[0]} allmenu`, buttonText: { displayText: '📄 allmenu' }, type: 1 },
+                { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
             ],
             headerType: 4
         };
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link in parallel to save time
-        const responsePromise = axios.get(apiURL, { timeout: 10000 });
-        
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 10000 });
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
+
         // Fetch thumbnail for the context info
         let thumbnailBuffer;
         try {
@@ -1536,66 +1524,31 @@ case 'song': {
             // Continue without thumbnail if there's an error
         }
 
-        // Wait for download link
-        const response = await responsePromise;
-        const data = response.data;
-
-        if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
-        }
-
-        // Send audio with appropriate format
-        if (formatType === 'document') {
-            // Send as document
-            await socket.sendMessage(sender, {
-                document: { url: data.downloadLink },
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                caption: `*${video.title}* - Sent as document\n🏷️ *Prefix:* ${GLOBAL_PREFIX}`,
-                contextInfo: {
-                    externalAdReply: {
-                        title: video.title.substring(0, 30),
-                        body: 'Powered by CASEYRHODES API',
-                        mediaType: 1,
-                        sourceUrl: video.url,
-                        thumbnail: thumbnailBuffer,
-                        renderLargerThumbnail: false,
-                        mediaUrl: video.url
-                    }
+        // Send audio with context info after a short delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        await socket.sendMessage(sender, {
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false,
+            contextInfo: {
+                externalAdReply: {
+                    title: video.title.substring(0, 30),
+                    body: 'Powered by CASEYRHODES API',
+                    mediaType: 1,
+                    sourceUrl: video.url,
+                    thumbnail: thumbnailBuffer,
+                    renderLargerThumbnail: true,
+                    mediaUrl: video.url
                 }
-            });
-        } else {
-            // Send as audio
-            await socket.sendMessage(sender, {
-                audio: { url: data.downloadLink },
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false,
-                contextInfo: {
-                    externalAdReply: {
-                        title: video.title.substring(0, 30),
-                        body: 'Powered by CASEYRHODES API',
-                        mediaType: 1,
-                        sourceUrl: video.url,
-                        thumbnail: thumbnailBuffer,
-                        renderLargerThumbnail: false,
-                        mediaUrl: video.url
-                    }
-                }
-            });
-        }
+            }
+        });
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
         await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*\n\n' +
-                  '*Possible reasons:*\n' +
-                  '• YouTube link is invalid\n' +
-                  '• Server is busy\n' +
-                  '• Video is too long\n\n' +
-                  'Please try again with a different query.'
+            text: '*❌ An error occurred while processing your request.*'
         }, { quoted: msg });
     }
     break;
@@ -2186,6 +2139,94 @@ case 'tts': {
         console.error('TTS Error:', e);
         await socket.sendMessage(sender, {
             text: `❌ *Error:* ${e.message || e}`
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'cid':
+case 'newsletter':
+case 'id': {
+    try {
+        // React to the command first
+        await socket.sendMessage(sender, {
+            react: {
+                text: "📡",
+                key: msg.key
+            }
+        });
+
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+
+        // Remove command prefix and get the link
+        const args = q.split(' ').slice(1);
+        const link = args.join(' ').trim();
+
+        if (!link) {
+            return await socket.sendMessage(sender, {
+                text: "❎ Please provide a WhatsApp Channel link.\n\n*Example:* .cid https://whatsapp.com/channel/123456789"
+            }, { quoted: msg });
+        }
+
+        const match = link.match(/whatsapp\.com\/channel\/([\w-]+)/i);
+        if (!match) {
+            return await socket.sendMessage(sender, {
+                text: "⚠️ *Invalid channel link format.*\n\nMake sure it looks like:\nhttps://whatsapp.com/channel/xxxxxxxxx"
+            }, { quoted: msg });
+        }
+
+        const inviteId = match[1];
+
+        try {
+            // Try to get channel metadata using WhatsApp web functions
+            const metadata = await socket.getNewsletterMetadata(inviteId);
+            
+            if (!metadata) {
+                return await socket.sendMessage(sender, {
+                    text: "❌ Channel not found or inaccessible."
+                }, { quoted: msg });
+            }
+
+            const infoText = `*— 乂 Channel Info —*\n\n` +
+              `🆔 *ID:* ${metadata.id || 'N/A'}\n` +
+              `📌 *Name:* ${metadata.name || 'N/A'}\n` +
+              `👥 *Followers:* ${metadata.subscribers ? metadata.subscribers.toLocaleString() : "N/A"}\n` +
+              `📅 *Created on:* ${metadata.creationTime ? new Date(metadata.creationTime * 1000).toLocaleString() : "Unknown"}\n` +
+              `🌐 *Link:* https://whatsapp.com/channel/${inviteId}`;
+
+            // Try to send with image if available
+            if (metadata.picture) {
+                await socket.sendMessage(sender, {
+                    image: { url: metadata.picture },
+                    caption: infoText
+                }, { quoted: msg });
+            } else {
+                await socket.sendMessage(sender, {
+                    text: infoText
+                }, { quoted: msg });
+            }
+
+        } catch (metadataError) {
+            console.error("Metadata error:", metadataError);
+            
+            // Fallback: Show basic info with the invite ID
+            const fallbackText = `*— 乂 Channel Info —*\n\n` +
+              `🆔 *Channel ID:* ${inviteId}\n` +
+              `🌐 *Link:* https://whatsapp.com/channel/${inviteId}\n\n` +
+              `ℹ️ *Note:* Full metadata unavailable. The channel may be private or the link may be invalid.`;
+
+            await socket.sendMessage(sender, {
+                text: fallbackText
+            }, { quoted: msg });
+        }
+
+    } catch (error) {
+        console.error("❌ Error in cid command:", error);
+        await socket.sendMessage(sender, {
+            text: "⚠️ An unexpected error occurred while processing the channel link."
         }, { quoted: msg });
     }
     break;
