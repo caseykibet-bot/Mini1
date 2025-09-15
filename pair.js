@@ -1448,6 +1448,7 @@ case 'song': {
     const axios = require('axios');
     const yts = require('yt-search');
     const BASE_URL = 'https://noobs-api.top';
+    const GLOBAL_PREFIX = `${prefix}`; // Dynamic prefix from config
 
     // Extract query from message
     const q = msg.message?.conversation || 
@@ -1456,16 +1457,31 @@ case 'song': {
               msg.message?.videoMessage?.caption || '';
     
     const args = q.split(' ').slice(1);
-    const query = args.join(' ').trim();
+    let query = args.join(' ').trim();
+    let formatType = 'audio'; // Default format
+
+    // Check if user specified format
+    if (query.includes('|doc') || query.includes('|document')) {
+        formatType = 'document';
+        query = query.replace(/\|(doc|document)/g, '').trim();
+    } else if (query.includes('|audio') || query.includes('|mp3')) {
+        formatType = 'audio';
+        query = query.replace(/\|(audio|mp3)/g, '').trim();
+    }
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*'
+            text: '*🎵 Please provide a song name or YouTube link*\n\n' +
+                  `*Usage:* ${prefix}song <query> [|audio|doc]\n` +
+                  '*Examples:*\n' +
+                  `• ${prefix}song shape of you\n` +
+                  `• ${prefix}song shape of you |audio\n` +
+                  `• ${prefix}song shape of you |doc`
         }, { quoted: msg });
     }
 
     try {
-        console.log('[PLAY] Searching YT for:', query);
+        console.log('[PLAY] Searching YT for:', query, 'Format:', formatType);
         const search = await yts(query);
         const video = search.videos[0];
 
@@ -1476,10 +1492,10 @@ case 'song': {
         }
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
-        const fileName = `${safeTitle}.mp3`;
+        const fileName = `${GLOBAL_PREFIX}${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Send song info first
+        // Send song info first with format options
         const buttonMessage = {
             image: { url: video.thumbnail },
             caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*\n\n` +
@@ -1487,29 +1503,27 @@ case 'song': {
                      `├🌟 *ᴛɪᴛʟᴇ:* ${video.title}\n` +
                      `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
                      `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
-                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
+                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
+                     `├📦 *ꜰᴏʀᴍᴀᴛ:* ${formatType === 'audio' ? 'Audio' : 'Document'}\n` +
+                     `├🏷️ *ᴘʀᴇꜰɪx:* ${GLOBAL_PREFIX}\n` +
                      `╰─────────────────◆\n\n` +
-                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
-            footer: 'Click the button below for all commands',
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟\n\n` +
+                     `*Usage:* Add |audio or |doc to specify format`,
+            footer: 'Click the buttons below to change format',
             buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '🎀ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
+                { buttonId: `${prefix}${args[0]} |audio`, buttonText: { displayText: '🎵 ᴀᴜᴅɪᴏ' }, type: 1 },
+                { buttonId: `${prefix}${args[0]} |doc`, buttonText: { displayText: '📄 ᴅᴏᴄᴜᴍᴇɴᴛ' }, type: 1 },
+                { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🎀 ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
             ],
             headerType: 4
         };
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link
-        const response = await axios.get(apiURL, { timeout: 10000 });
-        const data = response.data;
-
-        if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
-        }
-
+        // Get download link in parallel to save time
+        const responsePromise = axios.get(apiURL, { timeout: 10000 });
+        
         // Fetch thumbnail for the context info
         let thumbnailBuffer;
         try {
@@ -1523,31 +1537,68 @@ case 'song': {
             // Continue without thumbnail if there's an error
         }
 
-        // Send audio with context info after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: fileName,
-            ptt: false,
-            contextInfo: {
-                externalAdReply: {
-                    title: video.title.substring(0, 30),
-                    body: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʜᴏᴅᴇs ᴀᴘɪ',
-                    mediaType: 1,
-                    sourceUrl: video.url,
-                    thumbnail: thumbnailBuffer,
-                    renderLargerThumbnail: false,
-                    mediaUrl: video.url
+        // Wait for download link
+        const response = await responsePromise;
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
+
+        // Send audio with appropriate format
+        if (formatType === 'document') {
+            // Send as document
+            await socket.sendMessage(sender, {
+                document: { url: data.downloadLink },
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                caption: `*${video.title}* - Sent as document\n🏷️ *Prefix:* ${GLOBAL_PREFIX}`,
+                contextInfo: {
+                    externalAdReply: {
+                        title: video.title.substring(0, 30),
+                        body: 'Powered by CASEYRHODES API',
+                        mediaType: 1,
+                        sourceUrl: video.url,
+                        thumbnail: thumbnailBuffer,
+                        renderLargerThumbnail: true,
+                        mediaUrl: video.url
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            // Send as audio
+            await socket.sendMessage(sender, {
+                audio: { url: data.downloadLink },
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false,
+                contextInfo: {
+                    externalAdReply: {
+                        title: video.title.substring(0, 30),
+                        body: 'Powered by CASEYRHODES API',
+                        mediaType: 1,
+                        sourceUrl: video.url,
+                        thumbnail: thumbnailBuffer,
+                        renderLargerThumbnail: true,
+                        mediaUrl: video.url
+                    }
+                }
+            });
+        }
+
+        // Completion message has been removed as requested
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
         await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*'
+            text: '*❌ An error occurred while processing your request.*\n\n' +
+                  '*Possible reasons:*\n' +
+                  '• YouTube link is invalid\n' +
+                  '• Server is busy\n' +
+                  '• Video is too long\n\n' +
+                  'Please try again with a different query.'
         }, { quoted: msg });
     }
     break;
