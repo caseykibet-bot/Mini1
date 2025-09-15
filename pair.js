@@ -779,6 +779,8 @@ case 'info': {
                     { title: "🏓 ᴘɪɴɢ", description: "Check bot response speed", id: `${config.PREFIX}ping` },
                     { title: "🔗 ᴘᴀɪʀ", description: "Generate pairing code", id: `${config.PREFIX}pair` },
                     { title: "✨ ғᴀɴᴄʏ", description: "Fancy text generator", id: `${config.PREFIX}fancy` },
+                    { title: "🔮tts", description: "voice converter", id: `${config.PREFIX}tts` },
+                    { title: "🎉ɪᴍᴀɢᴇ", description: "random image generator", id: `${config.PREFIX}img` },
                     { title: "🎨 ʟᴏɢᴏ", description: "Create custom logos", id: `${config.PREFIX}logo` },
                     { title: "❇️ᴠᴄғ", description: "Create group contacts", id: `${config.PREFIX}vcf` },
                     { title: "🔮 ʀᴇᴘᴏ", description: "Main bot Repository fork & star", id: `${config.PREFIX}repo` }
@@ -923,7 +925,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
 *┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
 *┃*  🔮 *Commands*: ${count}
-*┃*  🇰🇪*Owner*: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
+*┃*  🇰🇪 *Owner*: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
 *┗────────────────⊷*
 
 ╭─『 🌐 *General Commands* 』─╮
@@ -1076,77 +1078,61 @@ case 'fc': {
   break;
 }
             // Case: ping
-                case 'ping': {
-                await socket.sendMessage(sender, { react: { text: '📍', key: msg.key } });
-                    try {
-                        const startTime = new Date().getTime();
-                        let ping = await socket.sendMessage(sender, { text: '*_🏓 ᴘɪɴɢɪɴɢ ᴛᴏ sᴇʀᴠᴇʀ..._* ❗' }, { quoted: msg });
+case 'ping': {
+    await socket.sendMessage(sender, { react: { text: '📍', key: msg.key } });
+    try {
+        const startTime = new Date().getTime();
+        
+        // Calculate latency
+        const endTime = new Date().getTime();
+        const latency = endTime - startTime;
 
-                        const progressSteps = [
-                            { bar: '《 █▒▒▒▒▒▒▒▒▒▒▒》', percent: '10%', delay: 100 },
-                            { bar: '《 ███▒▒▒▒▒▒▒▒▒》', percent: '25%', delay: 150 },
-                            { bar: '《 █████▒▒▒▒▒▒▒》', percent: '40%', delay: 100 },
-                            { bar: '《 ███████▒▒▒▒▒》', percent: '55%', delay: 120 },
-                            { bar: '《 █████████▒▒▒》', percent: '70%', delay: 100 },
-                            { bar: '《 ███████████▒》', percent: '85%', delay: 100 },
-                            { bar: '《 ████████████》', percent: '100%', delay: 200 }
-                        ];
+        // Determine quality based on latency
+        let quality = '';
+        let emoji = '';
+        if (latency < 100) {
+            quality = 'ᴇxᴄᴇʟʟᴇɴᴛ';
+            emoji = '🟢';
+        } else if (latency < 300) {
+            quality = 'ɢᴏᴏᴅ';
+            emoji = '🟡';
+        } else if (latency < 600) {
+            quality = 'ғᴀɪʀ';
+            emoji = '🟠';
+        } else {
+            quality = 'ᴘᴏᴏʀ';
+            emoji = '🔴';
+        }
 
-                        for (let step of progressSteps) {
-                            await new Promise(resolve => setTimeout(resolve, step.delay));
-                            try {
-                                await socket.sendMessage(sender, { text: `${step.bar} ${step.percent}`, edit: ping.key });
-                            } catch (editError) {
-                                console.warn('Failed to edit message:', editError);
-                                ping = await socket.sendMessage(sender, { text: `${step.bar} ${step.percent}` }, { quoted: msg });
-                            }
-                        }
+        // Create single message with image, text, and buttons
+        const pingMessage = {
+            image: { url: 'https://files.catbox.moe/6mfpu8.jpg' }, // Replace with your image URL
+            caption: `🏓 *ᴘɪɴɢ!*\n\n` +
+                `⚡ *sᴘᴇᴇᴅ:* ${latency}ms\n` +
+                `${emoji} *ϙᴜᴀʟɪᴛʏ:* ${quality}\n` +
+                `🕒 *ᴛɪᴍᴇsᴛᴀᴍᴘ:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC', hour12: true })}\n\n` +
+                `*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
+                `*┃*    ᴄᴏɴɴᴇᴄᴛɪᴏɴ sᴛᴀᴛᴜs  \n` +
+                `*┗──────────────⊷.`,
+            buttons: [
+                { buttonId: `${prefix}active`, buttonText: { displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' }, type: 1 },
+                { buttonId: `${prefix}session`, buttonText: { displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' }, type: 1 }
+            ],
+            headerType: 4
+        };
 
-                        const endTime = new Date().getTime();
-                        const latency = endTime - startTime;
-
-                        let quality = '';
-                        let emoji = '';
-                        if (latency < 100) {
-                            quality = 'ᴇxᴄᴇʟʟᴇɴᴛ';
-                            emoji = '🟢';
-                        } else if (latency < 300) {
-                            quality = 'ɢᴏᴏᴅ';
-                            emoji = '🟡';
-                        } else if (latency < 600) {
-                            quality = 'ғᴀɪʀ';
-                            emoji = '🟠';
-                        } else {
-                            quality = 'ᴘᴏᴏʀ';
-                            emoji = '🔴';
-                        }
-
-                        const finalMessage = {
-                            text: `🏓 *ᴘɪɴɢ!*\n\n` +
-                                `⚡ *sᴘᴇᴇᴅ:* ${latency}ms\n` +
-                                `${emoji} *ϙᴜᴀʟɪᴛʏ:* ${quality}\n` +
-                                `🕒 *ᴛɪᴍᴇsᴛᴀᴍᴘ:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC', hour12: true })}\n\n` +
-                                `*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
-                                `*┃*    ᴄᴏɴɴᴇᴄᴛɪᴏɴ sᴛᴀᴛᴜs  \n` +
-                                `*┗──────────────⊷.`,
-                            buttons: [
-                                { buttonId: `${prefix}active`, buttonText: { displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' }, type: 1 },
-                                { buttonId: `${prefix}session`, buttonText: { displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' }, type: 1 }
-                            ],
-                            headerType: 1
-                        };
-
-                        await socket.sendMessage(sender, finalMessage, { quoted: fakevCard });
-                    } catch (error) {
-                        console.error('Ping command error:', error);
-                        const startTime = new Date().getTime();
-                        const simplePing = await socket.sendMessage(sender, { text: '📍 Calculating ping...' }, { quoted: msg });
-                        const endTime = new Date().getTime();
-                        await socket.sendMessage(sender, { text: `📌 *Pong!*\n⚡ Latency: ${endTime - startTime}ms` }, { quoted: fakevCard });
-                    }
-                    break;
-                }
-                     // Case: pair
+        await socket.sendMessage(sender, pingMessage, { quoted: msg });
+    } catch (error) {
+        console.error('Ping command error:', error);
+        const startTime = new Date().getTime();
+        const endTime = new Date().getTime();
+        await socket.sendMessage(sender, { 
+            text: `📌 *Pong!*\n⚡ Latency: ${endTime - startTime}ms` 
+        }, { quoted: msg });
+    }
+    break;
+}            
+             // Case: pair
                // Case: pair
 case 'pair': {
     await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
@@ -1156,6 +1142,7 @@ case 'pair': {
               msg.message?.imageMessage?.caption ||
               msg.message?.videoMessage?.caption || '';
 
+    // Extract number from command
     const number = q.replace(/^[.\/!]pair\s*/i, '').trim();
 
     if (!number) {
@@ -1180,15 +1167,9 @@ case 'pair': {
             }, { quoted: msg });
         }
 
+        // Send the pairing code as a single message
         await socket.sendMessage(sender, {
-            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
-        }, { quoted: msg });
-
-        // Wait 2 seconds before sending the code again
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        await socket.sendMessage(sender, {
-            text: `${result.code}`
+            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* \`${result.code}\``
         }, { quoted: msg });
 
     } catch (err) {
@@ -1514,7 +1495,7 @@ case 'song': {
                      `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
             footer: 'Click the button below for all commands',
             buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
+                { buttonId: '.allmenu', buttonText: { displayText: '🎀ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
             ],
             headerType: 4
         };
@@ -1552,85 +1533,145 @@ case 'song': {
     }
     break;
 }
-case 'video':
-case 'videos': {
+//video case
+case 'mp4':
+case 'video': {
+    // Import dependencies
+    const yts = require('yt-search');
+
+    // Constants
+    const API_BASE_URL = 'https://api.giftedtech.co.ke/api/download/ytmp4';
+    const API_KEY = 'gifted';
+
+    // Utility functions
+    function extractYouTubeId(url) {
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    }
+
+    function convertYouTubeLink(input) {
+        const videoId = extractYouTubeId(input);
+        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
+    }
+
+    function formatDuration(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎥",
+            text: "🎬", // Video camera emoji
             key: msg.key
         }
     });
 
-    const { ytsearch } = require('@dark-yasiya/yt-dl.js');
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+
+    if (!q || q.trim() === '') {
+        return await socket.sendMessage(sender, 
+            { text: '*🎬 Give me a video title or YouTube link, love 😘*' }
+        );
+    }
+
+    const fixedQuery = convertYouTubeLink(q.trim());
 
     try {
-        const q = msg.message?.conversation || 
-                 msg.message?.extendedTextMessage?.text || '';
+        // Search for the video
+        const search = await yts(fixedQuery);
+        const videoInfo = search.videos[0];
         
-        const args = q.split(' ').slice(1);
-        const query = args.join(' ').trim();
-
-        if (!query) {
-            return await socket.sendMessage(sender, {
-                text: "❌ *Please provide a YouTube URL or video name*",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: 'video baby shark', buttonText: { displayText: '🎬 ᴇxᴀᴍᴘʟᴇ' }, type: 1 }
-                ]
-            }, { quoted: msg });
+        if (!videoInfo) {
+            return await socket.sendMessage(sender, 
+                { text: '*❌ No videos found, darling! Try another? 💔*' }
+            );
         }
 
-        const yt = await ytsearch(query);
-        if (yt.results.length < 1) {
-            return await socket.sendMessage(sender, {
-                text: "❌ *No results found!*",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: 'video', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
-                ]
-            }, { quoted: msg });
-        }
-
-        let yts = yt.results[0];  
-        let apiUrl = `https://api.giftedtech.co.ke/api/download/ytmp4?apikey=gifted&url=${encodeURIComponent(yts.url)}`;
+        // Format duration
+        const formattedDuration = formatDuration(videoInfo.seconds);
         
-        let response = await fetch(apiUrl);
-        let data = await response.json();
-        
-        if (data.status !== 200 || !data.success || !data.result.download_url) {
-            return await socket.sendMessage(sender, {
-                text: "❌ *Failed to fetch the video.* Please try again later.",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: 'video', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
-                ]
-            }, { quoted: msg });
-        }
+        // Create description
+        const desc = `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
+╭───────────────┈  ⊷
+├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
+├👤 *ᴄʜᴀɴɴᴇʟ:* ${videoInfo.author.name}
+├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
+├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
+├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
+├🎥 *Format:* MP4 Video
+╰───────────────┈ ⊷
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟
+`;
 
-        await socket.sendMessage(sender, { 
-            image: { url: yts.thumbnail }, 
-            caption: `📹 *Video Found!*\n\n🎬 *Title:* ${yts.title}\n⏳ *Duration:* ${yts.timestamp}\n👀 *Views:* ${yts.views}\n👤 *Author:* ${yts.author.name}\n\n⬇️ *Downloading video...*`
-        }, { quoted: msg });
-
+        // Send video info immediately WITH fake vCard (only here)
         await socket.sendMessage(sender, {
-            video: { url: data.result.download_url },
+            image: { url: videoInfo.thumbnail },
+            caption: desc
+        }, { quoted: fakevCard });
+
+        // Build API URL
+        const apiUrl = `${API_BASE_URL}?apikey=${API_KEY}&url=${encodeURIComponent(videoInfo.url)}`;
+        
+        // Fetch video data from API
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+        }
+        
+        const apiData = await response.json();
+        
+        // Handle different possible API response structures
+        let downloadUrl;
+        
+        if (apiData.downloadUrl) {
+            downloadUrl = apiData.downloadUrl;
+        } else if (apiData.url) {
+            downloadUrl = apiData.url;
+        } else if (apiData.links && apiData.links.length > 0) {
+            downloadUrl = apiData.links[0].url || apiData.links[0].downloadUrl;
+        } else if (apiData.data && apiData.data.downloadUrl) {
+            downloadUrl = apiData.data.downloadUrl;
+        } else if (apiData.result && apiData.result.download_url) {
+            downloadUrl = apiData.result.download_url;
+        } else {
+            throw new Error('No download URL found in API response');
+        }
+
+        if (!downloadUrl) {
+            throw new Error('Download URL is empty or invalid');
+        }
+
+        // Clean title for filename
+        const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
+
+        // Send video directly from URL WITHOUT fake vCard
+        await socket.sendMessage(sender, {
+            video: { url: downloadUrl },
             mimetype: "video/mp4",
-            caption: `✅ *Download Complete!*\n🎬 *Title:* ${yts.title}\n⏳ *Duration:* ${yts.timestamp}\n\n✨ *Powered by CASEYRHODES-TECH*`,
-            buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                { buttonId: `video ${query}`, buttonText: { displayText: '🔄 ʀᴇᴅᴏᴡɴʟᴏᴀᴅ' }, type: 1 }
-            ]
+            fileName: `${cleanTitle}.mp4`,
+            caption: `*${videoInfo.title}*`
         });
-
-    } catch (e) {
-        console.error('Video Download Error:', e);
-        await socket.sendMessage(sender, {
-            text: "❌ *An error occurred.* Please try again later.",
-            buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                { buttonId: 'video', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
-            ]
-        }, { quoted: msg });
+        
+    } catch (err) {
+        console.error('Video command error:', err);
+        
+        let errorMessage = "*❌ Oh no, the video download failed, love! 😢 Try again?*";
+        
+        if (err.message.includes('API responded') || err.message.includes('No download URL')) {
+            errorMessage = "*❌ The video service is temporarily unavailable. Please try again later, darling! 💔*";
+        }
+        
+        await socket.sendMessage(sender, 
+            { text: errorMessage }
+        );
     }
     break;
 }
@@ -1953,6 +1994,54 @@ case 'searchimg': {
                 { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
                 { buttonId: `${prefix}img`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
             ]
+        }, { quoted: msg });
+    }
+    break;
+}
+//tts case
+case 'tts': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🔊",
+            key: msg.key
+        }
+    });
+
+    const googleTTS = require('google-tts-api');
+
+    try {
+        // Extract text from message
+        const q = msg.message?.conversation || 
+                 msg.message?.extendedTextMessage?.text || '';
+        
+        const args = q.split(' ').slice(1);
+        const text = args.join(' ').trim();
+
+        if (!text) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *Please provide some text to convert to speech.*\n\n*Example:* .tts Hello world"
+            }, { quoted: msg });
+        }
+
+        const url = googleTTS.getAudioUrl(text, {
+            lang: 'en-US',
+            slow: false,
+            host: 'https://translate.google.com',
+        });
+
+        // Send the audio
+        await socket.sendMessage(sender, { 
+            audio: { url: url }, 
+            mimetype: 'audio/mpeg', 
+            ptt: false,
+            caption: `🔊 *Text to Speech*\n📝 *Text:* ${text}\n\n✨ *Powered by CASEYRHODES-TECH*`
+        }, { quoted: msg });
+
+    } catch (e) {
+        console.error('TTS Error:', e);
+        await socket.sendMessage(sender, {
+            text: `❌ *Error:* ${e.message || e}`
         }, { quoted: msg });
     }
     break;
@@ -4908,4 +4997,3 @@ async function loadNewsletterJIDsFromRaw() {
         return [];
     }
 }
-
