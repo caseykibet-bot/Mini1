@@ -1481,7 +1481,46 @@ case 'song': {
         const fileName = `${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Create allmenu button
+        // Get download link first
+        const response = await axios.get(apiURL, { timeout: 10000 });
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
+
+        // Fetch thumbnail for the context info
+        let thumbnailBuffer;
+        try {
+            const thumbnailResponse = await axios.get(video.thumbnail, { responseType: 'arraybuffer' });
+            thumbnailBuffer = Buffer.from(thumbnailResponse.data, 'binary');
+        } catch (err) {
+            console.error('[PLAY] Error fetching thumbnail:', err);
+            // Continue without thumbnail if there's an error
+        }
+
+        // Send audio with context info
+        await socket.sendMessage(sender, {
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false,
+            contextInfo: {
+                externalAdReply: {
+                    title: video.title.substring(0, 30),
+                    body: 'Powered by CASEYRHODES API',
+                    mediaType: 1,
+                    sourceUrl: video.url,
+                    thumbnail: thumbnailBuffer,
+                    renderLargerThumbnail: true,
+                    mediaUrl: video.url
+                }
+            }
+        }, { quoted: msg });
+
+        // Send info message with image and button
         const buttonMessage = {
             image: { url: video.thumbnail },
             caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*\n\n` +
@@ -1501,29 +1540,6 @@ case 'song': {
         };
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
-
-        // Get download link in parallel with sending the message
-        const [response] = await Promise.all([
-            axios.get(apiURL, { timeout: 10000 }),
-            // Add a small delay to ensure the info message is sent first
-            new Promise(resolve => setTimeout(resolve, 500))
-        ]);
-
-        const data = response.data;
-
-        if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
-        }
-
-        // Send audio directly as URL (faster)
-        await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: fileName,
-            ptt: false
-        }, { quoted: msg });
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
