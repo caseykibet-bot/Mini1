@@ -1435,8 +1435,6 @@ case 'lyrics': {
     }
     break;
 }
-//play command 
-//play command 
 case 'play':
 case 'song': {
     // React to the command first
@@ -1481,46 +1479,7 @@ case 'song': {
         const fileName = `${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Get download link first
-        const response = await axios.get(apiURL, { timeout: 10000 });
-        const data = response.data;
-
-        if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
-        }
-
-        // Fetch thumbnail for the context info
-        let thumbnailBuffer;
-        try {
-            const thumbnailResponse = await axios.get(video.thumbnail, { responseType: 'arraybuffer' });
-            thumbnailBuffer = Buffer.from(thumbnailResponse.data, 'binary');
-        } catch (err) {
-            console.error('[PLAY] Error fetching thumbnail:', err);
-            // Continue without thumbnail if there's an error
-        }
-
-        // Send audio with context info
-        await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: fileName,
-            ptt: false,
-            contextInfo: {
-                externalAdReply: {
-                    title: video.title.substring(0, 30),
-                    body: 'Powered by CASEYRHODES API',
-                    mediaType: 1,
-                    sourceUrl: video.url,
-                    thumbnail: thumbnailBuffer,
-                    renderLargerThumbnail: true,
-                    mediaUrl: video.url
-                }
-            }
-        }, { quoted: msg });
-
-        // Send info message with image and button
+        // Send song info first
         const buttonMessage = {
             image: { url: video.thumbnail },
             caption: `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*\n\n` +
@@ -1540,6 +1499,50 @@ case 'song': {
         };
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
+
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 10000 });
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
+
+        // Fetch thumbnail for the context info
+        let thumbnailBuffer;
+        try {
+            const thumbnailResponse = await axios.get(video.thumbnail, { 
+                responseType: 'arraybuffer',
+                timeout: 5000
+            });
+            thumbnailBuffer = Buffer.from(thumbnailResponse.data);
+        } catch (err) {
+            console.error('[PLAY] Error fetching thumbnail:', err);
+            // Continue without thumbnail if there's an error
+        }
+
+        // Send audio with context info after a short delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        await socket.sendMessage(sender, {
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false,
+            contextInfo: {
+                externalAdReply: {
+                    title: video.title.substring(0, 30),
+                    body: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʜᴏᴅᴇs ᴀᴘɪ',
+                    mediaType: 1,
+                    sourceUrl: video.url,
+                    thumbnail: thumbnailBuffer,
+                    renderLargerThumbnail: false,
+                    mediaUrl: video.url
+                }
+            }
+        });
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
