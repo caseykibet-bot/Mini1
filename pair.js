@@ -928,6 +928,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 
 ╭─『 🌐 *General Commands* 』─╮
 *┃*  🟢 *${config.PREFIX}alive* - Check bot status
+*┃*  🎀 *${config.PREFIX}image* - image generator
 *┃*  📊 *${config.PREFIX}bot_stats* - Bot statistics
 *┃*  ℹ️ *${config.PREFIX}bot_info* - Bot information
 *┃*  📋 *${config.PREFIX}menu* - Show interactive menu
@@ -937,11 +938,13 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🎥 *${config.PREFIX}video* - get video
 *┃*  🔮 *${config.PREFIX}github* - get other people profile
 *┃*  ♻️ *${config.PREFIX}lyrics* - get song lyrics 
+*┃*  🌟 *${config.PREFIX}support* - ask for support 
 *┃*  🚩 *${config.PREFIX}blocklist* - get all blocked contacts
 *┃*  📜 *${config.PREFIX}allmenu* - List all commands
 *┃*  🏓 *${config.PREFIX}ping* - Check response speed
 *┃*  🔗 *${config.PREFIX}pair* - Generate pairing code
 *┃*  ✨ *${config.PREFIX}fancy* - Fancy text generator
+*┃*  ♻️ *${config.PREFIX}screenshot* - get screenshot 
 *┃*  🎨 *${config.PREFIX}logo* - Create custom logos
 *┃*  📱 *${config.PREFIX}qr* - Generate QR codes
 *┗──────────────⊷*
@@ -1550,144 +1553,94 @@ case 'song': {
     break;
 }
 // Case: video
-case 'mp4':
-case 'video': {
-    // Import dependencies
-    const yts = require('yt-search');
-
-    // Constants
-    const API_BASE_URL = 'https://api.giftedtech.co.ke/api/download/ytmp4';
-    const API_KEY = 'gifted';
-
-    // Utility functions
-    function extractYouTubeId(url) {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-        const match = url.match(regex);
-        return match ? match[1] : null;
-    }
-
-    function convertYouTubeLink(input) {
-        const videoId = extractYouTubeId(input);
-        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
-    }
-
-    function formatDuration(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-
+case 'video':
+case 'videos': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎬", // Video camera emoji
+            text: "🎥",
             key: msg.key
         }
     });
 
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
-
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, 
-            { text: '*🎬 Give me a video title or YouTube link, love 😘*' }
-        );
-    }
-
-    const fixedQuery = convertYouTubeLink(q.trim());
+    const { ytsearch } = require('@dark-yasiya/yt-dl.js');
 
     try {
-        // Search for the video
-        const search = await yts(fixedQuery);
-        const videoInfo = search.videos[0];
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                 msg.message?.extendedTextMessage?.text || '';
         
-        if (!videoInfo) {
-            return await socket.sendMessage(sender, 
-                { text: '*❌ No videos found, darling! Try another? 💔*' }
-            );
+        const args = q.split(' ').slice(1);
+        const query = args.join(' ').trim();
+
+        if (!query) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *Please provide a YouTube URL or video name*",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: 'video baby shark', buttonText: { displayText: '🎬 ᴇxᴀᴍᴘʟᴇ' }, type: 1 }
+                ]
+            }, { quoted: msg });
         }
 
-        // Format duration
-        const formattedDuration = formatDuration(videoInfo.seconds);
-        
-        // Create description
-        const desc = `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
-╭───────────────┈  ⊷
-├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
-├👤 *ᴄʜᴀɴɴᴇʟ:* ${videoInfo.author.name}
-├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
-├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
-├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
-├🎥 *Format:* MP4 Video
-╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟
-`;
-
-        // Send video info immediately WITH fake vCard (only here)
+        // Send searching message
         await socket.sendMessage(sender, {
-            image: { url: videoInfo.thumbnail },
-            caption: desc
-        }, { quoted: fakevCard });
+            text: `🔍 *Searching for:* "${query}"...`
+        }, { quoted: msg });
 
-        // Build API URL
-        const apiUrl = `${API_BASE_URL}?apikey=${API_KEY}&url=${encodeURIComponent(videoInfo.url)}`;
-        
-        // Fetch video data from API
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-            throw new Error(`API responded with status: ${response.status}`);
-        }
-        
-        const apiData = await response.json();
-        
-        // Handle different possible API response structures
-        let downloadUrl;
-        
-        if (apiData.downloadUrl) {
-            downloadUrl = apiData.downloadUrl;
-        } else if (apiData.url) {
-            downloadUrl = apiData.url;
-        } else if (apiData.links && apiData.links.length > 0) {
-            downloadUrl = apiData.links[0].url || apiData.links[0].downloadUrl;
-        } else if (apiData.data && apiData.data.downloadUrl) {
-            downloadUrl = apiData.data.downloadUrl;
-        } else if (apiData.result && apiData.result.download_url) {
-            downloadUrl = apiData.result.download_url;
-        } else {
-            throw new Error('No download URL found in API response');
+        const yt = await ytsearch(query);
+        if (yt.results.length < 1) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *No results found!*",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: 'video', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                ]
+            }, { quoted: msg });
         }
 
-        if (!downloadUrl) {
-            throw new Error('Download URL is empty or invalid');
+        let yts = yt.results[0];  
+        let apiUrl = `https://api.giftedtech.co.ke/api/download/ytmp4?apikey=gifted&url=${encodeURIComponent(yts.url)}`;
+        
+        let response = await fetch(apiUrl);
+        let data = await response.json();
+        
+        if (data.status !== 200 || !data.success || !data.result.download_url) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *Failed to fetch the video.* Please try again later.",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: 'video', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                ]
+            }, { quoted: msg });
         }
 
-        // Clean title for filename
-        const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
+        // Send video info first
+        await socket.sendMessage(sender, { 
+            image: { url: yts.thumbnail }, 
+            caption: `📹 *Video Found!*\n\n🎬 *Title:* ${yts.title}\n⏳ *Duration:* ${yts.timestamp}\n👀 *Views:* ${yts.views}\n👤 *Author:* ${yts.author.name}\n\n⬇️ *Downloading video...*`
+        }, { quoted: msg });
 
-        // Send video directly from URL WITHOUT fake vCard
+        // Send the video directly
         await socket.sendMessage(sender, {
-            video: { url: downloadUrl },
+            video: { url: data.result.download_url },
             mimetype: "video/mp4",
-            fileName: `${cleanTitle}.mp4`,
-            caption: `*${videoInfo.title}*`
+            caption: `✅ *Download Complete!*\n🎬 *Title:* ${yts.title}\n⏳ *Duration:* ${yts.timestamp}\n\n✨ *Powered by CASEYRHODES-TECH*`,
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: `video ${query}`, buttonText: { displayText: '🔄 ʀᴇᴅᴏᴡɴʟᴏᴀᴅ' }, type: 1 }
+            ]
         });
-        
-    } catch (err) {
-        console.error('Video command error:', err);
-        
-        let errorMessage = "*❌ Oh no, the video download failed, love! 😢 Try again?*";
-        
-        if (err.message.includes('API responded') || err.message.includes('No download URL')) {
-            errorMessage = "*❌ The video service is temporarily unavailable. Please try again later, darling! 💔*";
-        }
-        
-        await socket.sendMessage(sender, 
-            { text: errorMessage }
-        );
+
+    } catch (e) {
+        console.error('Video Download Error:', e);
+        await socket.sendMessage(sender, {
+            text: "❌ *An error occurred.* Please try again later.",
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: 'video', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+            ]
+        }, { quoted: msg });
     }
     break;
 }
@@ -1992,6 +1945,213 @@ const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // F
   }
   break;
 }
+//image case 
+case 'img':
+case 'image':
+case 'googleimage':
+case 'searchimg': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🦋",
+            key: msg.key
+        }
+    });
+
+    const axios = require("axios");
+
+    try {
+        // Extract search query from message
+        const q = msg.message?.conversation || 
+                 msg.message?.extendedTextMessage?.text || '';
+        
+        const args = q.split(' ').slice(1);
+        const query = args.join(' ').trim();
+
+        if (!query) {
+            return await socket.sendMessage(sender, {
+                text: "🖼️ *Please provide a search query*\n*Example:* .img cute cats",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: 'img cute cats', buttonText: { displayText: '🐱 ᴇxᴀᴍᴘʟᴇ sᴇᴀʀᴄʜ' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        // Send searching message
+        await socket.sendMessage(sender, {
+            text: `🔍 *Searching images for:* "${query}"...`
+        }, { quoted: msg });
+
+        const url = `https://apis.davidcyriltech.my.id/googleimage?query=${encodeURIComponent(query)}`;
+        const response = await axios.get(url, { timeout: 15000 });
+
+        // Validate response
+        if (!response.data?.success || !response.data.results?.length) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *No images found.* Try different keywords",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: 'img', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        const results = response.data.results;
+        // Get 5 random images
+        const selectedImages = results
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 5);
+
+        let sentCount = 0;
+        
+        for (const imageUrl of selectedImages) {
+            try {
+                await socket.sendMessage(
+                    sender,
+                    { 
+                        image: { url: imageUrl },
+                        caption: `📷 *Image Search Result*\n🔍 *Query:* ${query}\n\n✨ *Powered by CaseyRhodes-XMD*`,
+                        buttons: [
+                            { buttonId: 'allmenu', buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                            { buttonId: `img ${query}`, buttonText: { displayText: '🔄 ᴍᴏʀᴇ ɪᴍᴀɢᴇs' }, type: 1 }
+                        ]
+                    },
+                    { quoted: msg }
+                );
+                
+                sentCount++;
+                
+                // Add delay between sends to avoid rate limiting
+                if (sentCount < selectedImages.length) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+            } catch (imageError) {
+                console.error('Failed to send image:', imageError);
+                // Continue with next image if one fails
+            }
+        }
+
+        // Completion message has been removed as requested
+
+    } catch (error) {
+        console.error('Image Search Error:', error);
+        
+        await socket.sendMessage(sender, {
+            text: `❌ *Search Failed*\n⚠️ *Error:* ${error.message || "Failed to fetch images"}`,
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: 'img', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+            ]
+        }, { quoted: msg });
+    }
+    break;
+}
+//case screenshot 
+case 'screenshot':
+case 'ss':
+case 'ssweb': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🌐",
+            key: msg.key
+        }
+    });
+
+    const axios = require("axios");
+
+    try {
+        // Extract URL from message
+        const q = msg.message?.conversation || 
+                 msg.message?.extendedTextMessage?.text || '';
+        
+        const args = q.split(' ').slice(1);
+        const url = args[0];
+
+        if (!url) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *Please provide a URL*\n*Example:* .screenshot https://google.com",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: 'screenshot https://google.com', buttonText: { displayText: '🌐 ᴇxᴀᴍᴘʟᴇ' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        if (!url.startsWith("http")) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *Invalid URL*\nURL must start with http:// or https://",
+                buttons: [
+                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: 'screenshot', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        // ASCII loading bars with percentage
+        const loadingBars = [
+            { percent: 10, bar: "[▓░░░░░░░░░]", text: "✦ Initializing capture..." },
+            { percent: 20, bar: "[▓▓░░░░░░░░]", text: "✦ Connecting to website..." },
+            { percent: 30, bar: "[▓▓▓░░░░░░░]", text: "✦ Loading page content..." },
+            { percent: 40, bar: "[▓▓▓▓░░░░░░]", text: "✦ Rendering elements..." },
+            { percent: 50, bar: "[▓▓▓▓▓░░░░░]", text: "✦ Processing JavaScript..." },
+            { percent: 60, bar: "[▓▓▓▓▓▓░░░░]", text: "✦ Capturing viewport..." },
+            { percent: 70, bar: "[▓▓▓▓▓▓▓░░░]", text: "✦ Scrolling page..." },
+            { percent: 80, bar: "[▓▓▓▓▓▓▓▓░░]", text: "✦ Finalizing screenshot..." },
+            { percent: 90, bar: "[▓▓▓▓▓▓▓▓▓░]", text: "✦ Optimizing image..." },
+            { percent: 100, bar: "[▓▓▓▓▓▓▓▓▓▓]", text: "✓ Capture complete!" }
+        ];
+
+        // Send initial message
+        const loadingMsg = await socket.sendMessage(sender, {
+            text: "🔄 *Starting screenshot capture...*\n✦ Please wait..."
+        }, { quoted: msg });
+
+        // Animate loading progress
+        for (const frame of loadingBars) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            await socket.sendMessage(sender, {
+                text: `📸 ${frame.bar} ${frame.percent}%\n${frame.text}`
+            }, { quoted: msg });
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Download the screenshot
+        const screenshotUrl = `https://image.thum.io/get/fullpage/${url}`;
+        const response = await axios.get(screenshotUrl, { 
+            responseType: 'arraybuffer',
+            timeout: 30000
+        });
+        const buffer = Buffer.from(response.data, 'binary');
+
+        // Send the screenshot with buttons
+        await socket.sendMessage(sender, {
+            image: buffer,
+            caption: "🖼️ *Screenshot Generated*\n\n" +
+                    "🔗 *Website:* " + url + "\n\n" +
+                    "⚡ *Powered by CASEYRHODES-TECH*",
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: `screenshot ${url}`, buttonText: { displayText: '🔄 ʀᴇᴄᴀᴘᴛᴜʀᴇ' }, type: 1 }
+            ]
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error("Screenshot Error:", error);
+        
+        await socket.sendMessage(sender, {
+            text: "❌ *Failed to capture screenshot*\n✦ Please try again later",
+            buttons: [
+                { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: 'screenshot', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+            ]
+        }, { quoted: msg });
+    }
+    break;
+}
 //bible case 
 //bible case 
 case 'bible': {
@@ -2129,7 +2289,7 @@ case 'jid': {
             text: response,
             footer: "Need help? Contact owner",
             buttons: [
-                { buttonId: 'owner', buttonText: { displayText: '👑 CONTACT OWNER' }, type: 1 }
+                { buttonId: 'support', buttonText: { displayText: '👑 CONTACT OWNER' }, type: 1 }
             ],
             contextInfo: newsletterConfig
         }, { quoted: msg });
@@ -2138,6 +2298,94 @@ case 'jid': {
         console.error("JID Error:", e);
         await socket.sendMessage(sender, {
             text: `❌ An error occurred: ${e.message || e}`
+        }, { quoted: msg });
+    }
+    break;
+}
+//support case
+case 'support':
+case 'casey': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🫅",
+            key: msg.key
+        }
+    });
+
+    const os = require("os");
+    const axios = require('axios');
+    const more = String.fromCharCode(8206);
+    const readMore = more.repeat(4001);
+
+    try {
+        // Runtime function (you'll need to implement this or use your existing one)
+        const runtime = (seconds) => {
+            const days = Math.floor(seconds / (24 * 60 * 60));
+            seconds %= 24 * 60 * 60;
+            const hours = Math.floor(seconds / (60 * 60));
+            seconds %= 60 * 60;
+            const minutes = Math.floor(seconds / 60);
+            seconds = Math.floor(seconds % 60);
+            return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        };
+
+        let dec = `    
+⟣──────────────────⟢
+▧ *ᴄʀᴇᴀᴛᴏʀ* : *ᴍʀ ᴄᴀsᴇʏʀʜᴏᴅᴇs (🇰🇪)*
+▧ *ᴍᴏᴅᴇ* : *${config.MODE}*
+▧ *ᴘʀᴇғɪx* : *${config.PREFIX}*
+▧ *ʀᴀᴍ* : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(os.totalmem() / 1024 / 1024)}MB
+▧ *ᴠᴇʀsɪᴏɴ* : *V.5* ⚡
+▧ *ᴜᴘᴛɪᴍᴇ* : ${runtime(process.uptime())}
+
+⟣──────────────────⟢
+
+> 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒-𝐗𝐌𝐃 
+
+⟣──────────────────⟢
+${readMore}
+\`CHANNEL🛠️\`
+https://tinyurl.com/26kh6jss
+
+\`GROUP\` 👥
+
+https://tinyurl.com/26kh6jss
+
+\`𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐗𝐌𝐃\` *Dev🧑‍💻*
+
+wa.me/+254112192119?text=Support!
+
+⟣──────────────────⟢
+
+`;
+
+        // Send the main support message with image
+        await socket.sendMessage(sender, {
+            image: { url: `https://i.ibb.co/NdGZ99mN/705f0162-de6f-4fb8-a78f-6c563969093c.jpg` },
+            caption: dec,
+            buttons: [
+                { buttonId: '.allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: '.support', buttonText: { displayText: '🔄 ʀᴇғʀᴇsʜ' }, type: 1 }
+            ]
+        }, { quoted: msg });
+
+        // Send audio
+        await socket.sendMessage(sender, {
+            audio: { url: 'https://files.catbox.moe/a1sh4u.mp3' },
+            mimetype: 'audio/mp4',
+            ptt: true,
+            caption: "🎵 *CaseyRhodes XMD Theme*"
+        }, { quoted: msg });
+        
+    } catch (e) {
+        console.error('Support Command Error:', e);
+        await socket.sendMessage(sender, {
+            text: `❌ *Error:* ${e.message || e}`,
+            buttons: [
+                { buttonId: '.allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: '.support', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+            ]
         }, { quoted: msg });
     }
     break;
