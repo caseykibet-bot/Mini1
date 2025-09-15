@@ -1552,10 +1552,8 @@ case 'song': {
     }
     break;
 }
-// Case: video
 case 'video':
 case 'videos': {
-    // React to the command first
     await socket.sendMessage(sender, {
         react: {
             text: "🎥",
@@ -1566,7 +1564,6 @@ case 'videos': {
     const { ytsearch } = require('@dark-yasiya/yt-dl.js');
 
     try {
-        // Extract query from message
         const q = msg.message?.conversation || 
                  msg.message?.extendedTextMessage?.text || '';
         
@@ -1582,11 +1579,6 @@ case 'videos': {
                 ]
             }, { quoted: msg });
         }
-
-        // Send searching message
-        await socket.sendMessage(sender, {
-            text: `🔍 *Searching for:* "${query}"...`
-        }, { quoted: msg });
 
         const yt = await ytsearch(query);
         if (yt.results.length < 1) {
@@ -1615,13 +1607,11 @@ case 'videos': {
             }, { quoted: msg });
         }
 
-        // Send video info first
         await socket.sendMessage(sender, { 
             image: { url: yts.thumbnail }, 
             caption: `📹 *Video Found!*\n\n🎬 *Title:* ${yts.title}\n⏳ *Duration:* ${yts.timestamp}\n👀 *Views:* ${yts.views}\n👤 *Author:* ${yts.author.name}\n\n⬇️ *Downloading video...*`
         }, { quoted: msg });
 
-        // Send the video directly
         await socket.sendMessage(sender, {
             video: { url: data.result.download_url },
             mimetype: "video/mp4",
@@ -1768,182 +1758,98 @@ case 'videos': {
                     break;
                     }
                 
-case 'tiktok': {
-const axios = require('axios');
-
-// Optimized axios instance
-const axiosInstance = axios.create({
-  timeout: 15000,
-  maxRedirects: 5,
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-  }
-});
-
-// TikTok API configuration
-const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // Fallback for testing
-  try {
-    // Get query from message
-    const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text ||
-              msg.message?.imageMessage?.caption ||
-              msg.message?.videoMessage?.caption || '';
-
-    // Validate and sanitize URL
-    const tiktokUrl = q.trim();
-    const urlRegex = /(?:https?:\/\/)?(?:www\.)?(?:tiktok\.com|vm\.tiktok\.com)\/[@a-zA-Z0-9_\-\.\/]+/;
-    if (!tiktokUrl || !urlRegex.test(tiktokUrl)) {
-      await socket.sendMessage(sender, {
-        text: '📥 *Usage:* .tiktok <TikTok URL>\nExample: .tiktok https://www.tiktok.com/@user/video/123456789'
-      }, { quoted: fakevCard });
-      return;
-    }
-
-    // Send downloading reaction
-    try {
-      await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
-    } catch (reactError) {
-      console.error('Reaction error:', reactError);
-    }
-
-    // Try primary API
-    let data;
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-      const res = await axiosInstance.get(`https://api.nexoracle.com/downloader/tiktok-nowm?apikey=${TIKTOK_API_KEY}&url=${encodeURIComponent(tiktokUrl)}`, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (res.data?.status === 200) {
-        data = res.data.result;
-      }
-    } catch (primaryError) {
-      console.error('Primary API error:', primaryError.message);
-    }
-
-    // Fallback API
-    if (!data) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-        const fallback = await axiosInstance.get(`https://api.tikwm.com/?url=${encodeURIComponent(tiktokUrl)}&hd=1`, {
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (fallback.data?.data) {
-          const r = fallback.data.data;
-          data = {
-            title: r.title || 'No title',
-            author: {
-              username: r.author?.unique_id || 'Unknown',
-              nickname: r.author?.nickname || 'Unknown'
-            },
-            metrics: {
-              digg_count: r.digg_count || 0,
-              comment_count: r.comment_count || 0,
-              share_count: r.share_count || 0,
-              download_count: r.download_count || 0
-            },
-            url: r.play || '',
-            thumbnail: r.cover || ''
-          };
+case 'tiktok':
+case 'tiktoks':
+case 'tiks': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "✅",
+            key: msg.key
         }
-      } catch (fallbackError) {
-        console.error('Fallback API error:', fallbackError.message);
-      }
-    }
-
-    if (!data || !data.url) {
-      await socket.sendMessage(sender, { text: '❌ TikTok video not found.' }, { quoted: fakevCard });
-      return;
-    }
-
-    const { title, author, url, metrics, thumbnail } = data;
-
-    // Prepare caption
-    const caption = `
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
-*┃*  📝 ᴛɪᴛᴛʟᴇ: ${title.replace(/[<>:"\/\\|?*]/g, '')}
-*┃*  👤 ᴀᴜᴛʜᴏʀ: @${author.username.replace(/[<>:"\/\\|?*]/g, '')} (${author.nickname.replace(/[<>:"\/\\|?*]/g, '')})
-*┃*  ❤️ ʟɪᴋᴇs: ${metrics.digg_count.toLocaleString()}
-*┃*  💬 ᴄᴏᴍᴍᴇɴᴛs: ${metrics.comment_count.toLocaleString()}
-*┃*  🔁 sʜᴀʀᴇs: ${metrics.share_count.toLocaleString()}
-*┃*  📥 ᴅᴏᴡɴʟᴏᴀᴅs: ${metrics.download_count.toLocaleString()}
-*┗──────────────⊷*
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ`;
-
-    // Send thumbnail with info
-    await socket.sendMessage(sender, {
-      image: { url: thumbnail || 'https://i.ibb.co/ynmqJG8j/vision-v.jpg' }, // Fallback image
-      caption
-    }, { quoted: fakevCard });
-
-    // Download video
-    const loading = await socket.sendMessage(sender, { text: '⏳ Downloading video...' }, { quoted: fakevCard });
-    let videoBuffer;
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-      const response = await axiosInstance.get(url, {
-        responseType: 'arraybuffer',
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      videoBuffer = Buffer.from(response.data, 'binary');
-
-      // Basic size check (e.g., max 50MB)
-      if (videoBuffer.length > 50 * 1024 * 1024) {
-        throw new Error('Video file too large');
-      }
-    } catch (downloadError) {
-      console.error('Video download error:', downloadError.message);
-      await socket.sendMessage(sender, { text: '❌ Failed to download video.' }, { quoted: fakevCard });
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-      return;
-    }
-
-    // Send video
-    await socket.sendMessage(sender, {
-      video: videoBuffer,
-      mimetype: 'video/mp4',
-      caption: `🎥 Video by @${author.username.replace(/[<>:"\/\\|?*]/g, '')}\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs`
-    }, { quoted: fakevCard });
-
-    // Update loading message
-    await socket.sendMessage(sender, { text: '✅ Video sent!', edit: loading.key });
-
-    // Send success reaction
-    try {
-      await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-    } catch (reactError) {
-      console.error('Success reaction error:', reactError);
-    }
-
-  } catch (error) {
-    console.error('TikTok command error:', {
-      error: error.message,
-      stack: error.stack,
-      url: tiktokUrl,
-      sender
     });
 
-    let errorMessage = '❌ Failed to download TikTok video. Please try again.';
-    if (error.name === 'AbortError') {
-      errorMessage = '❌ Download timed out. Please try again.';
-    }
+    const fetch = require("node-fetch");
 
-    await socket.sendMessage(sender, { text: errorMessage }, { quoted: fakevCard });
     try {
-      await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-    } catch (reactError) {
-      console.error('Error reaction error:', reactError);
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                 msg.message?.extendedTextMessage?.text || '';
+        
+        const args = q.split(' ').slice(1);
+        const query = args.join(' ').trim();
+
+        if (!query) {
+            return await socket.sendMessage(sender, {
+                text: "🌸 *What do you want to search on TikTok?*\n\n*Usage Example:*\n.tiktok <query>"
+            }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, {
+            text: `🔎 *Searching TikTok for:* ${query}`
+        }, { quoted: msg });
+
+        const response = await fetch(`https://api.diioffc.web.id/api/search/tiktok?query=${encodeURIComponent(query)}`);
+        const data = await response.json();
+
+        if (!data?.status || !data?.result?.length) {
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "❌",
+                    key: msg.key
+                }
+            });
+            return await socket.sendMessage(sender, {
+                text: "❌ *No results found for your query.* Please try with a different keyword."
+            }, { quoted: msg });
+        }
+
+        // Get only 2 results
+        const results = data.result.slice(0, 2);
+        
+        // Send each video
+        for (const video of results) {
+            const caption = 
+                `🎬 *${video.title}*\n` +
+                `👤 @${video.author?.username || 'unknown'}\n` +
+                `❤️ ${video.stats?.like || 0} likes | ⏱️ ${video.duration || 0}s\n` +
+                `🔗 https://www.tiktok.com/@${video.author?.username}/video/${video.video_id}`;
+
+            if (video.media?.no_watermark) {
+                await socket.sendMessage(sender, {
+                    video: { url: video.media.no_watermark },
+                    caption: caption
+                }, { quoted: msg });
+            } else {
+                await socket.sendMessage(sender, {
+                    text: `❌ *Couldn't retrieve video:* ${video.title}\n${caption}`
+                }, { quoted: msg });
+            }
+            
+            // Small delay between sends
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in TikTok command:", error);
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        await socket.sendMessage(sender, {
+            text: "❌ *An error occurred while searching TikTok.* Please try again later."
+        }, { quoted: msg });
     }
-  }
-  break;
+    break;
 }
 //image case 
 case 'img':
@@ -1959,28 +1865,31 @@ case 'searchimg': {
     });
 
     const axios = require("axios");
+    const prefix = global.prefix || '.'; // Get the prefix from your global settings
 
     try {
         // Extract search query from message
         const q = msg.message?.conversation || 
                  msg.message?.extendedTextMessage?.text || '';
         
-        const args = q.split(' ').slice(1);
+        // Remove prefix from the message
+        const queryText = q.startsWith(prefix) ? q.slice(prefix.length).trim() : q.trim();
+        const args = queryText.split(' ').slice(1);
         const query = args.join(' ').trim();
 
         if (!query) {
             return await socket.sendMessage(sender, {
-                text: "🖼️ *Please provide a search query*\n*Example:* .img cute cats",
+                text: `🖼️ *Please provide a search query*\n*Example:* ${prefix}img cute cats`,
                 buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: 'img cute cats', buttonText: { displayText: '🐱 ᴇxᴀᴍᴘʟᴇ sᴇᴀʀᴄʜ' }, type: 1 }
+                    { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: `${prefix}img cute cats`, buttonText: { displayText: '🐱 ᴇxᴀᴍᴘʟᴇ sᴇᴀʀᴄʜ' }, type: 1 }
                 ]
             }, { quoted: msg });
         }
 
         // Send searching message
         await socket.sendMessage(sender, {
-            text: `🔍 *Searching images for:* "${query}"...`
+            text: `> 🔍 *Searching images for:* "${query}"...`
         }, { quoted: msg });
 
         const url = `https://apis.davidcyriltech.my.id/googleimage?query=${encodeURIComponent(query)}`;
@@ -1991,17 +1900,17 @@ case 'searchimg': {
             return await socket.sendMessage(sender, {
                 text: "❌ *No images found.* Try different keywords",
                 buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: 'img', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                    { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: `${prefix}img`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
                 ]
             }, { quoted: msg });
         }
 
         const results = response.data.results;
-        // Get 5 random images
+        // Get 3 random images (reduced from 5 to reduce spam)
         const selectedImages = results
             .sort(() => 0.5 - Math.random())
-            .slice(0, 5);
+            .slice(0, 3);
 
         let sentCount = 0;
         
@@ -2013,8 +1922,8 @@ case 'searchimg': {
                         image: { url: imageUrl },
                         caption: `📷 *Image Search Result*\n🔍 *Query:* ${query}\n\n✨ *Powered by CaseyRhodes-XMD*`,
                         buttons: [
-                            { buttonId: 'allmenu', buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                            { buttonId: `img ${query}`, buttonText: { displayText: '🔄 ᴍᴏʀᴇ ɪᴍᴀɢᴇs' }, type: 1 }
+                            { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                            { buttonId: `${prefix}img ${query}`, buttonText: { displayText: '🔄 ᴍᴏʀᴇ ɪᴍᴀɢᴇs' }, type: 1 }
                         ]
                     },
                     { quoted: msg }
@@ -2041,118 +1950,13 @@ case 'searchimg': {
         await socket.sendMessage(sender, {
             text: `❌ *Search Failed*\n⚠️ *Error:* ${error.message || "Failed to fetch images"}`,
             buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                { buttonId: 'img', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                { buttonId: `${prefix}img`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
             ]
         }, { quoted: msg });
     }
     break;
 }
-//case screenshot 
-case 'screenshot':
-case 'ss':
-case 'ssweb': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🌐",
-            key: msg.key
-        }
-    });
-
-    const axios = require("axios");
-
-    try {
-        // Extract URL from message
-        const q = msg.message?.conversation || 
-                 msg.message?.extendedTextMessage?.text || '';
-        
-        const args = q.split(' ').slice(1);
-        const url = args[0];
-
-        if (!url) {
-            return await socket.sendMessage(sender, {
-                text: "❌ *Please provide a URL*\n*Example:* .screenshot https://google.com",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: 'screenshot https://google.com', buttonText: { displayText: '🌐 ᴇxᴀᴍᴘʟᴇ' }, type: 1 }
-                ]
-            }, { quoted: msg });
-        }
-
-        if (!url.startsWith("http")) {
-            return await socket.sendMessage(sender, {
-                text: "❌ *Invalid URL*\nURL must start with http:// or https://",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: 'screenshot', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
-                ]
-            }, { quoted: msg });
-        }
-
-        // ASCII loading bars with percentage
-        const loadingBars = [
-            { percent: 10, bar: "[▓░░░░░░░░░]", text: "✦ Initializing capture..." },
-            { percent: 20, bar: "[▓▓░░░░░░░░]", text: "✦ Connecting to website..." },
-            { percent: 30, bar: "[▓▓▓░░░░░░░]", text: "✦ Loading page content..." },
-            { percent: 40, bar: "[▓▓▓▓░░░░░░]", text: "✦ Rendering elements..." },
-            { percent: 50, bar: "[▓▓▓▓▓░░░░░]", text: "✦ Processing JavaScript..." },
-            { percent: 60, bar: "[▓▓▓▓▓▓░░░░]", text: "✦ Capturing viewport..." },
-            { percent: 70, bar: "[▓▓▓▓▓▓▓░░░]", text: "✦ Scrolling page..." },
-            { percent: 80, bar: "[▓▓▓▓▓▓▓▓░░]", text: "✦ Finalizing screenshot..." },
-            { percent: 90, bar: "[▓▓▓▓▓▓▓▓▓░]", text: "✦ Optimizing image..." },
-            { percent: 100, bar: "[▓▓▓▓▓▓▓▓▓▓]", text: "✓ Capture complete!" }
-        ];
-
-        // Send initial message
-        const loadingMsg = await socket.sendMessage(sender, {
-            text: "🔄 *Starting screenshot capture...*\n✦ Please wait..."
-        }, { quoted: msg });
-
-        // Animate loading progress
-        for (const frame of loadingBars) {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            await socket.sendMessage(sender, {
-                text: `📸 ${frame.bar} ${frame.percent}%\n${frame.text}`
-            }, { quoted: msg });
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Download the screenshot
-        const screenshotUrl = `https://image.thum.io/get/fullpage/${url}`;
-        const response = await axios.get(screenshotUrl, { 
-            responseType: 'arraybuffer',
-            timeout: 30000
-        });
-        const buffer = Buffer.from(response.data, 'binary');
-
-        // Send the screenshot with buttons
-        await socket.sendMessage(sender, {
-            image: buffer,
-            caption: "🖼️ *Screenshot Generated*\n\n" +
-                    "🔗 *Website:* " + url + "\n\n" +
-                    "⚡ *Powered by CASEYRHODES-TECH*",
-            buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                { buttonId: `screenshot ${url}`, buttonText: { displayText: '🔄 ʀᴇᴄᴀᴘᴛᴜʀᴇ' }, type: 1 }
-            ]
-        }, { quoted: msg });
-
-    } catch (error) {
-        console.error("Screenshot Error:", error);
-        
-        await socket.sendMessage(sender, {
-            text: "❌ *Failed to capture screenshot*\n✦ Please try again later",
-            buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '🌟 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                { buttonId: 'screenshot', buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
-            ]
-        }, { quoted: msg });
-    }
-    break;
-}
-//bible case 
 //bible case 
 case 'bible': {
     // React to the command first
