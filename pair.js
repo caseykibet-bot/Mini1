@@ -847,6 +847,7 @@ case 'info': {
                   title: "🔧 ᴛᴏᴏʟs & ᴜᴛɪʟɪᴛɪᴇs",
                   rows: [
                     { title: "🤖 ᴀɪ", description: "Chat with AI assistant", id: `${config.PREFIX}ai` },
+                   { title: "🚫ʙʟᴏᴄᴋ", description: "block", id: `${config.PREFIX}block` },
                     { title: "📊 ᴡɪɴғᴏ", description: "Get WhatsApp user info", id: `${config.PREFIX}winfo` },
                     { title: "🔍 ᴡʜᴏɪs", description: "Retrieve domain details", id: `${config.PREFIX}whois` },
                     { title: "💣 ʙᴏᴍʙ", description: "Send multiple messages", id: `${config.PREFIX}bomb` },
@@ -1215,10 +1216,7 @@ case 'block': {
 
         const chatId = msg.key.remoteJid; // Get current chat ID
         
-        // Block the chat first
-        await socket.updateBlockStatus(chatId, "block");
-        
-        // Send single message with everything
+        // Send success message immediately
         await socket.sendMessage(sender, { 
             image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
             caption: "🚫 *BLOCKED SUCCESSFULLY*\n\nblocked",
@@ -1236,6 +1234,9 @@ case 'block': {
             }
         });
 
+        // Block the chat after sending the success message
+        await socket.updateBlockStatus(chatId, "block");
+
     } catch (error) {
         console.error("Block command error:", error);
         
@@ -1248,108 +1249,6 @@ case 'block': {
         
         await socket.sendMessage(sender, {
             text: `❌ _Failed to block this chat._\nError: ${error.message}_`
-        }, { quoted: msg });
-    }
-    break;
-}
-//gitclone
-case 'gitclone':
-case 'git': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "📦",
-            key: msg.key
-        }
-    });
-
-    const fetch = require('node-fetch');
-
-    try {
-        // Extract GitHub link from message
-        const q = msg.message?.conversation || 
-                 msg.message?.extendedTextMessage?.text || '';
-        
-        const args = q.split(' ').slice(1);
-        const link = args[0];
-
-        if (!link) {
-            return await socket.sendMessage(sender, {
-                text: "📎 *Please provide a GitHub link.*\n\n*Example:*\n.gitclone https://github.com/caseyweb/CASEYRHODES-XMD",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
-                    { buttonId: 'gitclone https://github.com/caseyweb/CASEYRHODES-XMD', buttonText: { displayText: '🌐 EXAMPLE LINK' }, type: 1 }
-                ]
-            }, { quoted: msg });
-        }
-
-        if (!/^https:\/\/github\.com\/[^\/]+\/[^\/]+/.test(link)) {
-            return await socket.sendMessage(sender, {
-                text: "⚠️ *Invalid GitHub URL.*\nPlease provide a valid GitHub repository link.",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
-                ]
-            }, { quoted: msg });
-        }
-
-        const match = link.match(/github\.com\/([^\/]+)\/([^\/]+)(?:\.git)?/i);
-        if (!match) {
-            return await socket.sendMessage(sender, {
-                text: "❌ *Couldn't extract repository data.*\nPlease check the link format.",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
-                ]
-            }, { quoted: msg });
-        }
-
-        const user = match[1], repo = match[2];
-        const downloadURL = `https://api.github.com/repos/${user}/${repo}/zipball`;
-
-        // Check if repository exists
-        const headCheck = await fetch(downloadURL, { method: "HEAD", timeout: 10000 });
-
-        if (!headCheck.ok) {
-            return await socket.sendMessage(sender, {
-                text: "❌ *Repository not found.*\nThe repository may be private or doesn't exist.",
-                buttons: [
-                    { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
-                ]
-            }, { quoted: msg });
-        }
-
-        const filenameHeader = headCheck.headers.get("content-disposition");
-        const fileName = filenameHeader ? filenameHeader.match(/filename="?(.+?)"?$/)?.[1] : `${repo}.zip`;
-
-        // Send status message with buttons
-        await socket.sendMessage(sender, {
-            text: `╭───〔 *CASEYRHODES XMD GIT CLONE* 〕───⬣\n│\n│ 📁 *User:* ${user}\n│ 📦 *Repo:* ${repo}\n│ 📎 *Filename:* ${fileName}\n│\n╰───⬣ *Downloading...*`,
-            buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
-                { buttonId: 'gitclone', buttonText: { displayText: '🔄 ANOTHER REPO' }, type: 1 }
-            ]
-        }, { quoted: msg });
-
-        // Send the zip file
-        await socket.sendMessage(sender, {
-            document: { url: downloadURL },
-            fileName: `${fileName}.zip`,
-            mimetype: 'application/zip',
-            caption: `✅ *Download Complete!*\n📦 *Repository:* ${user}/${repo}\n📁 *Filename:* ${fileName}.zip\n\n⚡ *Powered by CASEYRHODES-TECH*`,
-            buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
-                { buttonId: 'gitclone', buttonText: { displayText: '🔄 DOWNLOAD ANOTHER' }, type: 1 }
-            ]
-        });
-
-    } catch (e) {
-        console.error("❌ GitClone Error:", e);
-        
-        await socket.sendMessage(sender, {
-            text: "❌ *Failed to download repository.*\nCheck the link or try again later.",
-            buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
-                { buttonId: 'gitclone', buttonText: { displayText: '🔄 TRY AGAIN' }, type: 1 }
-            ]
         }, { quoted: msg });
     }
     break;
@@ -1406,7 +1305,6 @@ case 'details': {
     }
     break;
 }
-
 // Case: blocklist (Blocked Users)
 case 'blocklist':
 case 'blocked': {
@@ -1424,7 +1322,11 @@ case 'blocked': {
         if (!blockedJids || blockedJids.length === 0) {
             return await socket.sendMessage(sender, {
                 text: '✅ *Your block list is empty!* 🌟\n\n' +
-                      'No users are currently blocked.'
+                      'No users are currently blocked.',
+                buttons: [
+                    { buttonId: '.block', buttonText: { displayText: '🚫 Block User' }, type: 1 },
+                    { buttonId: '.allmenu', buttonText: { displayText: '📋 Menu' }, type: 1 }
+                ]
             }, { quoted: fakevCard });
         }
 
@@ -1435,14 +1337,23 @@ case 'blocked': {
         await socket.sendMessage(sender, {
             text: `🚫 *Blocked Contacts:*\n\n${formattedList}\n\n` +
                   `*Total blocked:* ${blockedJids.length}\n\n` +
-                  `> _Powered by CaseyRhodes Tech_ 🌟`
+                  `> _Powered by CaseyRhodes Tech_ 🌟`,
+            buttons: [
+                { buttonId: '.unblock', buttonText: { displayText: '🔓 Unblock All' }, type: 1 },
+                { buttonId: '.block', buttonText: { displayText: '🚫 Block More' }, type: 1 },
+                { buttonId: '.allmenu', buttonText: { displayText: '📋 Main Menu' }, type: 1 }
+            ]
         }, { quoted: fakevCard });
 
     } catch (error) {
         console.error('Error fetching block list:', error);
         await socket.sendMessage(sender, {
             text: '❌ *An error occurred while retrieving the block list!*\n\n' +
-                  'This command may require admin privileges.'
+                  'This command may require admin privileges.',
+            buttons: [
+                { buttonId: '.help block', buttonText: { displayText: '❓ Help' }, type: 1 },
+                { buttonId: '.allmenu', buttonText: { displayText: '📋 Menu' }, type: 1 }
+            ]
         }, { quoted: fakevCard });
     }
     break;
@@ -1472,7 +1383,11 @@ case 'lyrics': {
         return await socket.sendMessage(sender, {
             text: '🎶 *Please provide a song name and artist...*\n\n' +
                   'Example: *.lyrics not afraid Eminem*\n' +
-                  'Example: *.lyrics shape of you Ed Sheeran*'
+                  'Example: *.lyrics shape of you Ed Sheeran*',
+            buttons: [
+                { buttonId: '.lyrics shape of you', buttonText: { displayText: '🎵 Example 1' }, type: 1 },
+                { buttonId: '.lyrics not afraid', buttonText: { displayText: '🎵 Example 2' }, type: 1 }
+            ]
         }, { quoted: fakevCard });
     }
 
@@ -1484,7 +1399,11 @@ case 'lyrics': {
         if (!data.success || !data.result || !data.result.lyrics) {
             return await socket.sendMessage(sender, {
                 text: '❌ *Lyrics not found for the provided query.*\n\n' +
-                      'Please check the song name and artist spelling.'
+                      'Please check the song name and artist spelling.',
+                buttons: [
+                    { buttonId: '.help lyrics', buttonText: { displayText: '❓ Help' }, type: 1 },
+                    { buttonId: '.lyrics', buttonText: { displayText: '🔍 Try Again' }, type: 1 }
+                ]
             }, { quoted: fakevCard });
         }
 
@@ -1503,6 +1422,11 @@ case 'lyrics': {
         await socket.sendMessage(sender, {
             image: { url: image },
             caption: caption,
+            buttons: [
+                { buttonId: '.play ' + query, buttonText: { displayText: '🎵 Play Song' }, type: 1 },
+                { buttonId: '.song ' + query, buttonText: { displayText: '📺 YouTube' }, type: 1 },
+                { buttonId: '.lyrics', buttonText: { displayText: '🔍 New Search' }, type: 1 }
+            ],
             contextInfo: {
                 forwardingScore: 1,
                 isForwarded: true,
@@ -1518,7 +1442,11 @@ case 'lyrics': {
         console.error('[LYRICS ERROR]', err);
         await socket.sendMessage(sender, {
             text: '❌ *An error occurred while fetching lyrics!*\n\n' +
-                  'Please try again later or check your internet connection.'
+                  'Please try again later or check your internet connection.',
+            buttons: [
+                { buttonId: '.lyrics', buttonText: { displayText: '🔄 Retry' }, type: 1 },
+                { buttonId: '.help', buttonText: { displayText: '❓ Help' }, type: 1 }
+            ]
         }, { quoted: fakevCard });
     }
     break;
@@ -2065,6 +1993,7 @@ const TIKTOK_API_KEY = process.env.TIKTOK_API_KEY || 'free_key@maher_apis'; // F
   break;
 }
 //bible case 
+//bible case 
 case 'bible': {
     // React to the command first
     await socket.sendMessage(sender, {
@@ -2117,14 +2046,6 @@ case 'bible': {
                         newsletterJid: '120363302677217436@newsletter',
                         newsletterName: 'CASEYRHODES BIBLE 🎉🙏',
                         serverMessageId: 143
-                    },
-                    externalAdReply: {
-                        showAdAttribution: true,
-                        title: "CASEYRHODES BIBLE 🎉🙏",
-                        body: "Daily Bible Verses & Inspiration",
-                        mediaType: 1,
-                        thumbnailUrl: "https://files.catbox.moe/y3j3kl.jpg",
-                        sourceUrl: ""
                     }
                 }
             }, { quoted: msg });
@@ -2259,19 +2180,38 @@ case 'savecontacts': {
         
         let vcard = '';
         let noPort = 0;
+        let validNumbers = 0;
         
-        // Generate vCard for each participant
+        // Generate vCard for each participant - extract phone numbers only
         for (let participant of participants) {
-            const number = participant.id.split("@")[0];
-            vcard += `BEGIN:VCARD\nVERSION:3.0\nFN:[${noPort++}] +${number}\nTEL;type=CELL;type=VOICE;waid=${number}:+${number}\nEND:VCARD\n`;
+            const jid = participant.id;
+            
+            // Extract phone number from JID (remove @s.whatsapp.net or other suffixes)
+            let number = jid.split('@')[0];
+            
+            // Remove any non-digit characters except plus sign at the beginning
+            number = number.replace(/^(?:\+)?(\d+)$/, '$1');
+            
+            // Validate it's a proper phone number (at least 5 digits)
+            if (number.length >= 5 && /^\d+$/.test(number)) {
+                vcard += `BEGIN:VCARD\nVERSION:3.0\nFN:[${noPort++}] +${number}\nTEL;type=CELL;type=VOICE;waid=${number}:+${number}\nEND:VCARD\n`;
+                validNumbers++;
+            }
         }
 
         const nmfilect = './contacts.vcf';
         
         // Send processing message
         await socket.sendMessage(sender, {
-            text: `📇 Saving ${participants.length} participants contact...`
+            text: `📇 Processing ${participants.length} participants...`
         }, { quoted: msg });
+
+        // Check if we have valid numbers
+        if (validNumbers === 0) {
+            return await socket.sendMessage(sender, {
+                text: "❌ No valid phone numbers found in this group."
+            }, { quoted: msg });
+        }
 
         // Write vCard to file
         fs.writeFileSync(nmfilect, vcard.trim());
@@ -2284,11 +2224,12 @@ case 'savecontacts': {
             fileName: 'Caseyrhodes.vcf', 
             caption: `✅ *Contact Save Complete!*\n\n` +
                     `📋 *Group Name:* ${groupMetadata.subject}\n` +
-                    `👥 *Contacts Saved:* ${participants.length}\n\n` +
+                    `👥 *Total Participants:* ${participants.length}\n` +
+                    `📞 *Valid Numbers Saved:* ${validNumbers}\n\n` +
                     `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ`,
             buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
-                { buttonId: 'savecontact', buttonText: { displayText: '🔄 SAVE AGAIN' }, type: 1 }
+                { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
+                { buttonId: '.savecontact', buttonText: { displayText: '🔄 SAVE AGAIN' }, type: 1 }
             ]
         }, { quoted: msg });
 
@@ -2300,7 +2241,7 @@ case 'savecontacts': {
         await socket.sendMessage(sender, {
             text: `❌ Error: ${err.message || err}`,
             buttons: [
-                { buttonId: 'allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
+                { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
             ]
         }, { quoted: msg });
     }
@@ -2404,43 +2345,63 @@ case "meme": {
     }
     break;
 }
-
+//case cat
 case "cat": {
     try {
         await socket.sendMessage(sender, { react: { text: '🐱', key: msg.key } });
         const res = await fetch('https://api.thecatapi.com/v1/images/search');
         const data = await res.json();
         if (!data || !data[0]?.url) {
-            await socket.sendMessage(sender, { text: '❌ Couldn\'t fetch cat image.' }, { quoted: fakevCard });
+            await socket.sendMessage(sender, { 
+                text: '❌ Couldn\'t fetch cat image.' 
+            }, { quoted: fakevCard });
             break;
         }
         await socket.sendMessage(sender, {
             image: { url: data[0].url },
-            caption: '🐱 Meow~ Here\'s a cute cat for you!'
+            caption: '🐱 Meow~ Here\'s a cute cat for you!',
+            buttons: [
+                { buttonId: '.cat', buttonText: { displayText: '🐱 Another Cat' }, type: 1 }
+            ]
         }, { quoted: fakevCard });
     } catch (err) {
         console.error(err);
-        await socket.sendMessage(sender, { text: '❌ Failed to fetch cat image.' }, { quoted: fakevCard });
+        await socket.sendMessage(sender, { 
+            text: '❌ Failed to fetch cat image.',
+            buttons: [
+                { buttonId: '.cat', buttonText: { displayText: '🔄 Try Again' }, type: 1 }
+            ]
+        }, { quoted: fakevCard });
     }
     break;
 }
-
+//case dog 
 case "dog": {
     try {
         await socket.sendMessage(sender, { react: { text: '🦮', key: msg.key } });
         const res = await fetch('https://dog.ceo/api/breeds/image/random');
         const data = await res.json();
         if (!data || !data.message) {
-            await socket.sendMessage(sender, { text: '❌ Couldn\'t fetch dog image.' }, { quoted: fakevCard });
+            await socket.sendMessage(sender, { 
+                text: '❌ Couldn\'t fetch dog image.' 
+            }, { quoted: fakevCard });
             break;
         }
         await socket.sendMessage(sender, {
             image: { url: data.message },
-            caption: '🐶 Woof! Here\'s a cute dog!'
+            caption: '🐶 Woof! Here\'s a cute dog!',
+            buttons: [
+                { buttonId: '.dog', buttonText: { displayText: '🐶 Another Dog' }, type: 1 }
+            ]
         }, { quoted: fakevCard });
     } catch (err) {
         console.error(err);
-        await socket.sendMessage(sender, { text: '❌ Failed to fetch dog image.' }, { quoted: fakevCard });
+        await socket.sendMessage(sender, { 
+            text: '❌ Failed to fetch dog image.',
+            buttons: [
+                { buttonId: '.dog', buttonText: { displayText: '🔄 Try Again' }, type: 1 }
+            ]
+        }, { quoted: fakevCard });
     }
     break;
 }
@@ -3223,11 +3184,22 @@ case 'gh': {
 🔄 *Updated:* ${new Date(data.updated_at).toLocaleDateString()}
       `.trim();
 
-      await socket.sendMessage(from, {
+      // Create a button to download the profile info
+      const buttonMessage = {
         image: { url: profilePic },
-        caption: userInfo
-      }, { quoted: msg });
+        caption: userInfo,
+        footer: 'Click the button below to download this profile info',
+        buttons: [
+          {
+            buttonId: `download-${data.login}`,
+            buttonText: { displayText: '📥 Download Profile' },
+            type: 1
+          }
+        ],
+        headerType: 4
+      };
 
+      await socket.sendMessage(from, buttonMessage, { quoted: msg });
       await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
 
     } catch (err) {
@@ -3243,6 +3215,46 @@ case 'gh': {
       text: '❌ An unexpected error occurred. Please try again.'
     }, { quoted: msg });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
+}
+// Add this to your button handling section
+case 'download-': { // This will catch any button starting with "download-"
+  try {
+    const username = body.substring(9); // Extract username from button ID
+    const response = await axios.get(`https://api.github.com/users/${username}`);
+    const data = response.data;
+    
+    // Format the data as text for download
+    const profileText = `
+GitHub Profile Information
+--------------------------
+Name: ${data.name || 'N/A'}
+Username: ${data.login}
+Bio: ${data.bio || 'N/A'}
+Company: ${data.company || 'N/A'}
+Location: ${data.location || 'N/A'}
+Email: ${data.email || 'N/A'}
+Blog: ${data.blog || 'N/A'}
+Public Repositories: ${data.public_repos}
+Followers: ${data.followers}
+Following: ${data.following}
+Profile Created: ${new Date(data.created_at).toLocaleDateString()}
+Last Updated: ${new Date(data.updated_at).toLocaleDateString()}
+    `.trim();
+    
+    // Send as a document
+    await socket.sendMessage(from, {
+      document: { url: `data:text/plain;base64,${Buffer.from(profileText).toString('base64')}` },
+      fileName: `${username}_github_profile.txt`,
+      mimetype: 'text/plain'
+    }, { quoted: msg });
+    
+  } catch (error) {
+    console.error('Download error:', error);
+    await socket.sendMessage(from, {
+      text: '❌ Error downloading profile information.'
+    }, { quoted: msg });
   }
   break;
 }
@@ -3742,14 +3754,60 @@ END:VCARD
         }
     }, { quoted: fakevCard });
 
-    // Optional: Send additional info message
-    await socket.sendMessage(sender, {
+    // Send message with button
+    const buttonMessage = {
         text: `*👑 Bot Owner Details*\n\n` +
               `*Name:* ${botOwner}\n` +
               `*Contact:* ${ownerNumber}\n\n` +
-              `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ🌟`
-    }, { quoted: fakevCard });
+              `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ🌟`,
+        footer: 'Need help or have questions?',
+        buttons: [
+            {
+                buttonId: 'contact-owner',
+                buttonText: { displayText: '🎀 Contact Owner' },
+                type: 1
+            }
+        ],
+        headerType: 1
+    };
+
+    await socket.sendMessage(sender, buttonMessage, { quoted: fakevCard });
     
+    break;
+}
+// Add this to your button handling section
+case 'contact-owner': {
+    try {
+        // Send a pre-filled message to contact the owner
+        await socket.sendMessage(from, {
+            text: `Hello! I'd like to get in touch with you about your bot.`
+        }, { quoted: msg });
+        
+        // Optionally send the contact card again
+        const botOwner = "ᴄᴀsᴇʏʀʜᴏᴅᴇs";
+        const ownerNumber = "254101022551";
+        
+        const vcard = `
+BEGIN:VCARD
+VERSION:3.0
+FN:${botOwner}
+TEL;waid=${ownerNumber}:${ownerNumber}
+END:VCARD
+`;
+
+        await socket.sendMessage(from, {
+            contacts: {
+                displayName: botOwner,
+                contacts: [{ vcard }]
+            }
+        }, { quoted: msg });
+        
+    } catch (error) {
+        console.error('Contact button error:', error);
+        await socket.sendMessage(from, {
+            text: '❌ Error processing your request.'
+        }, { quoted: msg });
+    }
     break;
 }
 // case 39: weather
@@ -3878,138 +3936,7 @@ case 'savestatus': {
   }
   break;
 }
-//url test 
-case 'tourl':
-case 'imgtourl':
-case 'imgurl':
-case 'url':
-case 'geturl':
-case 'upload': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "✅",
-            key: msg.key
-        }
-    });
 
-    const axios = require("axios");
-    const FormData = require('form-data');
-    const fs = require('fs');
-    const os = require('os');
-    const path = require("path");
-
-    try {
-        // Check if message is quoted
-        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage ? msg : null;
-        const messageToUse = quotedMsg || msg;
-
-        // Get mime type from message
-        let mimeType = '';
-        if (messageToUse.message?.imageMessage) {
-            mimeType = messageToUse.message.imageMessage.mimetype;
-        } else if (messageToUse.message?.videoMessage) {
-            mimeType = messageToUse.message.videoMessage.mimetype;
-        } else if (messageToUse.message?.audioMessage) {
-            mimeType = messageToUse.message.audioMessage.mimetype;
-        } else if (messageToUse.message?.documentMessage) {
-            mimeType = messageToUse.message.documentMessage.mimetype;
-        }
-
-        if (!mimeType) {
-            return await socket.sendMessage(sender, {
-                text: "*❌ Please reply to an image, video, or audio file*"
-            }, { quoted: msg });
-        }
-
-        // Download the media
-        const mediaBuffer = await socket.downloadMediaMessage(messageToUse);
-        
-        if (!mediaBuffer) {
-            return await socket.sendMessage(sender, {
-                text: "*❌ Failed to download the media file*"
-            }, { quoted: msg });
-        }
-
-        const tempFilePath = path.join(os.tmpdir(), `catbox_upload_${Date.now()}`);
-        fs.writeFileSync(tempFilePath, mediaBuffer);
-
-        // Get file extension based on mime type
-        let extension = '';
-        if (mimeType.includes('image/jpeg')) extension = '.jpg';
-        else if (mimeType.includes('image/png')) extension = '.png';
-        else if (mimeType.includes('video')) extension = '.mp4';
-        else if (mimeType.includes('audio')) extension = '.mp3';
-        else extension = '.bin';
-        
-        const fileName = `file${extension}`;
-
-        // Prepare form data for Catbox
-        const form = new FormData();
-        form.append('fileToUpload', fs.createReadStream(tempFilePath), fileName);
-        form.append('reqtype', 'fileupload');
-
-        // Upload to Catbox
-        const response = await axios.post("https://catbox.moe/user/api.php", form, {
-            headers: form.getHeaders(),
-            timeout: 30000
-        });
-
-        if (!response.data) {
-            fs.unlinkSync(tempFilePath);
-            return await socket.sendMessage(sender, {
-                text: "*❌ Error uploading to Catbox*"
-            }, { quoted: msg });
-        }
-
-        const mediaUrl = response.data;
-        fs.unlinkSync(tempFilePath);
-
-        // Determine media type for response
-        let mediaType = 'File';
-        if (mimeType.includes('image')) mediaType = 'Image';
-        else if (mimeType.includes('video')) mediaType = 'Video';
-        else if (mimeType.includes('audio')) mediaType = 'Audio';
-
-        // Format bytes function
-        const formatBytes = (bytes) => {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        };
-
-        // Create the status message
-        const status = `*${mediaType} ᴜᴘʟᴏᴀᴅᴇᴅ sᴜᴄᴄᴇsғᴜʟʟʏ ✅*\n\n` +
-            `*Size:* ${formatBytes(mediaBuffer.length)}\n` +
-            `*URL:* ${mediaUrl}\n\n` +
-            `> ᴜᴘʟᴏᴀᴅᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟`;
-
-        // Send response with newsletter context
-        await socket.sendMessage(sender, { 
-            image: { url: `https://i.ibb.co/wN6Gw0ZF/lordcasey.jpg` },  
-            caption: status,
-            contextInfo: {
-                mentionedJid: [sender],
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363302677217436@newsletter',
-                    newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟',
-                    serverMessageId: 143
-                }
-            }
-        }, { quoted: msg });
-
-    } catch (error) {
-        console.error('Tourl Error:', error);
-        await socket.sendMessage(sender, {
-            text: `*❌ Error:* ${error.message || error}`
-        }, { quoted: msg });
-    }
-    break;
-}
 //🌟
 case 'jid': {
     // React to the command first
@@ -4563,10 +4490,14 @@ await socket.sendMessage(userJid, {
         `🏠 ɢʀᴏᴜᴘ sᴛᴀᴛᴜs: ${groupStatus}\n` +
         `⏰ ᴄᴏɴɴᴇᴄᴛᴇᴅ: ${new Date().toLocaleString()}\n\n` +
         `📢 ғᴏʟʟᴏᴡ ᴍᴀɪɴ ᴄʜᴀɴɴᴇʟ 👇\n` +
-        `https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T\n\n` +
+        `> https://whatsapp.com/channel/0029Vb6DmcwE50Ugs1acGO2s\n\n` +
         `🤖 ᴛʏᴘᴇ *${config.PREFIX}menu* ᴛᴏ ɢᴇᴛ sᴛᴀʀᴛᴇᴅ!`,
         '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ'
-    )
+    ),
+    buttons: [
+        { buttonId: `${config.PREFIX}owner`, buttonText: { displayText: '👑 OWNER' }, type: 1 },
+        { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '🤖 MENU' }, type: 1 }
+    ]
 });
 
 await sendAdminConnectMessage(socket, sanitizedNumber, groupResult);
