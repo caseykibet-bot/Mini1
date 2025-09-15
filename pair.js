@@ -1482,10 +1482,25 @@ case 'song': {
 
     try {
         console.log('[PLAY] Searching YT for:', query, 'Format:', formatType);
+        
+        // Show searching emoji
+        await socket.sendMessage(sender, {
+            react: {
+                text: "🔍",
+                key: msg.key
+            }
+        });
+        
         const search = await yts(query);
         const video = search.videos[0];
 
         if (!video) {
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "❌",
+                    key: msg.key
+                }
+            });
             return await socket.sendMessage(sender, {
                 text: '*❌ No songs found! Try another search?*'
             }, { quoted: msg });
@@ -1494,6 +1509,14 @@ case 'song': {
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${GLOBAL_PREFIX}${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
+
+        // Show processing emoji
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
 
         // Send song info first with format options
         const buttonMessage = {
@@ -1505,15 +1528,15 @@ case 'song': {
                      `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
                      `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
-                     `├📦 *ꜰᴏʀᴍᴀᴛ:* ${formatType === 'audio' ? 'Audio' : 'Document'}\n` +
+                     `├📦 *ꜰᴏʀᴍᴀᴛ:* ${formatType === 'audio' ? 'Audio 🎵' : 'Document 📄'}\n` +
                      `├🏷️ *ᴘʀᴇꜰɪx:* ${GLOBAL_PREFIX}\n` +
                      `╰─────────────────◆\n\n` +
                      `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟\n\n` +
                      `*Usage:* Add |audio or |doc to specify format`,
             footer: 'Click the buttons below to change format',
             buttons: [
-                { buttonId: `${prefix}${args[0]} |audio`, buttonText: { displayText: '🎵 ᴀᴜᴅɪᴏ' }, type: 1 },
-                { buttonId: `${prefix}${args[0]} |doc`, buttonText: { displayText: '📄 ᴅᴏᴄᴜᴍᴇɴᴛ' }, type: 1 },
+                { buttonId: `${prefix}song ${query} |audio`, buttonText: { displayText: '🎵 ᴀᴜᴅɪᴏ' }, type: 1 },
+                { buttonId: `${prefix}song ${query} |doc`, buttonText: { displayText: '📄 ᴅᴏᴄᴜᴍᴇɴᴛ' }, type: 1 },
                 { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🎀 ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
             ],
             headerType: 4
@@ -1521,9 +1544,30 @@ case 'song': {
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link in parallel to save time
-        const responsePromise = axios.get(apiURL, { timeout: 10000 });
-        
+        // Show downloading emoji
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⬇️",
+                key: msg.key
+            }
+        });
+
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 10000 });
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "❌",
+                    key: msg.key
+                }
+            });
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
+        }
+
         // Fetch thumbnail for the context info
         let thumbnailBuffer;
         try {
@@ -1537,24 +1581,22 @@ case 'song': {
             // Continue without thumbnail if there's an error
         }
 
-        // Wait for download link
-        const response = await responsePromise;
-        const data = response.data;
-
-        if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
-        }
-
         // Send audio with appropriate format
         if (formatType === 'document') {
+            // Show uploading emoji for document
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "📤",
+                    key: msg.key
+                }
+            });
+            
             // Send as document
             await socket.sendMessage(sender, {
                 document: { url: data.downloadLink },
                 mimetype: 'audio/mpeg',
                 fileName: fileName,
-                caption: `*${video.title}* - Sent as document\n🏷️ *Prefix:* ${GLOBAL_PREFIX}`,
+                caption: `*${video.title}*\n📄 *Sent as document*\n🏷️ *Prefix:* ${GLOBAL_PREFIX}`,
                 contextInfo: {
                     externalAdReply: {
                         title: video.title.substring(0, 30),
@@ -1562,12 +1604,20 @@ case 'song': {
                         mediaType: 1,
                         sourceUrl: video.url,
                         thumbnail: thumbnailBuffer,
-                        renderLargerThumbnail: true,
+                        renderLargerThumbnail: false,
                         mediaUrl: video.url
                     }
                 }
             });
         } else {
+            // Show uploading emoji for audio
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "📤",
+                    key: msg.key
+                }
+            });
+            
             // Send as audio
             await socket.sendMessage(sender, {
                 audio: { url: data.downloadLink },
@@ -1581,17 +1631,29 @@ case 'song': {
                         mediaType: 1,
                         sourceUrl: video.url,
                         thumbnail: thumbnailBuffer,
-                        renderLargerThumbnail: true,
+                        renderLargerThumbnail: false,
                         mediaUrl: video.url
                     }
                 }
             });
         }
 
-        // Completion message has been removed as requested
+        // Show success emoji
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
         await socket.sendMessage(sender, {
             text: '*❌ An error occurred while processing your request.*\n\n' +
                   '*Possible reasons:*\n' +
