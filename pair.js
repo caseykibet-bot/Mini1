@@ -1441,7 +1441,7 @@ case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎵",
+            text: "🎸",
             key: msg.key
         }
     });
@@ -1539,7 +1539,7 @@ case 'song': {
                     mediaType: 1,
                     sourceUrl: video.url,
                     thumbnail: thumbnailBuffer,
-                    renderLargerThumbnail: true,
+                    renderLargerThumbnail: false,
                     mediaUrl: video.url
                 }
             }
