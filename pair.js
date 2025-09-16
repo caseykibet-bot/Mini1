@@ -1350,6 +1350,125 @@ case 'details': {
     }
     break;
 }
+//vv 
+case 'vv':
+case 'viewonce':
+case 'retrieve': {
+    try {
+        // Check if user is owner/creator (using various methods)
+        const userJid = msg.key.participant || msg.key.remoteJid;
+        const isOwner = (
+            // Method 1: Check config owners array
+            config.OWNERS && config.OWNERS.includes(userJid) ||
+            // Method 2: Check if user is the bot owner
+            userJid === config.OWNER_NUMBER + '@s.whatsapp.net' ||
+            // Method 3: Check if user is in owners list (alternative format)
+            userJid === config.owner + '@s.whatsapp.net' ||
+            // Method 4: Check if user is the primary owner
+            userJid === config.MODS && config.MODS.includes(userJid)
+        );
+
+        if (!isOwner) {
+            return await socket.sendMessage(sender, {
+                text: '*📛 This is an owner-only command.*'
+            }, { quoted: msg });
+        }
+
+        // Check if message is a reply to a view once message
+        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (!quoted) {
+            return await socket.sendMessage(sender, {
+                text: '*🍁 Please reply to a view once message!*'
+            }, { quoted: msg });
+        }
+
+        // Check if it's actually a view once message
+        const isViewOnce = quoted?.viewOnceMessageV2 || quoted?.viewOnceMessageV2Extension;
+        if (!isViewOnce) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ This is not a view once message!*'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Extract the actual message from view once wrapper
+        const actualMessage = quoted.viewOnceMessageV2?.message || quoted.viewOnceMessageV2Extension?.message;
+
+        if (!actualMessage) {
+            throw new Error('Could not extract view once content');
+        }
+
+        // Download the media
+        const media = await socket.downloadMediaMessage({ 
+            ...msg, 
+            message: actualMessage 
+        });
+
+        let messageContent = {};
+
+        // Handle different media types
+        if (actualMessage.imageMessage) {
+            messageContent = {
+                image: media,
+                caption: actualMessage.imageMessage.caption || '',
+                mimetype: actualMessage.imageMessage.mimetype || "image/jpeg"
+            };
+        } 
+        else if (actualMessage.videoMessage) {
+            messageContent = {
+                video: media,
+                caption: actualMessage.videoMessage.caption || '',
+                mimetype: actualMessage.videoMessage.mimetype || "video/mp4"
+            };
+        } 
+        else if (actualMessage.audioMessage) {
+            messageContent = {
+                audio: media,
+                mimetype: actualMessage.audioMessage.mimetype || "audio/mp4",
+                ptt: actualMessage.audioMessage.ptt || false
+            };
+        } 
+        else {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Only image, video, and audio view once messages are supported*'
+            }, { quoted: msg });
+        }
+
+        // Send the retrieved media directly without success message
+        await socket.sendMessage(sender, messageContent, { quoted: msg });
+
+        // Send success reaction only
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("ViewOnce Error:", error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        await socket.sendMessage(sender, {
+            text: `❌ *Error retrieving view once message:*\n${error.message || 'Failed to retrieve message'}`
+        }, { quoted: msg });
+    }
+    break;
+}
 // Case: blocklist (Blocked Users)
 case 'blocklist':
 case 'blocked': {
@@ -1493,6 +1612,214 @@ case 'lyrics': {
                 { buttonId: '.help', buttonText: { displayText: '❓ Help' }, type: 1 }
             ]
         }, { quoted: fakevCard });
+    }
+    break;
+}
+//case url 
+case 'tourl':
+case 'imgtourl':
+case 'imgurl':
+case 'url':
+case 'uploadimg': {
+    try {
+        const axios = require('axios');
+        const FormData = require('form-data');
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+
+        // API keys
+        const API_KEYS = [
+            "40dfb24c7b48ba51487a9645abf33148",
+            "4a9c3527b0cd8b12dd4d8ab166a0f592",
+            "0e2b3697320c339de00589478be70c48",
+            "7b46d3cddc9b67ef690ed03dce9cb7d5"
+        ];
+
+        // Check if message has image
+        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage || msg;
+        const mime = quoted?.imageMessage?.mimetype || quoted?.documentMessage?.mimetype || '';
+
+        if (!mime.startsWith("image")) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Oops! Reply to an image*'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Download image
+        const media = await socket.downloadMediaMessage(quoted);
+        const filePath = path.join(os.tmpdir(), "upload-image.jpg");
+        fs.writeFileSync(filePath, media);
+
+        let imageUrl, lastError;
+        for (const apiKey of API_KEYS) {
+            try {
+                const form = new FormData();
+                form.append("image", fs.createReadStream(filePath));
+
+                const res = await axios.post("https://api.imgbb.com/1/upload", form, {
+                    params: { key: apiKey },
+                    headers: form.getHeaders(),
+                    timeout: 15000
+                });
+
+                imageUrl = res?.data?.data?.url;
+                if (imageUrl) break;
+            } catch (err) {
+                lastError = err;
+                console.error(`ImgBB key failed:`, err.message);
+            }
+        }
+
+        fs.unlinkSync(filePath);
+
+        if (!imageUrl) {
+            throw lastError || new Error('All upload services failed');
+        }
+
+        await socket.sendMessage(sender, {
+            text: `✅ *IMAGE UPLOADED SUCCESSFULLY!*\n\n` +
+                  `📂 *File Size:* ${media.length} bytes\n` +
+                  `🔗 *URL:* ${imageUrl}\n\n` +
+                  `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            buttons: [
+                {
+                    buttonId: '.tourl',
+                    buttonText: { displayText: '🔄 Upload Another' },
+                    type: 1
+                }
+            ],
+            headerType: 1
+        }, { quoted: msg });
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Tourl error:", error);
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        await socket.sendMessage(sender, {
+            text: `❌ *Error:* ${error.message || 'Upload failed'}\nTry again or use a different image.`
+        }, { quoted: msg });
+    }
+    break;
+}
+//case catbox url 
+case 'tourl2':
+case 'imgtourl2':
+case 'imgurl2':
+case 'url2':
+case 'geturl2':
+case 'upload': {
+    try {
+        const axios = require('axios');
+        const FormData = require('form-data');
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+
+        // Check if message has media
+        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage || msg;
+        const mime = quoted?.imageMessage?.mimetype || quoted?.videoMessage?.mimetype || quoted?.audioMessage?.mimetype || quoted?.documentMessage?.mimetype || '';
+
+        if (!mime) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Reply to image, audio or video.*'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Download media
+        const media = await socket.downloadMediaMessage(quoted);
+        const ext = mime.includes("image/jpeg") ? ".jpg" :
+                    mime.includes("png") ? ".png" :
+                    mime.includes("video") ? ".mp4" :
+                    mime.includes("audio") ? ".mp3" : "";
+        const tmp = path.join(os.tmpdir(), `upload_${Date.now()}${ext}`);
+        fs.writeFileSync(tmp, media);
+
+        const form = new FormData();
+        form.append("fileToUpload", fs.createReadStream(tmp), `file${ext}`);
+        form.append("reqtype", "fileupload");
+
+        const res = await axios.post("https://catbox.moe/user/api.php", form, {
+            headers: form.getHeaders(),
+            timeout: 15000
+        });
+
+        if (!res.data) throw new Error("Upload failed");
+
+        fs.unlinkSync(tmp);
+
+        const type = mime.includes("image") ? "Image" :
+                     mime.includes("video") ? "Video" :
+                     mime.includes("audio") ? "Audio" : "File";
+
+        // Format bytes function
+        function formatBytes(bytes) {
+            if (!bytes) return "0 Bytes";
+            const k = 1024, sizes = ["Bytes", "KB", "MB", "GB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+        }
+
+        await socket.sendMessage(sender, {
+            text: `✅ *${type} Uploaded!*\n\n` +
+                  `📁 *Size:* ${formatBytes(media.length)}\n` +
+                  `🔗 *URL:* ${res.data}\n\n` +
+                  `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            buttons: [
+                {
+                    buttonId: '.tourl2',
+                    buttonText: { displayText: '📤 Upload Another' },
+                    type: 1
+                }
+            ],
+            headerType: 1
+        }, { quoted: msg });
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Tourl2 error:", error);
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        await socket.sendMessage(sender, {
+            text: `❌ *Error:* ${error.message || 'Upload failed'}\nTry again with a smaller file.`
+        }, { quoted: msg });
     }
     break;
 }
@@ -2277,6 +2604,164 @@ case 'tts': {
         console.error('TTS Error:', e);
         await socket.sendMessage(sender, {
             text: `❌ *Error:* ${e.message || e}`
+        }, { quoted: msg });
+    }
+    break;
+}
+//web zip 
+case 'webzip':
+case 'sitezip':
+case 'web':
+case 'archive': {
+    try {
+        const axios = require('axios');
+        
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const url = args[0];
+
+        if (!url) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Please provide a URL*\nExample: .webzip https://example.com'
+            }, { quoted: msg });
+        }
+
+        if (!url.match(/^https?:\/\//)) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Invalid URL*\nPlease use http:// or https://'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        const apiUrl = `https://api.giftedtech.web.id/api/tools/web2zip?apikey=gifted&url=${encodeURIComponent(url)}`;
+        const response = await axios.get(apiUrl, { timeout: 30000 });
+
+        if (!response.data?.success || !response.data?.result?.download_url) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Failed to archive website*\nSite may be restricted, too large, or unavailable.'
+            }, { quoted: msg });
+        }
+
+        const { siteUrl, copiedFilesAmount, download_url } = response.data.result;
+
+        const caption = `
+╭───[ *ᴡᴇʙᴢɪᴘ* ]───
+├ *sɪᴛᴇ*: ${siteUrl} 🌐
+├ *ғɪʟᴇs*: ${copiedFilesAmount} 📂
+╰───[ *ᴄᴀsᴇʏʀʜᴏᴅᴇs* ]───
+> *powered by caseyrhodes* ⚡`;
+
+        // Send archiving message
+        const loadingMsg = await socket.sendMessage(sender, {
+            text: '⏳ *Archiving website... This may take a while* 📦'
+        }, { quoted: msg });
+
+        try {
+            const zipResponse = await axios.get(download_url, {
+                responseType: 'arraybuffer',
+                timeout: 60000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+
+            if (!zipResponse.data) {
+                throw new Error('Empty zip response');
+            }
+
+            const zipBuffer = Buffer.from(zipResponse.data, 'binary');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `website_archive_${timestamp}.zip`;
+
+            // Send the zip file with buttons
+            const zipMessage = {
+                document: zipBuffer,
+                fileName: filename,
+                mimetype: 'application/zip',
+                caption: `${caption}\n✅ *Archive downloaded successfully*`,
+                footer: 'Website archived successfully',
+                buttons: [
+                    {
+                        buttonId: `.webzip ${url}`,
+                        buttonText: { displayText: '🔄 Archive Again' },
+                        type: 1
+                    },
+                    {
+                        buttonId: '.allmenu',
+                        buttonText: { displayText: '❓ Tools Help' },
+                        type: 1
+                    }
+                ],
+                headerType: 4,
+                contextInfo: {
+                    mentionedJid: [msg.key.participant || msg.key.remoteJid],
+                    externalAdReply: {
+                        title: 'Website Archive',
+                        body: `${copiedFilesAmount} files archived`,
+                        mediaType: 1,
+                        sourceUrl: url,
+                        thumbnail: Buffer.from('') // Optional: add thumbnail
+                    }
+                }
+            };
+
+            await socket.sendMessage(sender, zipMessage, { quoted: msg });
+
+            // Delete loading message
+            await socket.sendMessage(sender, {
+                delete: loadingMsg.key
+            });
+
+            // Send success reaction
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "✅",
+                    key: msg.key
+                }
+            });
+
+        } catch (downloadError) {
+            console.error('Zip download error:', downloadError);
+            await socket.sendMessage(sender, {
+                text: '❌ *Failed to download archive*\nFile may be too large or download timed out.'
+            }, { quoted: msg });
+        }
+
+    } catch (error) {
+        console.error('Webzip error:', error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        let errorMsg = '❌ *Error archiving website*';
+        
+        if (error.message.includes('timeout')) {
+            errorMsg = '❌ *Request timed out*\nPlease try again with a smaller website.';
+        } else if (error.code === 'ENOTFOUND') {
+            errorMsg = '❌ *API service unavailable*\nTry again later.';
+        } else if (error.response?.status === 404) {
+            errorMsg = '❌ *Website not found or inaccessible*';
+        }
+
+        await socket.sendMessage(sender, {
+            text: errorMsg
         }, { quoted: msg });
     }
     break;
