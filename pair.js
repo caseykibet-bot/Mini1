@@ -1350,125 +1350,6 @@ case 'details': {
     }
     break;
 }
-//vv 
-case 'vv':
-case 'viewonce':
-case 'retrieve': {
-    try {
-        // Check if user is owner/creator (using various methods)
-        const userJid = msg.key.participant || msg.key.remoteJid;
-        const isOwner = (
-            // Method 1: Check config owners array
-            config.OWNERS && config.OWNERS.includes(userJid) ||
-            // Method 2: Check if user is the bot owner
-            userJid === config.OWNER_NUMBER + '@s.whatsapp.net' ||
-            // Method 3: Check if user is in owners list (alternative format)
-            userJid === config.owner + '@s.whatsapp.net' ||
-            // Method 4: Check if user is the primary owner
-            userJid === config.MODS && config.MODS.includes(userJid)
-        );
-
-        if (!isOwner) {
-            return await socket.sendMessage(sender, {
-                text: '*📛 This is an owner-only command.*'
-            }, { quoted: msg });
-        }
-
-        // Check if message is a reply to a view once message
-        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-        if (!quoted) {
-            return await socket.sendMessage(sender, {
-                text: '*🍁 Please reply to a view once message!*'
-            }, { quoted: msg });
-        }
-
-        // Check if it's actually a view once message
-        const isViewOnce = quoted?.viewOnceMessageV2 || quoted?.viewOnceMessageV2Extension;
-        if (!isViewOnce) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ This is not a view once message!*'
-            }, { quoted: msg });
-        }
-
-        // Send processing reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "⏳",
-                key: msg.key
-            }
-        });
-
-        // Extract the actual message from view once wrapper
-        const actualMessage = quoted.viewOnceMessageV2?.message || quoted.viewOnceMessageV2Extension?.message;
-
-        if (!actualMessage) {
-            throw new Error('Could not extract view once content');
-        }
-
-        // Download the media
-        const media = await socket.downloadMediaMessage({ 
-            ...msg, 
-            message: actualMessage 
-        });
-
-        let messageContent = {};
-
-        // Handle different media types
-        if (actualMessage.imageMessage) {
-            messageContent = {
-                image: media,
-                caption: actualMessage.imageMessage.caption || '',
-                mimetype: actualMessage.imageMessage.mimetype || "image/jpeg"
-            };
-        } 
-        else if (actualMessage.videoMessage) {
-            messageContent = {
-                video: media,
-                caption: actualMessage.videoMessage.caption || '',
-                mimetype: actualMessage.videoMessage.mimetype || "video/mp4"
-            };
-        } 
-        else if (actualMessage.audioMessage) {
-            messageContent = {
-                audio: media,
-                mimetype: actualMessage.audioMessage.mimetype || "audio/mp4",
-                ptt: actualMessage.audioMessage.ptt || false
-            };
-        } 
-        else {
-            return await socket.sendMessage(sender, {
-                text: '❌ *Only image, video, and audio view once messages are supported*'
-            }, { quoted: msg });
-        }
-
-        // Send the retrieved media directly without success message
-        await socket.sendMessage(sender, messageContent, { quoted: msg });
-
-        // Send success reaction only
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (error) {
-        console.error("ViewOnce Error:", error);
-        
-        // Send error reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌",
-                key: msg.key
-            }
-        });
-
-        await socket.sendMessage(sender, {
-            text: `❌ *Error retrieving view once message:*\n${error.message || 'Failed to retrieve message'}`
-        }, { quoted: msg });
-    }
-    break;
-}
 // Case: blocklist (Blocked Users)
 case 'blocklist':
 case 'blocked': {
@@ -1612,214 +1493,6 @@ case 'lyrics': {
                 { buttonId: '.help', buttonText: { displayText: '❓ Help' }, type: 1 }
             ]
         }, { quoted: fakevCard });
-    }
-    break;
-}
-//case url 
-case 'tourl':
-case 'imgtourl':
-case 'imgurl':
-case 'url':
-case 'uploadimg': {
-    try {
-        const axios = require('axios');
-        const FormData = require('form-data');
-        const fs = require('fs');
-        const os = require('os');
-        const path = require('path');
-
-        // API keys
-        const API_KEYS = [
-            "40dfb24c7b48ba51487a9645abf33148",
-            "4a9c3527b0cd8b12dd4d8ab166a0f592",
-            "0e2b3697320c339de00589478be70c48",
-            "7b46d3cddc9b67ef690ed03dce9cb7d5"
-        ];
-
-        // Check if message has image
-        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage || msg;
-        const mime = quoted?.imageMessage?.mimetype || quoted?.documentMessage?.mimetype || '';
-
-        if (!mime.startsWith("image")) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Oops! Reply to an image*'
-            }, { quoted: msg });
-        }
-
-        // Send processing reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "⏳",
-                key: msg.key
-            }
-        });
-
-        // Download image
-        const media = await socket.downloadMediaMessage(quoted);
-        const filePath = path.join(os.tmpdir(), "upload-image.jpg");
-        fs.writeFileSync(filePath, media);
-
-        let imageUrl, lastError;
-        for (const apiKey of API_KEYS) {
-            try {
-                const form = new FormData();
-                form.append("image", fs.createReadStream(filePath));
-
-                const res = await axios.post("https://api.imgbb.com/1/upload", form, {
-                    params: { key: apiKey },
-                    headers: form.getHeaders(),
-                    timeout: 15000
-                });
-
-                imageUrl = res?.data?.data?.url;
-                if (imageUrl) break;
-            } catch (err) {
-                lastError = err;
-                console.error(`ImgBB key failed:`, err.message);
-            }
-        }
-
-        fs.unlinkSync(filePath);
-
-        if (!imageUrl) {
-            throw lastError || new Error('All upload services failed');
-        }
-
-        await socket.sendMessage(sender, {
-            text: `✅ *IMAGE UPLOADED SUCCESSFULLY!*\n\n` +
-                  `📂 *File Size:* ${media.length} bytes\n` +
-                  `🔗 *URL:* ${imageUrl}\n\n` +
-                  `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
-            buttons: [
-                {
-                    buttonId: '.tourl',
-                    buttonText: { displayText: '🔄 Upload Another' },
-                    type: 1
-                }
-            ],
-            headerType: 1
-        }, { quoted: msg });
-
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (error) {
-        console.error("Tourl error:", error);
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌",
-                key: msg.key
-            }
-        });
-        await socket.sendMessage(sender, {
-            text: `❌ *Error:* ${error.message || 'Upload failed'}\nTry again or use a different image.`
-        }, { quoted: msg });
-    }
-    break;
-}
-//case catbox url 
-case 'tourl2':
-case 'imgtourl2':
-case 'imgurl2':
-case 'url2':
-case 'geturl2':
-case 'upload': {
-    try {
-        const axios = require('axios');
-        const FormData = require('form-data');
-        const fs = require('fs');
-        const os = require('os');
-        const path = require('path');
-
-        // Check if message has media
-        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage || msg;
-        const mime = quoted?.imageMessage?.mimetype || quoted?.videoMessage?.mimetype || quoted?.audioMessage?.mimetype || quoted?.documentMessage?.mimetype || '';
-
-        if (!mime) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Reply to image, audio or video.*'
-            }, { quoted: msg });
-        }
-
-        // Send processing reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "⏳",
-                key: msg.key
-            }
-        });
-
-        // Download media
-        const media = await socket.downloadMediaMessage(quoted);
-        const ext = mime.includes("image/jpeg") ? ".jpg" :
-                    mime.includes("png") ? ".png" :
-                    mime.includes("video") ? ".mp4" :
-                    mime.includes("audio") ? ".mp3" : "";
-        const tmp = path.join(os.tmpdir(), `upload_${Date.now()}${ext}`);
-        fs.writeFileSync(tmp, media);
-
-        const form = new FormData();
-        form.append("fileToUpload", fs.createReadStream(tmp), `file${ext}`);
-        form.append("reqtype", "fileupload");
-
-        const res = await axios.post("https://catbox.moe/user/api.php", form, {
-            headers: form.getHeaders(),
-            timeout: 15000
-        });
-
-        if (!res.data) throw new Error("Upload failed");
-
-        fs.unlinkSync(tmp);
-
-        const type = mime.includes("image") ? "Image" :
-                     mime.includes("video") ? "Video" :
-                     mime.includes("audio") ? "Audio" : "File";
-
-        // Format bytes function
-        function formatBytes(bytes) {
-            if (!bytes) return "0 Bytes";
-            const k = 1024, sizes = ["Bytes", "KB", "MB", "GB"];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
-        }
-
-        await socket.sendMessage(sender, {
-            text: `✅ *${type} Uploaded!*\n\n` +
-                  `📁 *Size:* ${formatBytes(media.length)}\n` +
-                  `🔗 *URL:* ${res.data}\n\n` +
-                  `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
-            buttons: [
-                {
-                    buttonId: '.tourl2',
-                    buttonText: { displayText: '📤 Upload Another' },
-                    type: 1
-                }
-            ],
-            headerType: 1
-        }, { quoted: msg });
-
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (error) {
-        console.error("Tourl2 error:", error);
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌",
-                key: msg.key
-            }
-        });
-        await socket.sendMessage(sender, {
-            text: `❌ *Error:* ${error.message || 'Upload failed'}\nTry again with a smaller file.`
-        }, { quoted: msg });
     }
     break;
 }
@@ -2477,137 +2150,7 @@ case 'searchimg': {
     }
     break;
 }
-//screenshot case
-case 'screenshot':
-case 'ss':
-case 'ssweb': {
-    try {
-        const axios = require('axios');
-        
-        // Extract query from message
-        const q = msg.message?.conversation || 
-                  msg.message?.extendedTextMessage?.text || 
-                  msg.message?.imageMessage?.caption || 
-                  msg.message?.videoMessage?.caption || '';
-        
-        const args = q.split(' ').slice(1);
-        const url = args[0];
-
-        if (!url) {
-            return await socket.sendMessage(sender, {
-                text: '❌ *Please provide a valid URL.*\nExample: `.screenshot https://github.com`'
-            }, { quoted: msg });
-        }
-
-        // Validate the URL
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            return await socket.sendMessage(sender, {
-                text: '❌ *Invalid URL.* Please include "http://" or "https://".'
-            }, { quoted: msg });
-        }
-
-        // Send processing reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "⏳",
-                key: msg.key
-            }
-        });
-
-        // Generate the screenshot URL using Thum.io API
-        const screenshotUrl = `https://image.thum.io/get/fullpage/${url}`;
-
-        // Send the screenshot as an image message
-        await socket.sendMessage(sender, {
-            image: { url: screenshotUrl },
-            caption: `🌐 *Website Screenshot*\n\n🔗 *URL:* ${url}\n\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
-            contextInfo: {
-                mentionedJid: [msg.key.participant || msg.key.remoteJid],
-                forwardingScore: 999,
-                isForwarded: true,
-                externalAdReply: {
-                    title: 'Website Screenshot',
-                    body: 'Powered by Thum.io API',
-                    mediaType: 1,
-                    sourceUrl: url,
-                    thumbnailUrl: screenshotUrl
-                }
-            }
-        }, { quoted: msg });
-
-        // Send success reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (error) {
-        console.error("Screenshot Error:", error);
-        
-        // Send error reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌",
-                key: msg.key
-            }
-        });
-        
-        await socket.sendMessage(sender, {
-            text: '❌ *Failed to capture the screenshot.*\nThe website may be blocking screenshots or the URL might be invalid.'
-        }, { quoted: msg });
-    }
-    break;
-}
-//tts case
-case 'tts': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🔊",
-            key: msg.key
-        }
-    });
-
-    const googleTTS = require('google-tts-api');
-
-    try {
-        // Extract text from message
-        const q = msg.message?.conversation || 
-                 msg.message?.extendedTextMessage?.text || '';
-        
-        const args = q.split(' ').slice(1);
-        const text = args.join(' ').trim();
-
-        if (!text) {
-            return await socket.sendMessage(sender, {
-                text: "❌ *Please provide some text to convert to speech.*\n\n*Example:* .tts Hello world"
-            }, { quoted: msg });
-        }
-
-        const url = googleTTS.getAudioUrl(text, {
-            lang: 'en-US',
-            slow: false,
-            host: 'https://translate.google.com',
-        });
-
-        // Send the audio
-        await socket.sendMessage(sender, { 
-            audio: { url: url }, 
-            mimetype: 'audio/mpeg', 
-            ptt: false,
-            caption: `🔊 *Text to Speech*\n📝 *Text:* ${text}\n\n✨ *Powered by CASEYRHODES-TECH*`
-        }, { quoted: msg });
-
-    } catch (e) {
-        console.error('TTS Error:', e);
-        await socket.sendMessage(sender, {
-            text: `❌ *Error:* ${e.message || e}`
-        }, { quoted: msg });
-    }
-    break;
-}
+//zip case 
 //web zip 
 case 'webzip':
 case 'sitezip':
@@ -2766,6 +2309,137 @@ case 'archive': {
     }
     break;
 }
+//screenshot case
+case 'screenshot':
+case 'ss':
+case 'ssweb': {
+    try {
+        const axios = require('axios');
+        
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const url = args[0];
+
+        if (!url) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Please provide a valid URL.*\nExample: `.screenshot https://github.com`'
+            }, { quoted: msg });
+        }
+
+        // Validate the URL
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Invalid URL.* Please include "http://" or "https://".'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Generate the screenshot URL using Thum.io API
+        const screenshotUrl = `https://image.thum.io/get/fullpage/${url}`;
+
+        // Send the screenshot as an image message
+        await socket.sendMessage(sender, {
+            image: { url: screenshotUrl },
+            caption: `🌐 *Website Screenshot*\n\n🔗 *URL:* ${url}\n\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            contextInfo: {
+                mentionedJid: [msg.key.participant || msg.key.remoteJid],
+                forwardingScore: 999,
+                isForwarded: true,
+                externalAdReply: {
+                    title: 'Website Screenshot',
+                    body: 'Powered by Thum.io API',
+                    mediaType: 1,
+                    sourceUrl: url,
+                    thumbnailUrl: screenshotUrl
+                }
+            }
+        }, { quoted: msg });
+
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Screenshot Error:", error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        
+        await socket.sendMessage(sender, {
+            text: '❌ *Failed to capture the screenshot.*\nThe website may be blocking screenshots or the URL might be invalid.'
+        }, { quoted: msg });
+    }
+    break;
+}
+//tts case
+case 'tts': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🔊",
+            key: msg.key
+        }
+    });
+
+    const googleTTS = require('google-tts-api');
+
+    try {
+        // Extract text from message
+        const q = msg.message?.conversation || 
+                 msg.message?.extendedTextMessage?.text || '';
+        
+        const args = q.split(' ').slice(1);
+        const text = args.join(' ').trim();
+
+        if (!text) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *Please provide some text to convert to speech.*\n\n*Example:* .tts Hello world"
+            }, { quoted: msg });
+        }
+
+        const url = googleTTS.getAudioUrl(text, {
+            lang: 'en-US',
+            slow: false,
+            host: 'https://translate.google.com',
+        });
+
+        // Send the audio
+        await socket.sendMessage(sender, { 
+            audio: { url: url }, 
+            mimetype: 'audio/mpeg', 
+            ptt: false,
+            caption: `🔊 *Text to Speech*\n📝 *Text:* ${text}\n\n✨ *Powered by CASEYRHODES-TECH*`
+        }, { quoted: msg });
+
+    } catch (e) {
+        console.error('TTS Error:', e);
+        await socket.sendMessage(sender, {
+            text: `❌ *Error:* ${e.message || e}`
+        }, { quoted: msg });
+    }
+    break;
+}
 case 'fetch':
 case 'get':
 case 'api': {
@@ -2862,6 +2536,109 @@ case 'api': {
 
         await socket.sendMessage(sender, {
             text: `${errorMessage}\n\nError details: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+//vv case 
+//case catbox url 
+case 'tourl2':
+case 'imgtourl2':
+case 'imgurl2':
+case 'url2':
+case 'geturl2':
+case 'upload': {
+    try {
+        const axios = require('axios');
+        const FormData = require('form-data');
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+
+        // Check if message has media
+        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage || msg;
+        const mime = quoted?.imageMessage?.mimetype || quoted?.videoMessage?.mimetype || quoted?.audioMessage?.mimetype || quoted?.documentMessage?.mimetype || '';
+
+        if (!mime) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Reply to image, audio or video.*'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Download media
+        const media = await socket.downloadMediaMessage(quoted);
+        const ext = mime.includes("image/jpeg") ? ".jpg" :
+                    mime.includes("png") ? ".png" :
+                    mime.includes("video") ? ".mp4" :
+                    mime.includes("audio") ? ".mp3" : "";
+        const tmp = path.join(os.tmpdir(), `upload_${Date.now()}${ext}`);
+        fs.writeFileSync(tmp, media);
+
+        const form = new FormData();
+        form.append("fileToUpload", fs.createReadStream(tmp), `file${ext}`);
+        form.append("reqtype", "fileupload");
+
+        const res = await axios.post("https://catbox.moe/user/api.php", form, {
+            headers: form.getHeaders(),
+            timeout: 15000
+        });
+
+        if (!res.data) throw new Error("Upload failed");
+
+        fs.unlinkSync(tmp);
+
+        const type = mime.includes("image") ? "Image" :
+                     mime.includes("video") ? "Video" :
+                     mime.includes("audio") ? "Audio" : "File";
+
+        // Format bytes function
+        function formatBytes(bytes) {
+            if (!bytes) return "0 Bytes";
+            const k = 1024, sizes = ["Bytes", "KB", "MB", "GB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+        }
+
+        await socket.sendMessage(sender, {
+            text: `✅ *${type} Uploaded!*\n\n` +
+                  `📁 *Size:* ${formatBytes(media.length)}\n` +
+                  `🔗 *URL:* ${res.data}\n\n` +
+                  `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            buttons: [
+                {
+                    buttonId: '.tourl2',
+                    buttonText: { displayText: '📤 Upload Another' },
+                    type: 1
+                }
+            ],
+            headerType: 1
+        }, { quoted: msg });
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Tourl2 error:", error);
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        await socket.sendMessage(sender, {
+            text: `❌ *Error:* ${error.message || 'Upload failed'}\nTry again with a smaller file.`
         }, { quoted: msg });
     }
     break;
@@ -4562,44 +4339,123 @@ case 'gh': {
   break;
 }
 // Add this to your button handling section
-case 'download-': { // This will catch any button starting with "download-"
-  try {
-    const username = body.substring(9); // Extract username from button ID
-    const response = await axios.get(`https://api.github.com/users/${username}`);
-    const data = response.data;
-    
-    // Format the data as text for download
-    const profileText = `
-GitHub Profile Information
---------------------------
-Name: ${data.name || 'N/A'}
-Username: ${data.login}
-Bio: ${data.bio || 'N/A'}
-Company: ${data.company || 'N/A'}
-Location: ${data.location || 'N/A'}
-Email: ${data.email || 'N/A'}
-Blog: ${data.blog || 'N/A'}
-Public Repositories: ${data.public_repos}
-Followers: ${data.followers}
-Following: ${data.following}
-Profile Created: ${new Date(data.created_at).toLocaleDateString()}
-Last Updated: ${new Date(data.updated_at).toLocaleDateString()}
-    `.trim();
-    
-    // Send as a document
-    await socket.sendMessage(from, {
-      document: { url: `data:text/plain;base64,${Buffer.from(profileText).toString('base64')}` },
-      fileName: `${username}_github_profile.txt`,
-      mimetype: 'text/plain'
-    }, { quoted: msg });
-    
-  } catch (error) {
-    console.error('Download error:', error);
-    await socket.sendMessage(from, {
-      text: '❌ Error downloading profile information.'
-    }, { quoted: msg });
-  }
-  break;
+case 'vv':
+case 'viewonce':
+case 'retrieve': {
+    try {
+        // Check if user is owner/creator (using various methods)
+        const userJid = msg.key.participant || msg.key.remoteJid;
+        const isOwner = (
+            // Method 1: Check config owners array
+            config.OWNERS && config.OWNERS.includes(userJid) ||
+            // Method 2: Check if user is the bot owner
+            userJid === config.OWNER_NUMBER + '@s.whatsapp.net' ||
+            // Method 3: Check if user is in owners list (alternative format)
+            userJid === config.owner + '@s.whatsapp.net' ||
+            // Method 4: Check if user is the primary owner
+            userJid === config.MODS && config.MODS.includes(userJid)
+        );
+
+        if (!isOwner) {
+            return await socket.sendMessage(sender, {
+                text: '*📛 This is an owner-only command.*'
+            }, { quoted: msg });
+        }
+
+        // Check if message is a reply to a view once message
+        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (!quoted) {
+            return await socket.sendMessage(sender, {
+                text: '*🍁 Please reply to a view once message!*'
+            }, { quoted: msg });
+        }
+
+        // Check if it's actually a view once message
+        const isViewOnce = quoted?.viewOnceMessageV2 || quoted?.viewOnceMessageV2Extension;
+        if (!isViewOnce) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ This is not a view once message!*'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Extract the actual message from view once wrapper
+        const actualMessage = quoted.viewOnceMessageV2?.message || quoted.viewOnceMessageV2Extension?.message;
+
+        if (!actualMessage) {
+            throw new Error('Could not extract view once content');
+        }
+
+        // Download the media
+        const media = await socket.downloadMediaMessage({ 
+            ...msg, 
+            message: actualMessage 
+        });
+
+        let messageContent = {};
+
+        // Handle different media types
+        if (actualMessage.imageMessage) {
+            messageContent = {
+                image: media,
+                caption: actualMessage.imageMessage.caption || '',
+                mimetype: actualMessage.imageMessage.mimetype || "image/jpeg"
+            };
+        } 
+        else if (actualMessage.videoMessage) {
+            messageContent = {
+                video: media,
+                caption: actualMessage.videoMessage.caption || '',
+                mimetype: actualMessage.videoMessage.mimetype || "video/mp4"
+            };
+        } 
+        else if (actualMessage.audioMessage) {
+            messageContent = {
+                audio: media,
+                mimetype: actualMessage.audioMessage.mimetype || "audio/mp4",
+                ptt: actualMessage.audioMessage.ptt || false
+            };
+        } 
+        else {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Only image, video, and audio view once messages are supported*'
+            }, { quoted: msg });
+        }
+
+        // Send the retrieved media directly without success message
+        await socket.sendMessage(sender, messageContent, { quoted: msg });
+
+        // Send success reaction only
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("ViewOnce Error:", error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        await socket.sendMessage(sender, {
+            text: `❌ *Error retrieving view once message:*\n${error.message || 'Failed to retrieve message'}`
+        }, { quoted: msg });
+    }
+    break;
 }
                 // Case: promote - Promote a member to group admin
                 case 'promote': {
