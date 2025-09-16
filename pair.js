@@ -1818,173 +1818,167 @@ case 'video': {
                     break;
                     }
 case 'tiktok':
-case 'tiktoks':
-case 'tiks': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "✅",
-            key: msg.key
-        }
-    });
-
-    const fetch = require("node-fetch");
-
+case 'tt':
+case 'tiktokdl': {
     try {
+        const axios = require('axios');
+        
         // Extract query from message
         const q = msg.message?.conversation || 
-                 msg.message?.extendedTextMessage?.text || '';
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
         
         const args = q.split(' ').slice(1);
-        const query = args.join(' ').trim();
+        const tiktokUrl = args[0];
 
-        if (!query) {
+        if (!tiktokUrl || !tiktokUrl.includes("tiktok.com")) {
             return await socket.sendMessage(sender, {
-                text: "🌸 *What do you want to search on TikTok?*\n\n*Usage Examples:*\n.tiktok <query>\n.tiktok <URL or Link>"
+                text: '❌ *Please provide a valid TikTok URL.*\nExample: .tiktok https://vm.tiktok.com/abc123'
             }, { quoted: msg });
         }
 
+        // Send processing reaction
         await socket.sendMessage(sender, {
-            text: `🔎 *Searching TikTok for:* ${query}`
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        let data;
+        
+        // Try primary API
+        try {
+            const res = await axios.get(`https://api.nexoracle.com/downloader/tiktok-nowm?apikey=free_key@maher_apis&url=${encodeURIComponent(tiktokUrl)}`, {
+                timeout: 15000
+            });
+            if (res.data?.status === 200) data = res.data.result;
+        } catch (primaryError) {
+            console.log('Primary API failed, trying fallback...');
+        }
+
+        // Fallback API if primary fails
+        if (!data) {
+            try {
+                const fallback = await axios.get(`https://api.tikwm.com/?url=${encodeURIComponent(tiktokUrl)}&hd=1`, {
+                    timeout: 15000
+                });
+                if (fallback.data?.data) {
+                    const r = fallback.data.data;
+                    data = {
+                        title: r.title,
+                        author: {
+                            username: r.author.unique_id,
+                            nickname: r.author.nickname
+                        },
+                        metrics: {
+                            digg_count: r.digg_count,
+                            comment_count: r.comment_count,
+                            share_count: r.share_count,
+                            download_count: r.download_count
+                        },
+                        url: r.play,
+                        thumbnail: r.cover
+                    };
+                }
+            } catch (fallbackError) {
+                console.error('Fallback API also failed');
+            }
+        }
+
+        if (!data) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *TikTok video not found or API services are down.*\nPlease try again later.'
+            }, { quoted: msg });
+        }
+
+        const { title, author, url, metrics, thumbnail } = data;
+
+        const caption = `🎬 *TikTok Downloader*\n
+╭─❍ ᴄᴀsᴇʏʀʜᴏᴅᴇs-ᴡᴏʀʟᴅ ❍
+┊🎵 *Title:* ${title || 'No title'}
+┊👤 *Author:* @${author.username} (${author.nickname})
+┊❤️ *Likes:* ${metrics.digg_count || 0}
+┊💬 *Comments:* ${metrics.comment_count || 0}
+┊🔁 *Shares:* ${metrics.share_count || 0}
+┊📥 *Downloads:* ${metrics.download_count || 0}
+╰─❍
+> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`;
+
+        // Send thumbnail and info first
+        await socket.sendMessage(sender, {
+            image: { url: thumbnail },
+            caption: caption
         }, { quoted: msg });
 
-        // Check if it's a URL or a search query
-        let apiUrl;
-        if (query.includes('tiktok.com') || query.includes('vt.tiktok')) {
-            // It's a URL - use download API
-            apiUrl = `https://api.diioffc.web.id/api/download/tiktok?url=${encodeURIComponent(query)}`;
-        } else {
-            // It's a search query
-            apiUrl = `https://api.diioffc.web.id/api/search/tiktok?query=${encodeURIComponent(query)}`;
-        }
+        // Send downloading message
+        const loadingMsg = await socket.sendMessage(sender, {
+            text: '⏳ *Downloading video... Please wait*'
+        }, { quoted: msg });
 
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-            throw new Error(`API returned status: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        try {
+            // Download video
+            const videoResponse = await axios.get(url, {
+                responseType: 'arraybuffer',
+                timeout: 30000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
 
-        // Handle URL download response
-        if (query.includes('tiktok.com') || query.includes('vt.tiktok')) {
-            if (!data?.status || !data?.result) {
-                await socket.sendMessage(sender, {
-                    react: {
-                        text: "❌",
-                        key: msg.key
+            const videoBuffer = Buffer.from(videoResponse.data, 'binary');
+
+            // Send video
+            await socket.sendMessage(sender, {
+                video: videoBuffer,
+                caption: `🎥 *Video by* @${author.username}\n\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+                contextInfo: {
+                    mentionedJid: [msg.key.participant || msg.key.remoteJid],
+                    externalAdReply: {
+                        title: 'TikTok Download',
+                        body: `By @${author.username}`,
+                        mediaType: 2,
+                        sourceUrl: tiktokUrl,
+                        thumbnailUrl: thumbnail
                     }
-                });
-                return await socket.sendMessage(sender, {
-                    text: "❌ *Could not download this TikTok.* The link might be invalid or the video might be unavailable."
-                }, { quoted: msg });
-            }
+                }
+            });
 
-            const video = data.result;
-            const caption = 
-                `🎬 *TikTok Video*\n` +
-                `👤 @${video.author?.username || 'unknown'}\n` +
-                `❤️ ${video.stats?.like || 0} likes | ⏱️ ${video.duration || 0}s\n` +
-                `🔗 ${query}`;
+            // Update loading message to success
+            await socket.sendMessage(sender, {
+                text: '✅ *Video downloaded successfully!*',
+                edit: loadingMsg.key
+            });
 
-            if (video.media?.no_watermark) {
-                await socket.sendMessage(sender, {
-                    video: { url: video.media.no_watermark },
-                    caption: caption
-                }, { quoted: msg });
-            } else if (video.media?.watermark) {
-                await socket.sendMessage(sender, {
-                    video: { url: video.media.watermark },
-                    caption: caption + '\n\n⚠️ *Watermarked version (no watermark unavailable)*'
-                }, { quoted: msg });
-            } else {
-                await socket.sendMessage(sender, {
-                    text: `❌ *Couldn't retrieve video.*\n${caption}`
-                }, { quoted: msg });
-            }
-            
+            // Send success reaction
             await socket.sendMessage(sender, {
                 react: {
                     text: "✅",
                     key: msg.key
                 }
             });
-            
-            return;
-        }
 
-        // Handle search response
-        if (!data?.status || !data?.result?.length) {
+        } catch (downloadError) {
+            console.error('Video download failed:', downloadError);
             await socket.sendMessage(sender, {
-                react: {
-                    text: "❌",
-                    key: msg.key
-                }
-            });
-            return await socket.sendMessage(sender, {
-                text: "❌ *No results found for your query.* Please try with a different keyword."
+                text: '❌ *Failed to download video.* The video might be too large or restricted.'
             }, { quoted: msg });
         }
 
-        // Get only 2 results
-        const results = data.result.slice(0, 2);
+    } catch (err) {
+        console.error("TikTok download error:", err);
         
-        // Send each video
-        for (const video of results) {
-            const caption = 
-                `🎬 *${video.title || 'TikTok Video'}*\n` +
-                `👤 @${video.author?.username || 'unknown'}\n` +
-                `❤️ ${video.stats?.like || 0} likes | ⏱️ ${video.duration || 0}s\n` +
-                `🔗 https://www.tiktok.com/@${video.author?.username}/video/${video.video_id}`;
-
-            if (video.media?.no_watermark) {
-                await socket.sendMessage(sender, {
-                    video: { url: video.media.no_watermark },
-                    caption: caption
-                }, { quoted: msg });
-            } else if (video.media?.watermark) {
-                await socket.sendMessage(sender, {
-                    video: { url: video.media.watermark },
-                    caption: caption + '\n\n⚠️ *Watermarked version (no watermark unavailable)*'
-                }, { quoted: msg });
-            } else {
-                await socket.sendMessage(sender, {
-                    text: `❌ *Couldn't retrieve video:* ${video.title}\n${caption}`
-                }, { quoted: msg });
-            }
-            
-            // Small delay between sends
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (error) {
-        console.error("Error in TikTok command:", error);
+        // Send error reaction
         await socket.sendMessage(sender, {
             react: {
                 text: "❌",
                 key: msg.key
             }
         });
-        
-        let errorMessage = "❌ *An error occurred while processing your TikTok request.* Please try again later.";
-        
-        if (error.message.includes("API returned status: 5")) {
-            errorMessage = "❌ *TikTok API is currently unavailable.* Please try again in a few minutes.";
-        } else if (error.message.includes("API returned status: 4")) {
-            errorMessage = "❌ *Invalid request.* Please check your query or URL and try again.";
-        } else if (error.message.includes("fetch failed")) {
-            errorMessage = "❌ *Network error.* Please check your connection and try again.";
-        }
-        
+
         await socket.sendMessage(sender, {
-            text: errorMessage
+            text: '❌ *Failed to process TikTok video.*\nPlease check the URL and try again.'
         }, { quoted: msg });
     }
     break;
@@ -2095,6 +2089,89 @@ case 'searchimg': {
     }
     break;
 }
+//screenshot case
+case 'screenshot':
+case 'ss':
+case 'ssweb': {
+    try {
+        const axios = require('axios');
+        
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const url = args[0];
+
+        if (!url) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Please provide a valid URL.*\nExample: `.screenshot https://github.com`'
+            }, { quoted: msg });
+        }
+
+        // Validate the URL
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Invalid URL.* Please include "http://" or "https://".'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Generate the screenshot URL using Thum.io API
+        const screenshotUrl = `https://image.thum.io/get/fullpage/${url}`;
+
+        // Send the screenshot as an image message
+        await socket.sendMessage(sender, {
+            image: { url: screenshotUrl },
+            caption: `🌐 *Website Screenshot*\n\n🔗 *URL:* ${url}\n\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            contextInfo: {
+                mentionedJid: [msg.key.participant || msg.key.remoteJid],
+                forwardingScore: 999,
+                isForwarded: true,
+                externalAdReply: {
+                    title: 'Website Screenshot',
+                    body: 'Powered by Thum.io API',
+                    mediaType: 1,
+                    sourceUrl: url,
+                    thumbnailUrl: screenshotUrl
+                }
+            }
+        }, { quoted: msg });
+
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Screenshot Error:", error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        
+        await socket.sendMessage(sender, {
+            text: '❌ *Failed to capture the screenshot.*\nThe website may be blocking screenshots or the URL might be invalid.'
+        }, { quoted: msg });
+    }
+    break;
+}
 //tts case
 case 'tts': {
     // React to the command first
@@ -2139,6 +2216,106 @@ case 'tts': {
         console.error('TTS Error:', e);
         await socket.sendMessage(sender, {
             text: `❌ *Error:* ${e.message || e}`
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'fetch':
+case 'get':
+case 'api': {
+    try {
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const url = args.join(' ').trim();
+
+        if (!url) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Please provide a valid URL or API endpoint.*\nExample: .fetch https://api.github.com/users/caseyrhodes'
+            }, { quoted: msg });
+        }
+
+        if (!/^https?:\/\//.test(url)) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *URL must start with http:// or https://.*'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Fetch data from the URL
+        const axios = require('axios');
+        const response = await axios.get(url, {
+            timeout: 10000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+
+        const data = response.data;
+        const content = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+        
+        // Truncate if too long
+        const truncatedContent = content.length > 2048 ? content.slice(0, 2048) + '...' : content;
+
+        await socket.sendMessage(sender, {
+            text: `🌐 *API Response from:* ${url}\n\n\`\`\`${truncatedContent}\`\`\`\n\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            contextInfo: {
+                mentionedJid: [msg.key.participant || msg.key.remoteJid],
+                forwardingScore: 999,
+                isForwarded: true,
+                externalAdReply: {
+                    title: 'API Fetch Result',
+                    body: 'Data retrieved successfully',
+                    mediaType: 1,
+                    sourceUrl: url
+                }
+            }
+        }, { quoted: msg });
+
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Fetch command error:", error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        let errorMessage = '❌ *An error occurred while fetching the data.*';
+        
+        if (error.code === 'ECONNREFUSED') {
+            errorMessage = '❌ *Connection refused.* The server may be down or unreachable.';
+        } else if (error.code === 'ETIMEDOUT') {
+            errorMessage = '❌ *Request timeout.* The server took too long to respond.';
+        } else if (error.response?.status) {
+            errorMessage = `❌ *HTTP Error ${error.response.status}:* ${error.response.statusText}`;
+        } else if (error.message.includes('Unexpected token')) {
+            errorMessage = '❌ *Invalid JSON response.* The API returned malformed data.';
+        }
+
+        await socket.sendMessage(sender, {
+            text: `${errorMessage}\n\nError details: ${error.message}`
         }, { quoted: msg });
     }
     break;
