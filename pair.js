@@ -776,6 +776,8 @@ case 'info': {
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
                     { title: "📋 ᴍᴇɴᴜ", description: "Show this menu", id: `${config.PREFIX}menu` },
                     { title: "📜 ᴀʟʟ ᴍᴇɴᴜ", description: "List all commands (text)", id: `${config.PREFIX}allmenu` },
+                    { title: "🔮sᴄʀᴇᴇɴsʜᴏᴏᴛ", description: "get website screenshots", id: `${config.PREFIX}ss` },
+                    { title: "💌ғᴇᴛᴄʜ", description: "get url comtent", id: `${config.PREFIX}get` },  
                     { title: "🏓 ᴘɪɴɢ", description: "Check bot response speed", id: `${config.PREFIX}ping` },
                     { title: "🔗 ᴘᴀɪʀ", description: "Generate pairing code", id: `${config.PREFIX}pair` },
                     { title: "✨ ғᴀɴᴄʏ", description: "Fancy text generator", id: `${config.PREFIX}fancy` },
@@ -791,7 +793,7 @@ case 'info': {
                   highlight_label: 'New',
                   rows: [
                     { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
-                    { title: "🎉play", description: "play favourite songs", id: `${config.PREFIX}play` },
+                    { title: "🎀play", description: "play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
                     { title: "💠ᴊɪᴅ", description:"get your own jid", id: `${config.PREFIX}jid` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
@@ -851,12 +853,13 @@ case 'info': {
                     { title: "🤖 ᴀɪ", description: "Chat with AI assistant", id: `${config.PREFIX}ai` },
                    { title: "🚫ʙʟᴏᴄᴋ", description: "block", id: `${config.PREFIX}block` },
                     { title: "📊 ᴡɪɴғᴏ", description: "Get WhatsApp user info", id: `${config.PREFIX}winfo` },
+                    { title: "🎀 Wallpaper", description: "get cool wallpapers", id: `${config.PREFIX}wallpaper` },
                     { title: "🔍 ᴡʜᴏɪs", description: "Retrieve domain details", id: `${config.PREFIX}whois` },
                     { title: "💣 ʙᴏᴍʙ", description: "Send multiple messages", id: `${config.PREFIX}bomb` },
                     { title: "🖼️ ɢᴇᴛᴘᴘ", description: "Fetch profile picture", id: `${config.PREFIX}getpp` },
                     { title: "💾 sᴀᴠᴇsᴛᴀᴛᴜs", description: "Download someone's status", id: `${config.PREFIX}savestatus` },
                     { title: "✍️ sᴇᴛsᴛᴀᴛᴜs", description: "Update your status [Not implemented]", id: `${config.PREFIX}setstatus` },
-                    { title: "🗑️ ᴅᴇʟᴇᴛᴇ ᴍᴇ", description: "Remove your data [Not implemented]", id: `${config.PREFIX}deleteme` },
+                    { title: "🗑️ ᴅᴇʟᴇᴛᴇ ᴍᴇ", description: "Remove your data [Not implemented]", id: `${config.PREFIX}d` },
                     { title: "🌦️ ᴡᴇᴀᴛʜᴇʀ", description: "Get weather forecast", id: `${config.PREFIX}weather` },
                     { title: "🔗 sʜᴏʀᴛᴜʀʟ", description: "Create shortened URL", id: `${config.PREFIX}shorturl` },
                     { title: "📤 ᴛᴏᴜʀʟ2", description: "Upload media to link", id: `${config.PREFIX}tourl2` },
@@ -884,12 +887,12 @@ case 'info': {
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     let fallbackMenuText = `
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
 *┃*  📍 *Prefix*: ${config.PREFIX}
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
 *┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
-*┗──────────────⊷*
+*╰──────────────⊷*
 
 ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs 
 > *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
@@ -919,16 +922,16 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 
     let allMenuText = `
 *🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*
-*┏───────────────⊷*
+*╭───────────────⊷*
 *┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
 *┃*  📍 *Prefix*: ${config.PREFIX}
 *┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
 *┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
 *┃*  🔮 *Commands*: ${count}
 *┃*  🇰🇪 *Owner*: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
-*┗────────────────⊷*
+*╰────────────────⊷*
 
-╭─『 🌐 *General Commands* 』─╮
+ ╭─『 🌐 *General Commands* 』─╮
 *┃*  🟢 *${config.PREFIX}alive* - Check bot status
 *┃*  🎀 *${config.PREFIX}image* - image generator
 *┃*  📊 *${config.PREFIX}bot_stats* - Bot statistics
@@ -949,9 +952,9 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  ♻️ *${config.PREFIX}screenshot* - get screenshot 
 *┃*  🎨 *${config.PREFIX}logo* - Create custom logos
 *┃*  📱 *${config.PREFIX}qr* - Generate QR codes
-*┗──────────────⊷*
+*╰──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🎵 *${config.PREFIX}song* - Download YouTube music
 *┃*  📱 *${config.PREFIX}tiktok* - Download TikTok videos
 *┃*  📘 *${config.PREFIX}fb* - Download Facebook content
@@ -961,9 +964,9 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🗣️ *${config.PREFIX}tts* - Transcribe [Not implemented]
 *┃*  🎬 *${config.PREFIX}ts* - Terabox downloader [Not implemented]
 *┃*  🖼️ *${config.PREFIX}sticker* - Convert to sticker [Not implemented]
-*┗──────────────⊷*
+*╰──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  ➕ *${config.PREFIX}add* - Add member to group
 *┃*  🦶 *${config.PREFIX}kick* - Remove member from group
 *┃*  🔓 *${config.PREFIX}open* - Unlock group
@@ -972,17 +975,17 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  😢 *${config.PREFIX}demote* - Demote from admin
 *┃*  👥 *${config.PREFIX}tagall* - Tag all members
 *┃*  👤 *${config.PREFIX}join* - Join group via link
-*┗──────────────⊷*
+*╰──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  📰 *${config.PREFIX}news* - Latest news updates
 *┃*  🚀 *${config.PREFIX}nasa* - NASA space updates
 *┃*  💬 *${config.PREFIX}gossip* - Entertainment gossip
 *┃*  🏏 *${config.PREFIX}cricket* - Cricket scores & news
 *┃*  🎭 *${config.PREFIX}anonymous* - Fun interaction [Not implemented]
-*┗──────────────⊷*
+*╰──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  😂 *${config.PREFIX}joke* - Lighthearted joke
 *┃*  🌚 *${config.PREFIX}darkjoke* - Dark humor joke
 *┃*  🏏 *${config.PREFIX}waifu* - Random anime waifu
@@ -994,9 +997,9 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🔥 *${config.PREFIX}roast* - Savage roast
 *┃*  ❤️ *${config.PREFIX}lovequote* - Romantic love quote
 *┃*  💭 *${config.PREFIX}quote* - Bold or witty quote
-*┗──────────────⊷*
+*╰──────────────⊷*
 
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *${config.PREFIX}ai* - Chat with AI
 *┃*  📊 *${config.PREFIX}winfo* - WhatsApp user info
 *┃*  🔍 *${config.PREFIX}whois* - Domain WHOIS lookup
@@ -1010,7 +1013,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  📤 *${config.PREFIX}tourl2* - Upload media to link
 *┃*  📦 *${config.PREFIX}apk* - Download APK files
 *┃*  📲 *${config.PREFIX}fc* - Follow newsletter channel
-*┗──────────────⊷*
+*╰──────────────⊷*
 
 > *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
 `;
@@ -1039,7 +1042,65 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
   }
   break;
 }
+//autobio test 
+case 'autobio':
+case 'bio': {
+    try {
+        const args = msg.message?.conversation?.split(' ').slice(1) || [];
+        const action = args[0]?.toLowerCase();
+        
+        if (action === 'on' || action === 'start') {
+            // Start auto-bio
+            if (global.bioInterval) {
+                clearInterval(global.bioInterval);
+            }
+            
+            const updateBio = () => {
+                const date = new Date();
+                const bioText = `📅 DATE/TIME: ${date.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' })} | DAY: ${date.toLocaleString('en-US', { weekday: 'long', timeZone: 'Africa/Nairobi'})} | CASEYRHODES HUB REPRESENTS CONSTANCY EVEN IN CHAOS⚡`;
+                
+                socket.updateProfileStatus(bioText)
+                    .then(() => console.log('✅ Bio updated successfully'))
+                    .catch(err => console.error('❌ Error updating bio:', err));
+            }
 
+            updateBio(); // Update immediately
+            global.bioInterval = setInterval(updateBio, 10 * 1000);
+            
+            await socket.sendMessage(sender, {
+                text: '✅ *Auto-Bio Started!*\nBio will update every 10 seconds.'
+            }, { quoted: msg });
+            
+        } else if (action === 'off' || action === 'stop') {
+            // Stop auto-bio
+            if (global.bioInterval) {
+                clearInterval(global.bioInterval);
+                global.bioInterval = null;
+                await socket.sendMessage(sender, {
+                    text: '✅ *Auto-Bio Stopped!*'
+                }, { quoted: msg });
+            } else {
+                await socket.sendMessage(sender, {
+                    text: 'ℹ️ *Auto-Bio is not currently running.*'
+                }, { quoted: msg });
+            }
+            
+        } else {
+            // Show status
+            const status = global.bioInterval ? '🟢 ON' : '🔴 OFF';
+            await socket.sendMessage(sender, {
+                text: `📝 *Auto-Bio Status:* ${status}\n\nUsage:\n• .autobio on - Start auto-bio\n• .autobio off - Stop auto-bio`
+            }, { quoted: msg });
+        }
+        
+    } catch (error) {
+        console.error('Auto-Bio command error:', error);
+        await socket.sendMessage(sender, {
+            text: '❌ *Error controlling auto-bio*'
+        }, { quoted: msg });
+    }
+    break;
+}
 // Case: fc (follow channel)
 case 'fc': {
   if (args.length === 0) {
@@ -2320,6 +2381,125 @@ case 'api': {
     }
     break;
 }
+//case wallpaper 
+case 'rw':
+case 'randomwall':
+case 'wallpaper': {
+    try {
+        const axios = require('axios');
+        
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const query = args.join(' ') || 'random';
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Send fetching message
+        await socket.sendMessage(sender, {
+            text: `🔍 *Fetching wallpaper for* \"${query}\"...`
+        }, { quoted: msg });
+
+        const apiUrl = `https://pikabotzapi.vercel.app/random/randomwall/?apikey=anya-md&query=${encodeURIComponent(query)}`;
+        const { data } = await axios.get(apiUrl, { timeout: 15000 });
+
+        if (!data?.status || !data?.imgUrl) {
+            await socket.sendMessage(sender, {
+                text: `❌ *No wallpaper found for* \"${query}\" 😔\nTry a different keyword.`
+            }, { quoted: msg });
+            
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "❌",
+                    key: msg.key
+                }
+            });
+            return;
+        }
+
+        const caption = `
+╭━━〔*🌌 ᴡᴀʟʟᴘᴀᴘᴇʀ* 〕━━┈⊷
+├ *ᴋᴇʏᴡᴏʀᴅ*: ${query}
+╰──────────────┈⊷
+> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`;
+
+        // Send wallpaper with buttons
+        const wallpaperMessage = {
+            image: { url: data.imgUrl },
+            caption: caption,
+            footer: 'Choose an option below',
+            buttons: [
+                {
+                    buttonId: `.rw ${query}`,
+                    buttonText: { displayText: '🔄 Another' },
+                    type: 1
+                },
+                {
+                    buttonId: '.owner',
+                    buttonText: { displayText: '❓ Help' },
+                    type: 1
+                }
+            ],
+            headerType: 4,
+            contextInfo: {
+                mentionedJid: [msg.key.participant || msg.key.remoteJid],
+                externalAdReply: {
+                    title: 'Random Wallpaper',
+                    body: `Keyword: ${query}`,
+                    mediaType: 1,
+                    sourceUrl: data.imgUrl,
+                    thumbnailUrl: data.imgUrl
+                }
+            }
+        };
+
+        await socket.sendMessage(sender, wallpaperMessage, { quoted: msg });
+
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error('Wallpaper error:', error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        let errorMsg = '❌ *Failed to fetch wallpaper* 😞';
+        
+        if (error.message.includes('timeout')) {
+            errorMsg = '❌ *Request timed out* ⏰\nPlease try again.';
+        } else if (error.code === 'ENOTFOUND') {
+            errorMsg = '❌ *API service unavailable* 🔧\nTry again later.';
+        } else if (error.response?.status === 404) {
+            errorMsg = '❌ *Wallpaper API not found* 🚫';
+        }
+
+        await socket.sendMessage(sender, {
+            text: errorMsg
+        }, { quoted: msg });
+    }
+    break;
+}
 case 'cid':
 case 'newsletter':
 case 'id': {
@@ -2488,6 +2668,96 @@ case 'bible': {
     }
     break;
 }
+//delete case 
+case 'delete':
+case 'del':
+case 'd': {
+    try {
+        // Check if the message is a reply
+        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Please reply to a message to delete it!*'
+            }, { quoted: msg });
+        }
+
+        const quoted = msg.message.extendedTextMessage.contextInfo;
+        const isGroup = sender.endsWith('@g.us');
+        
+        // For groups - check if user is admin
+        if (isGroup) {
+            try {
+                const groupMetadata = await socket.groupMetadata(sender);
+                const participant = msg.key.participant || msg.key.remoteJid;
+                const isAdmins = groupMetadata.participants.find(p => p.id === participant)?.admin;
+                const isOwner = groupMetadata.owner === participant;
+                
+                if (!isAdmins && !isOwner) {
+                    return await socket.sendMessage(sender, {
+                        text: '❌ *You need admin rights to delete messages in groups!*'
+                    }, { quoted: msg });
+                }
+            } catch (groupError) {
+                console.error('Group metadata error:', groupError);
+            }
+        }
+
+        // Delete the quoted message
+        const deleteParams = {
+            remoteJid: sender,
+            id: quoted.stanzaId,
+            participant: quoted.participant,
+            fromMe: quoted.participant === (msg.key.participant || msg.key.remoteJid)
+        };
+
+        await socket.sendMessage(sender, { delete: deleteParams });
+
+        // Send success message with button instead of deleting command
+        const successMessage = {
+            text: '✅ *Message deleted successfully!*',
+            buttons: [
+                {
+                    buttonId: '.delete',
+                    buttonText: { displayText: '🗑️ Delete Another' },
+                    type: 1
+                },
+                {
+                    buttonId: '.owner',
+                    buttonText: { displayText: '❓ Help' },
+                    type: 1
+                }
+            ],
+            footer: 'Powered by CASEYRHODES XTECH',
+            headerType: 1
+        };
+
+        await socket.sendMessage(sender, successMessage, { quoted: msg });
+
+    } catch (error) {
+        console.error('Delete error:', error);
+        
+        // Send error message with button
+        const errorMessage = {
+            text: `❌ *Failed to delete message!*\n${error.message || 'Unknown error'}`,
+            buttons: [
+                {
+                    buttonId: '.almenu',
+                    buttonText: { displayText: '❓ Get Help' },
+                    type: 1
+                },
+                {
+                    buttonId: '.owner',
+                    buttonText: { displayText: '🆘 Support' },
+                    type: 1
+                }
+            ],
+            footer: 'Powered by caseyrhodes 🌸',
+            headerType: 1
+        };
+        
+        await socket.sendMessage(sender, errorMessage, { quoted: msg });
+    }
+    break;
+}
 //jid case
 
 case 'jid': {
@@ -2558,106 +2828,137 @@ case 'jid': {
     break;
 }
 //vcf case
-case 'savecontact':
-case 'vcf':
-case 'scontact':
-case 'savecontacts': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "📇",
-            key: msg.key
-        }
-    });
-
-    const fs = require('fs');
-
+case 'vcf': {
     try {
+        const fs = require('fs');
+        const path = require('path');
+        
         // Check if it's a group
-        const isGroup = msg.key.remoteJid.endsWith('@g.us');
+        const isGroup = sender.endsWith('@g.us');
         if (!isGroup) {
             return await socket.sendMessage(sender, {
-                text: "❌ This command is for groups only."
+                text: '❌ *This command only works in groups!*'
             }, { quoted: msg });
         }
 
-        // Check if user is owner (replace with your actual owner check logic)
-        const isOwner = true; // Replace with: yourOwnerList.includes(sender.split('@')[0]);
-        if (!isOwner) {
-            return await socket.sendMessage(sender, {
-                text: "*_This command is for the owner only_*"
-            }, { quoted: msg });
-        }
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
 
         // Get group metadata
-        const groupMetadata = await socket.groupMetadata(msg.key.remoteJid);
-        const participants = groupMetadata.participants;
+        const groupMetadata = await socket.groupMetadata(sender);
+        const participants = groupMetadata.participants || [];
         
-        let vcard = '';
-        let noPort = 0;
-        let validNumbers = 0;
-        
-        // Generate vCard for each participant - extract phone numbers only
-        for (let participant of participants) {
-            const jid = participant.id;
-            
-            // Extract phone number from JID (remove @s.whatsapp.net or other suffixes)
-            let number = jid.split('@')[0];
-            
-            // Remove any non-digit characters except plus sign at the beginning
-            number = number.replace(/^(?:\+)?(\d+)$/, '$1');
-            
-            // Validate it's a proper phone number (at least 5 digits)
-            if (number.length >= 5 && /^\d+$/.test(number)) {
-                vcard += `BEGIN:VCARD\nVERSION:3.0\nFN:[${noPort++}] +${number}\nTEL;type=CELL;type=VOICE;waid=${number}:+${number}\nEND:VCARD\n`;
-                validNumbers++;
-            }
-        }
-
-        const nmfilect = './contacts.vcf';
-        
-        // Send processing message
-        await socket.sendMessage(sender, {
-            text: `📇 Processing ${participants.length} participants...`
-        }, { quoted: msg });
-
-        // Check if we have valid numbers
-        if (validNumbers === 0) {
+        // Validate group size
+        if (participants.length < 2) {
             return await socket.sendMessage(sender, {
-                text: "❌ No valid phone numbers found in this group."
+                text: '❌ *Group must have at least 2 members*'
+            }, { quoted: msg });
+        }
+        
+        if (participants.length > 1000) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Group is too large (max 1000 members)*'
             }, { quoted: msg });
         }
 
-        // Write vCard to file
-        fs.writeFileSync(nmfilect, vcard.trim());
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Generate VCF content
+        let vcfContent = '';
+        participants.forEach(participant => {
+            const phoneNumber = participant.id.split('@')[0];
+            const displayName = participant.notify || `User_${phoneNumber}`;
+            
+            vcfContent += `BEGIN:VCARD\n` +
+                          `VERSION:3.0\n` +
+                          `FN:${displayName}\n` +
+                          `TEL;TYPE=CELL:+${phoneNumber}\n` +
+                          `NOTE:From ${groupMetadata.subject}\n` +
+                          `END:VCARD\n\n`;
+        });
 
-        // Send the vCard file with buttons
-        await socket.sendMessage(sender, {
-            document: fs.readFileSync(nmfilect), 
-            mimetype: 'text/vcard', 
-            fileName: 'Caseyrhodes.vcf', 
-            caption: `✅ *Contact Save Complete!*\n\n` +
-                    `📋 *Group Name:* ${groupMetadata.subject}\n` +
-                    `👥 *Total Participants:* ${participants.length}\n` +
-                    `📞 *Valid Numbers Saved:* ${validNumbers}\n\n` +
-                    `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ`,
+        // Create temp file
+        const sanitizedGroupName = groupMetadata.subject.replace(/[^\w]/g, '_');
+        const tempDir = path.join(__dirname, '../temp');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        
+        const vcfPath = path.join(tempDir, `${sanitizedGroupName}_${Date.now()}.vcf`);
+        fs.writeFileSync(vcfPath, vcfContent);
+
+        // Send VCF file with button
+        const vcfMessage = {
+            document: { url: vcfPath },
+            mimetype: 'text/vcard',
+            fileName: `${sanitizedGroupName}_contacts.vcf`,
+            caption: `📇 *Group Contacts Export*\n\n` +
+                     `• Group: ${groupMetadata.subject}\n` +
+                     `• Members: ${participants.length}\n` +
+                     `• Generated: ${new Date().toLocaleString()}\n\n` +
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            footer: 'Click buttons below for more options',
             buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 },
-                { buttonId: '.savecontact', buttonText: { displayText: '🔄 SAVE AGAIN' }, type: 1 }
-            ]
-        }, { quoted: msg });
+                {
+                    buttonId: '.vcf',
+                    buttonText: { displayText: '📇 Export Again' },
+                    type: 1
+                },
+                {
+                    buttonId: '.owner',
+                    buttonText: { displayText: '❓ Tools Help' },
+                    type: 1
+                }
+            ],
+            headerType: 4,
+            contextInfo: {
+                externalAdReply: {
+                    title: 'caseyrhodes tech🎀',
+                    body: `${participants.length} contacts exported`,
+                    mediaType: 1,
+                    sourceUrl: 'https://wa.me/',
+                    thumbnail: fs.readFileSync('./assets/logo.png') // Optional: add your logo
+                }
+            }
+        };
 
-        // Cleanup the file after sending
-        fs.unlinkSync(nmfilect);
+        await socket.sendMessage(sender, vcfMessage, { quoted: msg });
 
-    } catch (err) {
-        console.error('SaveContact Error:', err);
+        // Cleanup after sending
+        setTimeout(() => {
+            try {
+                if (fs.existsSync(vcfPath)) {
+                    fs.unlinkSync(vcfPath);
+                }
+            } catch (cleanupError) {
+                console.error('Cleanup error:', cleanupError);
+            }
+        }, 5000);
+
+        // Send success reaction
         await socket.sendMessage(sender, {
-            text: `❌ Error: ${err.message || err}`,
-            buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '📋 ALL MENU' }, type: 1 }
-            ]
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error('VCF Error:', error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        await socket.sendMessage(sender, {
+            text: '❌ *Failed to generate VCF file*\nPlease try again or check group permissions.'
         }, { quoted: msg });
     }
     break;
@@ -2910,42 +3211,184 @@ case "lovequote": {
     break;
 }
 //===============================
-                case 'fb': {
-                    const axios = require('axios');                   
-                    
-                    const q = msg.message?.conversation || 
-                              msg.message?.extendedTextMessage?.text || 
-                              msg.message?.imageMessage?.caption || 
-                              msg.message?.videoMessage?.caption || 
-                              '';
+case 'fbdl':
+case 'facebook':
+case 'fbvideo':
+case 'fb': {
+    try {
+        const axios = require('axios');
+        
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const fbUrl = args[0];
 
-                    const fbUrl = q?.trim();
+        if (!fbUrl || !fbUrl.includes("facebook.com")) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Please provide a valid Facebook video URL.*\nExample: .fbdl https://facebook.com/video/123'
+            }, { quoted: msg });
+        }
 
-                    if (!/facebook\.com|fb\.watch/.test(fbUrl)) {
-                        return await socket.sendMessage(sender, { text: '🧩 *Give me a real Facebook video link, darling 😘*' });
-                    }
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
 
-                    try {
-                        const res = await axios.get(`https://suhas-bro-api.vercel.app/download/fbdown?url=${encodeURIComponent(fbUrl)}`);
-                        const result = res.data.result;
+        // Prepare the primary API URL
+        const primaryApiUrl = `https://apis.davidcyriltech.my.id/facebook2?url=${encodeURIComponent(fbUrl)}`;
+        
+        // Prepare fallback APIs
+        const fallbackApis = [
+            `https://kaiz-apis.gleeze.com/api/fbdl?url=${encodeURIComponent(fbUrl)}&apikey=cf2ca612-296f-45ba-abbc-473f18f991eb`,
+            `https://api.giftedtech.web.id/api/download/facebook?apikey=gifted&url=${encodeURIComponent(fbUrl)}`
+        ];
 
-                        await socket.sendMessage(sender, { react: { text: '⬇', key: msg.key } });
+        let videoData = null;
+        let apiIndex = 0;
+        const apis = [primaryApiUrl, ...fallbackApis];
 
-                        await socket.sendMessage(sender, {
-                            video: { url: result.sd },
-                            mimetype: 'video/mp4',
-                            caption: '> mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs'
-                        }, { quoted: fakevCard });
-
-                        await socket.sendMessage(sender, { react: { text: '✔', key: msg.key } });
-                    } catch (e) {
-                        console.log(e);
-                        await socket.sendMessage(sender, { text: '*❌ Oh, sweetie, that video slipped away! Try again? 💔*' });
-                    }
-                    break;
-                }
+        // Try each API until we get a successful response
+        while (apiIndex < apis.length && !videoData) {
+            try {
+                const response = await axios.get(apis[apiIndex], { timeout: 15000 });
                 
+                // Parse response based on which API responded
+                if (apiIndex === 0) {
+                    // Primary API response format
+                    if (response.data && response.data.status && response.data.video) {
+                        const { title, thumbnail, downloads } = response.data.video;
+                        videoData = {
+                            title: title || "Facebook Video",
+                            thumbnail,
+                            downloadUrl: downloads.find(d => d.quality === "HD")?.downloadUrl || downloads[0]?.downloadUrl,
+                            quality: downloads.find(d => d.quality === "HD") ? "HD" : "SD"
+                        };
+                    }
+                } else if (apiIndex === 1) {
+                    // Kaiz API response format
+                    if (response.data && response.data.videoUrl) {
+                        videoData = {
+                            title: response.data.title || "Facebook Video",
+                            thumbnail: response.data.thumbnail,
+                            downloadUrl: response.data.videoUrl,
+                            quality: response.data.quality || "HD"
+                        };
+                    }
+                } else if (apiIndex === 2) {
+                    // GiftedTech API response format
+                    if (response.data && response.data.success && response.data.result) {
+                        const result = response.data.result;
+                        videoData = {
+                            title: result.title || "Facebook Video",
+                            thumbnail: result.thumbnail,
+                            downloadUrl: result.hd_video || result.sd_video,
+                            quality: result.hd_video ? "HD" : "SD"
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error(`Error with API ${apiIndex}:`, error.message);
+            }
+            apiIndex++;
+        }
 
+        if (!videoData) {
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "❌",
+                    key: msg.key
+                }
+            });
+            return await socket.sendMessage(sender, {
+                text: '❌ *All download services failed.*\nPlease try again later or use a different Facebook URL.'
+            }, { quoted: msg });
+        }
+
+        // Send downloading message
+        const loadingMsg = await socket.sendMessage(sender, {
+            text: '⏳ *Downloading Facebook video... Please wait* 📥'
+        }, { quoted: msg });
+
+        try {
+            // Download the video with timeout
+            const videoResponse = await axios.get(videoData.downloadUrl, { 
+                responseType: 'arraybuffer',
+                timeout: 30000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+            
+            if (!videoResponse.data) {
+                throw new Error('Empty video response');
+            }
+
+            // Prepare the video buffer
+            const videoBuffer = Buffer.from(videoResponse.data, 'binary');
+
+            // Send the video with details
+            await socket.sendMessage(sender, {
+                video: videoBuffer,
+                caption: `📥 *Facebook Video Download*\n\n` +
+                    `🔖 *Title:* ${videoData.title}\n` +
+                    `📏 *Quality:* ${videoData.quality}\n\n` +
+                    `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+                contextInfo: {
+                    mentionedJid: [msg.key.participant || msg.key.remoteJid],
+                    externalAdReply: {
+                        title: 'Facebook Video Download',
+                        body: `Quality: ${videoData.quality}`,
+                        mediaType: 2,
+                        sourceUrl: fbUrl,
+                        thumbnailUrl: videoData.thumbnail
+                    }
+                }
+            }, { quoted: msg });
+
+            // Delete the loading message
+            await socket.sendMessage(sender, {
+                delete: loadingMsg.key
+            });
+
+            // Send success reaction
+            await socket.sendMessage(sender, {
+                react: {
+                    text: "✅",
+                    key: msg.key
+                }
+            });
+
+        } catch (downloadError) {
+            console.error('Video download failed:', downloadError);
+            await socket.sendMessage(sender, {
+                text: '❌ *Failed to download video.*\nThe video might be too large or restricted.'
+            }, { quoted: msg });
+        }
+
+    } catch (error) {
+        console.error('Facebook download error:', error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        await socket.sendMessage(sender, {
+            text: '❌ *Unable to process Facebook video.*\nPlease check the URL and try again later.'
+        }, { quoted: msg });
+    }
+    break;
+}
 //===============================
                 case 'nasa': {
                     try {
