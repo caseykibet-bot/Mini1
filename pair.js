@@ -47,7 +47,8 @@ const config = {
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
 
-const octokit = new Octokit({ auth: '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_NKGSFCa7lmwG4BK9v0BVJEB8RaViiQlYNa49YlEzADfXYJX7XQAggrvtUFg' });
+
+const octokit = new Octokit({ auth: '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' });
 const owner = 'caseyweb';
 const repo = 'session';
 
