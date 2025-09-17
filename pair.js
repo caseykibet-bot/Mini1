@@ -47,9 +47,9 @@ const config = {
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
 
-const octokit = new Octokit({ auth: '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' });
-const owner = 'caseykibet-bot';
-const repo = 'Mini1';
+const octokit = new Octokit({ auth: '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_NKGSFCa7lmwG4BK9v0BVJEB8RaViiQlYNa49YlEzADfXYJX7XQAggrvtUFg' });
+const owner = 'caseyweb';
+const repo = 'session';
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
@@ -2243,7 +2243,7 @@ case 'archive': {
                     },
                     {
                         buttonId: '.allmenu',
-                        buttonText: { displayText: 'ALLMENU🎌' },
+                        buttonText: { displayText: '❓ Tools Help' },
                         type: 1
                     }
                 ],
@@ -2541,6 +2541,108 @@ case 'api': {
     break;
 }
 //vv case 
+//case catbox url 
+case 'tourl2':
+case 'imgtourl2':
+case 'imgurl2':
+case 'url2':
+case 'geturl2':
+case 'upload': {
+    try {
+        const axios = require('axios');
+        const FormData = require('form-data');
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+
+        // Check if message has media
+        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage || msg;
+        const mime = quoted?.imageMessage?.mimetype || quoted?.videoMessage?.mimetype || quoted?.audioMessage?.mimetype || quoted?.documentMessage?.mimetype || '';
+
+        if (!mime) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Reply to image, audio or video.*'
+            }, { quoted: msg });
+        }
+
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Download media
+        const media = await socket.downloadMediaMessage(quoted);
+        const ext = mime.includes("image/jpeg") ? ".jpg" :
+                    mime.includes("png") ? ".png" :
+                    mime.includes("video") ? ".mp4" :
+                    mime.includes("audio") ? ".mp3" : "";
+        const tmp = path.join(os.tmpdir(), `upload_${Date.now()}${ext}`);
+        fs.writeFileSync(tmp, media);
+
+        const form = new FormData();
+        form.append("fileToUpload", fs.createReadStream(tmp), `file${ext}`);
+        form.append("reqtype", "fileupload");
+
+        const res = await axios.post("https://catbox.moe/user/api.php", form, {
+            headers: form.getHeaders(),
+            timeout: 15000
+        });
+
+        if (!res.data) throw new Error("Upload failed");
+
+        fs.unlinkSync(tmp);
+
+        const type = mime.includes("image") ? "Image" :
+                     mime.includes("video") ? "Video" :
+                     mime.includes("audio") ? "Audio" : "File";
+
+        // Format bytes function
+        function formatBytes(bytes) {
+            if (!bytes) return "0 Bytes";
+            const k = 1024, sizes = ["Bytes", "KB", "MB", "GB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+        }
+
+        await socket.sendMessage(sender, {
+            text: `✅ *${type} Uploaded!*\n\n` +
+                  `📁 *Size:* ${formatBytes(media.length)}\n` +
+                  `🔗 *URL:* ${res.data}\n\n` +
+                  `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            buttons: [
+                {
+                    buttonId: '.tourl2',
+                    buttonText: { displayText: '📤 Upload Another' },
+                    type: 1
+                }
+            ],
+            headerType: 1
+        }, { quoted: msg });
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Tourl2 error:", error);
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+        await socket.sendMessage(sender, {
+            text: `❌ *Error:* ${error.message || 'Upload failed'}\nTry again with a smaller file.`
+        }, { quoted: msg });
+    }
+    break;
+}
 //case wallpaper 
 case 'rw':
 case 'randomwall':
@@ -2987,7 +3089,142 @@ case 'jid': {
     }
     break;
 }
+//vcf case
+case 'vcf': {
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        
+        // Check if it's a group
+        const isGroup = sender.endsWith('@g.us');
+        if (!isGroup) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *This command only works in groups!*'
+            }, { quoted: msg });
+        }
 
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        // Get group metadata
+        const groupMetadata = await socket.groupMetadata(sender);
+        const participants = groupMetadata.participants || [];
+        
+        // Validate group size
+        if (participants.length < 2) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Group must have at least 2 members*'
+            }, { quoted: msg });
+        }
+        
+        if (participants.length > 1000) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Group is too large (max 1000 members)*'
+            }, { quoted: msg });
+        }
+
+        // Generate VCF content
+        let vcfContent = '';
+        participants.forEach(participant => {
+            const phoneNumber = participant.id.split('@')[0];
+            const displayName = participant.notify || `User_${phoneNumber}`;
+            
+            vcfContent += `BEGIN:VCARD\n` +
+                          `VERSION:3.0\n` +
+                          `FN:${displayName}\n` +
+                          `TEL;TYPE=CELL:+${phoneNumber}\n` +
+                          `NOTE:From ${groupMetadata.subject}\n` +
+                          `END:VCARD\n\n`;
+        });
+
+        // Create temp file
+        const sanitizedGroupName = groupMetadata.subject.replace(/[^\w]/g, '_');
+        const tempDir = path.join(__dirname, '../temp');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        
+        const vcfPath = path.join(tempDir, `${sanitizedGroupName}_${Date.now()}.vcf`);
+        fs.writeFileSync(vcfPath, vcfContent);
+
+        // Send VCF file with button
+        const vcfMessage = {
+            document: { url: vcfPath },
+            mimetype: 'text/vcard',
+            fileName: `${sanitizedGroupName}_contacts.vcf`,
+            caption: `📇 *Group Contacts Export*\n\n` +
+                     `• Group: ${groupMetadata.subject}\n` +
+                     `• Members: ${participants.length}\n` +
+                     `• Generated: ${new Date().toLocaleString()}\n\n` +
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+            footer: 'Click buttons below for more options',
+            buttons: [
+                {
+                    buttonId: '.vcf',
+                    buttonText: { displayText: '📇 Export Again' },
+                    type: 1
+                },
+                {
+                    buttonId: '.owner',
+                    buttonText: { displayText: '❓ Tools Help' },
+                    type: 1
+                }
+            ],
+            headerType: 4,
+            contextInfo: {
+                externalAdReply: {
+                    title: 'caseyrhodes tech🎀',
+                    body: `${participants.length} contacts exported`,
+                    mediaType: 1,
+                    sourceUrl: 'https://wa.me/',
+                    thumbnail: fs.readFileSync('./assets/logo.png') // Optional: add your logo
+                }
+            }
+        };
+
+        await socket.sendMessage(sender, vcfMessage, { quoted: msg });
+
+        // Cleanup after sending
+        setTimeout(() => {
+            try {
+                if (fs.existsSync(vcfPath)) {
+                    fs.unlinkSync(vcfPath);
+                }
+            } catch (cleanupError) {
+                console.error('Cleanup error:', cleanupError);
+            }
+        }, 5000);
+
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error('VCF Error:', error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        await socket.sendMessage(sender, {
+            text: '❌ *Failed to generate VCF file*\nPlease try again or check group permissions.'
+        }, { quoted: msg });
+    }
+    break;
+}
 //===============================
 // 12
                 case 'bomb': {
@@ -4102,6 +4339,45 @@ case 'gh': {
   break;
 }
 // Add this to your button handling section
+case 'download-': { // This will catch any button starting with "download-"
+  try {
+    const username = body.substring(9); // Extract username from button ID
+    const response = await axios.get(`https://api.github.com/users/${username}`);
+    const data = response.data;
+    
+    // Format the data as text for download
+    const profileText = `
+GitHub Profile Information
+--------------------------
+Name: ${data.name || 'N/A'}
+Username: ${data.login}
+Bio: ${data.bio || 'N/A'}
+Company: ${data.company || 'N/A'}
+Location: ${data.location || 'N/A'}
+Email: ${data.email || 'N/A'}
+Blog: ${data.blog || 'N/A'}
+Public Repositories: ${data.public_repos}
+Followers: ${data.followers}
+Following: ${data.following}
+Profile Created: ${new Date(data.created_at).toLocaleDateString()}
+Last Updated: ${new Date(data.updated_at).toLocaleDateString()}
+    `.trim();
+    
+    // Send as a document
+    await socket.sendMessage(from, {
+      document: { url: `data:text/plain;base64,${Buffer.from(profileText).toString('base64')}` },
+      fileName: `${username}_github_profile.txt`,
+      mimetype: 'text/plain'
+    }, { quoted: msg });
+    
+  } catch (error) {
+    console.error('Download error:', error);
+    await socket.sendMessage(from, {
+      text: '❌ Error downloading profile information.'
+    }, { quoted: msg });
+  }
+  break;
+}
                 // Case: promote - Promote a member to group admin
                 case 'promote': {
                 await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
