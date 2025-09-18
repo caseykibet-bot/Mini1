@@ -770,7 +770,8 @@ case 'info': {
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
                     { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` }, 
-                    { title: "💖ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },    
+                    { title: "♻️ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },
+                    { title: "🪀ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "set your bio on and off", id: `${config.PREFIX}autorecording` },    
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
@@ -952,6 +953,8 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🏓 *${config.PREFIX}ping* - Check response speed
 *┃*  🔗 *${config.PREFIX}pair* - Generate pairing code
 *┃*  🎌 *${config.PREFIX}tagadmins* - tag group admin 
+*┃*  🌟 *${config.PREFIX}ginfo* - get group info
+*┃*  🎌 *${config.PREFIX}autorecoding* - change to your own 
 *┃*  ✨ *${config.PREFIX}fancy* - Fancy text generator
 *┃*  ♻️ *${config.PREFIX}screenshot* - get screenshot 
 *┃*  🎉 *${config.PREFIX}gjid* - get group jid
@@ -1126,6 +1129,80 @@ case 'bio': {
         await socket.sendMessage(sender, {
             text: '❌ *Error controlling auto-bio*'
         }, { quoted: msg });
+    }
+    break;
+}
+case 'autorecoding': {
+    try {
+        await socket.sendMessage(sender, { react: { text: '⚙️', key: msg.key } });
+        
+        // Check if user is owner/creator
+        const botNumber = await socket.decodeJid(socket.user.id);
+        const isCreator = [botNumber, config.OWNER_NUMBER + '@s.whatsapp.net'].includes(sender);
+        
+        if (!isCreator) {
+            return await socket.sendMessage(sender, {
+                text: "📛 *THIS IS AN OWNER COMMAND*\n\nOnly the bot owner can use this command."
+            }, { quoted: fakevCard });
+        }
+        
+        const text = msg.message?.conversation ||
+                    msg.message?.extendedTextMessage?.text || '';
+        const args = text.trim().split(' ');
+        const subcmd = args[1] ? args[1].toLowerCase() : '';
+        
+        // If no argument provided, show buttons
+        if (!subcmd || (subcmd !== 'on' && subcmd !== 'off')) {
+            const buttons = [
+                {buttonId: `${config.PREFIX}autorecoding on`, buttonText: {displayText: '✅ ENABLE'}, type: 1},
+                {buttonId: `${config.PREFIX}autorecoding off`, buttonText: {displayText: '❌ DISABLE'}, type: 1},
+            ];
+            
+            const buttonMessage = {
+                text: "🎛️ *AUTO-RECODING SETTINGS*\n\nSelect an option:",
+                footer: config.BOT_NAME,
+                buttons: buttons,
+                headerType: 1
+            };
+            
+            await socket.sendMessage(sender, buttonMessage, { quoted: fakevCard });
+            return;
+        }
+        
+        let responseMessage;
+        let buttonText;
+
+        if (subcmd === 'on') {
+            config.AUTO_RECODING = true;
+            responseMessage = "✅ *Auto-Recoding has been enabled.*\n\nThe bot will now automatically process recordings.";
+            buttonText = {displayText: '❌ DISABLE'};
+        } else if (subcmd === 'off') {
+            config.AUTO_RECODING = false;
+            responseMessage = "❌ *Auto-Recoding has been disabled.*\n\nThe bot will no longer automatically process recordings.";
+            buttonText = {displayText: '✅ ENABLE'};
+        }
+
+        // Create a button to toggle the opposite state
+        const oppositeState = subcmd === 'on' ? 'off' : 'on';
+        const buttons = [
+            {buttonId: `${config.PREFIX}autorecoding ${oppositeState}`, buttonText: buttonText, type: 1},
+            {buttonId: `${config.PREFIX}settings`, buttonText: {displayText: '⚙️ SETTINGS'}, type: 1},
+        ];
+        
+        const buttonMessage = {
+            text: responseMessage,
+            footer: config.BOT_NAME,
+            buttons: buttons,
+            headerType: 1
+        };
+
+        await socket.sendMessage(sender, buttonMessage, { quoted: fakevCard });
+        
+    } catch (error) {
+        console.error("Error in autorecoding command:", error);
+        await socket.sendMessage(sender, { 
+            text: "❌ Error processing your request. Please try again later."
+        }, { quoted: fakevCard });
     }
     break;
 }
@@ -2826,103 +2903,149 @@ case 'tts': {
     }
     break;
 }
+//fetch case
 case 'fetch':
 case 'get':
 case 'api': {
     try {
-        // Extract query from message
-        const q = msg.message?.conversation || 
-                  msg.message?.extendedTextMessage?.text || 
-                  msg.message?.imageMessage?.caption || 
-                  msg.message?.videoMessage?.caption || '';
+        await socket.sendMessage(sender, { react: { text: '🌐', key: msg.key } });
         
-        const args = q.split(' ').slice(1);
-        const url = args.join(' ').trim();
-
+        const text = msg.message?.conversation ||
+                    msg.message?.extendedTextMessage?.text || '';
+        
+        // Extract URL from command
+        const url = text.replace(/^(fetch|get|api)\s+/i, '').trim();
+        
         if (!url) {
-            return await socket.sendMessage(sender, {
-                text: '❌ *Please provide a valid URL or API endpoint.*\nExample: .fetch https://api.github.com/users/caseyrhodes'
-            }, { quoted: msg });
+            return await socket.sendMessage(sender, { 
+                text: `❌ *Please provide a URL*\n\n*Example:* ${config.PREFIX}fetch https://api.example.com/data` 
+            }, { quoted: fakevCard });
         }
 
         if (!/^https?:\/\//.test(url)) {
-            return await socket.sendMessage(sender, {
-                text: '❌ *URL must start with http:// or https://.*'
-            }, { quoted: msg });
+            return await socket.sendMessage(sender, { 
+                text: '❌ *URL must start with http:// or https://*' 
+            }, { quoted: fakevCard });
         }
 
-        // Send processing reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "⏳",
-                key: msg.key
+        try {
+            const _url = new URL(url);
+            const cleanUrl = `${_url.origin}${_url.pathname}${_url.search}`;
+            
+            // Add timeout to fetch request
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
+            const res = await fetch(cleanUrl, {
+                signal: controller.signal,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+            
+            clearTimeout(timeout);
+
+            // Check if response is successful
+            if (!res.ok) {
+                return await socket.sendMessage(sender, {
+                    text: `❌ *Request failed with status:* ${res.status} ${res.statusText}`
+                }, { quoted: fakevCard });
             }
-        });
 
-        // Fetch data from the URL
-        const axios = require('axios');
-        const response = await axios.get(url, {
-            timeout: 10000,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            const contentLength = res.headers.get('content-length');
+            const maxSize = 10 * 1024 * 1024; // 10MB limit (reduced for WhatsApp compatibility)
+            
+            if (contentLength && parseInt(contentLength) > maxSize) {
+                return await socket.sendMessage(sender, {
+                    text: `❌ *Content too large:* ${(contentLength / 1024 / 1024).toFixed(2)}MB exceeds limit of ${maxSize / 1024 / 1024}MB`
+                }, { quoted: fakevCard });
             }
-        });
 
-        const data = response.data;
-        const content = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
-        
-        // Truncate if too long
-        const truncatedContent = content.length > 2048 ? content.slice(0, 2048) + '...' : content;
+            const contentType = res.headers.get('content-type') || '';
+            
+            // Handle non-text content types by sending as media
+            if (contentType.includes('image/') || 
+                contentType.includes('video/') || 
+                contentType.includes('audio/') ||
+                contentType.includes('application/octet-stream')) {
+                
+                let messageType = 'document';
+                if (contentType.includes('image/')) messageType = 'image';
+                if (contentType.includes('video/')) messageType = 'video';
+                if (contentType.includes('audio/')) messageType = 'audio';
+                
+                const mediaMessage = {
+                    [messageType]: {
+                        url: cleanUrl
+                    },
+                    caption: `📥 *Fetched from URL:*\n${cleanUrl}`,
+                    mimetype: contentType
+                };
+                
+                return await socket.sendMessage(sender, mediaMessage, { quoted: fakevCard });
+            }
 
-        await socket.sendMessage(sender, {
-            text: `🌐 *API Response from:* ${url}\n\n\`\`\`${truncatedContent}\`\`\`\n\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
-            contextInfo: {
-                mentionedJid: [msg.key.participant || msg.key.remoteJid],
-                forwardingScore: 999,
-                isForwarded: true,
-                externalAdReply: {
-                    title: 'API Fetch Result',
-                    body: 'Data retrieved successfully',
-                    mediaType: 1,
-                    sourceUrl: url
+            // Handle text-based responses
+            const buffer = await res.arrayBuffer();
+            let content = Buffer.from(buffer).toString('utf8');
+            
+            // Try to parse and format if it's JSON
+            if (contentType.includes('application/json') || 
+                (content.trim().startsWith('{') || content.trim().startsWith('['))) {
+                try {
+                    const parsedJson = JSON.parse(content);
+                    content = JSON.stringify(parsedJson, null, 2);
+                } catch (e) {
+                    // Not valid JSON, keep as is
                 }
             }
-        }, { quoted: msg });
-
-        // Send success reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
+            
+            // Split large content into multiple messages if needed
+            const maxLength = 4096; // WhatsApp message limit
+            if (content.length <= maxLength) {
+                return await socket.sendMessage(sender, {
+                    text: `✅ *Fetched Data:*\n\n\`\`\`${content}\`\`\`\n\n*URL:* ${cleanUrl}`
+                }, { quoted: fakevCard });
             }
-        });
-
-    } catch (error) {
-        console.error("Fetch command error:", error);
-        
-        // Send error reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌",
-                key: msg.key
+            
+            // For large content, send as document
+            const documentMessage = {
+                document: {
+                    url: cleanUrl
+                },
+                fileName: `fetched_data_${Date.now()}.txt`,
+                mimetype: 'text/plain',
+                caption: `📥 *Fetched Data (${content.length} characters)*\n*URL:* ${cleanUrl}`
+            };
+            
+            await socket.sendMessage(sender, documentMessage, { quoted: fakevCard });
+            
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            
+            let errorMessage = '❌ Error fetching data';
+            if (error.name === 'AbortError') {
+                errorMessage = '❌ Request timed out after 30 seconds';
+            } else if (error.code === 'ENOTFOUND') {
+                errorMessage = '❌ Could not resolve hostname';
+            } else if (error.code === 'ECONNREFUSED') {
+                errorMessage = '❌ Connection refused by server';
+            } else if (error.type === 'invalid-url') {
+                errorMessage = '❌ Invalid URL format';
+            } else {
+                errorMessage = `❌ ${error.message}`;
             }
-        });
-
-        let errorMessage = '❌ *An error occurred while fetching the data.*';
-        
-        if (error.code === 'ECONNREFUSED') {
-            errorMessage = '❌ *Connection refused.* The server may be down or unreachable.';
-        } else if (error.code === 'ETIMEDOUT') {
-            errorMessage = '❌ *Request timeout.* The server took too long to respond.';
-        } else if (error.response?.status) {
-            errorMessage = `❌ *HTTP Error ${error.response.status}:* ${error.response.statusText}`;
-        } else if (error.message.includes('Unexpected token')) {
-            errorMessage = '❌ *Invalid JSON response.* The API returned malformed data.';
+            
+            await socket.sendMessage(sender, {
+                text: errorMessage
+            }, { quoted: fakevCard });
         }
-
-        await socket.sendMessage(sender, {
-            text: `${errorMessage}\n\nError details: ${error.message}`
-        }, { quoted: msg });
+        
+    } catch (error) {
+        console.error('Error in fetch command:', error);
+        await socket.sendMessage(sender, { 
+            text: "❌ Error processing your request. Please try again later."
+        }, { quoted: fakevCard });
     }
     break;
 }
@@ -3856,6 +3979,179 @@ case 'truthordare': {
                 '❌ *Request timed out* ⏰' : 
                 '❌ *Failed to fetch dare* 😞'
         }, { quoted: msg });
+    }
+    break;
+}
+//ginfo vase 
+case 'ginfo':
+case 'gpinfo':
+case 'groupinfo':
+case 'gcinfo': {
+    try {
+        await socket.sendMessage(sender, { react: { text: '🏷️', key: msg.key } });
+        
+        // Function to format creation date
+        const formatCreationDate = (timestamp) => {
+            if (!timestamp) return 'Unknown';
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZoneName: 'short'
+            });
+        };
+
+        // Function to fetch and format group info
+        const getGroupInfo = async (groupId) => {
+            try {
+                const groupMetadata = await socket.groupMetadata(groupId);
+                const participants = groupMetadata.participants;
+                
+                // Get creator info
+                const creator = groupMetadata.owner || groupMetadata.ownerJid || 'Unknown';
+                
+                // Get admins
+                const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id);
+                
+                // Prepare decorated response with emojis
+                let response = `*🏷️ GROUP INFORMATION* 🏷️\n\n`;
+                response += `*📛 Name:* ${groupMetadata.subject}\n`;
+                response += `*📝 Description:* ${groupMetadata.desc || 'No description'}\n`;
+                response += `*🕒 Created:* ${formatCreationDate(groupMetadata.creation)}\n`;
+                response += `*👑 Creator:* ${creator.split('@')[0]}\n`;
+                response += `*👥 Total Members:* ${participants.length}\n`;
+                response += `*⭐ Admins:* ${admins.length}\n`;
+                response += `*🔐 Restricted:* ${groupMetadata.restrict ? '✅ Yes' : '❌ No'}\n`;
+                response += `*📢 Announcement:* ${groupMetadata.announce ? '✅ Yes' : '❌ No'}\n`;
+                response += `*⏱️ Ephemeral:* ${groupMetadata.ephemeralDuration ? `${groupMetadata.ephemeralDuration} seconds` : '❌ Disabled'}\n`;
+                
+                // Try to get group picture
+                try {
+                    const ppUrl = await socket.profilePictureUrl(groupId);
+                    return { response, ppUrl, groupMetadata };
+                } catch (e) {
+                    return { response, groupMetadata };
+                }
+            } catch (error) {
+                throw error;
+            }
+        };
+
+        // Check if the message is from a group
+        const isGroup = sender.endsWith('@g.us');
+        const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+        const groupLink = text.replace(/^(ginfo|gpinfo|groupinfo|gcinfo)\s+/i, '').trim();
+
+        if (isGroup) {
+            // Fetch info for the current group
+            const { response, ppUrl, groupMetadata } = await getGroupInfo(sender);
+            
+            // Create interactive buttons
+            const buttons = [
+                {
+                    buttonId: `${config.PREFIX}join`,
+                    buttonText: { displayText: '🔗 Invite Link' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}tagadmins`,
+                    buttonText: { displayText: '⭐ Admins List' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}tagall`,
+                    buttonText: { displayText: '👥 Members List' },
+                    type: 1
+                }
+            ];
+            
+            if (ppUrl) {
+                await socket.sendMessage(sender, { 
+                    image: { url: ppUrl },
+                    caption: response,
+                    footer: `Group ID: ${sender.split('@')[0]}`,
+                    buttons: buttons,
+                    headerType: 4
+                }, { quoted: fakevCard });
+            } else {
+                await socket.sendMessage(sender, {
+                    text: response,
+                    footer: `Group ID: ${sender.split('@')[0]}`,
+                    buttons: buttons,
+                    headerType: 1
+                }, { quoted: fakevCard });
+            }
+        } else if (groupLink) {
+            // Handle group invite link
+            if (!groupLink.includes('chat.whatsapp.com')) {
+                await socket.sendMessage(sender, { 
+                    text: '❌ *Please provide a valid WhatsApp group invite link.*\n\nExample: https://chat.whatsapp.com/XXXXXXXXXXXX' 
+                }, { quoted: fakevCard });
+                return;
+            }
+            
+            // Extract group ID from link
+            const groupId = groupLink.split('/').pop() + '@g.us';
+            
+            try {
+                // Verify the group exists and get basic info first
+                const inviteInfo = await socket.groupGetInviteInfo(groupId.split('@')[0]);
+                
+                // Now fetch full metadata
+                const { response, ppUrl, groupMetadata } = await getGroupInfo(inviteInfo.id);
+                
+                // Create buttons for group link context
+                const buttons = [
+                    {
+                        buttonId: `${config.PREFIX}join ${groupId.split('@')[0]}`,
+                        buttonText: { displayText: '🚪 Join Group' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}moreinfo ${groupId.split('@')[0]}`,
+                        buttonText: { displayText: '📊 More Info' },
+                        type: 1
+                    }
+                ];
+                
+                if (ppUrl) {
+                    await socket.sendMessage(sender, { 
+                        image: { url: ppUrl },
+                        caption: response,
+                        footer: `Group ID: ${inviteInfo.id.split('@')[0]}`,
+                        buttons: buttons,
+                        headerType: 4
+                    }, { quoted: fakevCard });
+                } else {
+                    await socket.sendMessage(sender, {
+                        text: response,
+                        footer: `Group ID: ${inviteInfo.id.split('@')[0]}`,
+                        buttons: buttons,
+                        headerType: 1
+                    }, { quoted: fakevCard });
+                }
+            } catch (error) {
+                console.error("Error fetching group info from link:", error);
+                await socket.sendMessage(sender, { 
+                    text: '❌ *Error fetching group info.*\n\nMake sure:\n• The link is valid\n• You have permission to view this group\n• The group exists'
+                }, { quoted: fakevCard });
+            }
+        } else {
+            // Command used in private chat without link
+            await socket.sendMessage(sender, { 
+                text: '🤔 *Please use this command in a group or provide a group invite link.*\n\n*Example:* .gcinfo https://chat.whatsapp.com/XXXXXXXXXXXX'
+            }, { quoted: fakevCard });
+        }
+    } catch (error) {
+        console.error("Error in group info command:", error);
+        await socket.sendMessage(sender, { 
+            text: '❌ An error occurred while fetching group information.' 
+        }, { quoted: fakevCard });
     }
     break;
 }
