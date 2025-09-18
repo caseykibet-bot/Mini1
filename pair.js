@@ -48,7 +48,6 @@ const config = {
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
 
-
 const octokit = new Octokit({ auth: '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' });
 const owner = 'caseyweb';
 const repo = 'session';
@@ -128,6 +127,231 @@ async function cleanDuplicateFiles(number) {
         console.error(`Failed to clean duplicate files for ${number}:`, error);
     }
 }
+
+// ================== FIXED ANTIDELETE FUNCTION ==================
+async function handleMessageRevocation(client, revocationMessage, antideleteMode) {
+    try {
+        // Fast validation checks first
+        if (!revocationMessage?.message?.protocolMessage?.key?.id) return;
+        
+        const remoteJid = revocationMessage.key.remoteJid;
+        const messageId = revocationMessage.message.protocolMessage.key.id;
+
+        // Load original deleted message
+        const chatData = loadChatData(remoteJid, messageId);
+        const originalMessage = chatData[0];
+        if (!originalMessage) return;
+
+        // Get bot's JID early for faster checks
+        const botJid = (await client.user.id).split(":")[0] + "@s.whatsapp.net";
+
+        // Detect who deleted
+        const deletedBy = revocationMessage.participant || revocationMessage.key.remoteJid;
+        
+        // Detect who originally sent
+        const sentBy = originalMessage.key.participant || originalMessage.key.remoteJid;
+
+        // Skip if bot deleted or sent the message
+        if (deletedBy === botJid || sentBy === botJid) return;
+
+        // Skip if this is a duplicate notification (check timestamp)
+        const now = Date.now();
+        const messageTimestamp = originalMessage.messageTimestamp * 1000 || now;
+        if (now - messageTimestamp > 60000) return; // Skip if message is older than 1 minute
+
+        // Format participants
+        const deletedByFormatted = `@${deletedBy.split('@')[0]}`;
+        const sentByFormatted = `@${sentBy.split('@')[0]}`;
+
+        // Timezone handling for Africa/Nairobi (UTC+3)
+        const localNow = new Date(now + (3 * 60 * 60 * 1000));
+        const deletedTime = localNow.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        const deletedDate = localNow.toLocaleDateString();
+
+        // Base notification text
+        let notificationText = `🚨 *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɴᴛɪᴅᴇʟᴇᴛᴇ* 🚨\n\n` +
+            `👤 ᴅᴇʟᴇᴛᴇᴅ ʙʏ: ${deletedByFormatted}\n` +
+            `✉️ sᴇɴᴛ ʙʏ: ${sentByFormatted}\n` +
+            `📅 ᴅᴀᴛᴇ: ${deletedDate}\n` +
+            `⏰ ᴛɪᴍᴇ: ${deletedTime}\n\n`;
+
+        // Determine where to send recovered message
+        let targetJid;
+        if (antideleteMode === "private") {
+            targetJid = config.OWNER_NUMBER.replace(/[^0-9]/g, '') + "@s.whatsapp.net";
+        } else if (antideleteMode === "chat") {
+            targetJid = remoteJid;
+        } else return;
+
+        // Cache to prevent duplicate notifications
+        const cacheKey = `${messageId}_${deletedBy}`;
+        if (global.antiDeleteCache?.[cacheKey]) return;
+        global.antiDeleteCache = { [cacheKey]: true, ...global.antiDeleteCache };
+
+        // Process all supported message types
+        const msgContent = originalMessage.message;
+        
+        if (msgContent?.conversation) {
+            await client.sendMessage(targetJid, {
+                text: `${notificationText}📝 *Deleted Message:*\n${msgContent.conversation}`,
+                mentions: [deletedBy, sentBy]
+            });
+        }
+        else if (msgContent?.extendedTextMessage) {
+            await client.sendMessage(targetJid, {
+                text: `${notificationText}📝 *Deleted Quoted Message:*\n${msgContent.extendedTextMessage.text}`,
+                mentions: [deletedBy, sentBy]
+            });
+        }
+        else if (msgContent?.imageMessage) {
+            try {
+                const buffer = await downloadContentFromMessage(msgContent.imageMessage, 'image');
+                let imageBuffer = Buffer.from([]);
+                for await (const chunk of buffer) {
+                    imageBuffer = Buffer.concat([imageBuffer, chunk]);
+                }
+                
+                const caption = msgContent.imageMessage.caption || "";
+                await client.sendMessage(targetJid, {
+                    image: imageBuffer,
+                    caption: `${notificationText}🖼️ *Deleted Image*${caption ? `\n${caption}` : ""}`,
+                    mentions: [deletedBy, sentBy]
+                });
+            } catch (error) {
+                console.error("Failed to download image:", error);
+                await client.sendMessage(targetJid, {
+                    text: `${notificationText}🖼️ *Deleted Image* (Failed to download media)`,
+                    mentions: [deletedBy, sentBy]
+                });
+            }
+        }
+        else if (msgContent?.videoMessage) {
+            try {
+                const buffer = await downloadContentFromMessage(msgContent.videoMessage, 'video');
+                let videoBuffer = Buffer.from([]);
+                for await (const chunk of buffer) {
+                    videoBuffer = Buffer.concat([videoBuffer, chunk]);
+                }
+                
+                const caption = msgContent.videoMessage.caption || "";
+                await client.sendMessage(targetJid, {
+                    video: videoBuffer,
+                    caption: `${notificationText}🎥 *Deleted Video*${caption ? `\n${caption}` : ""}`,
+                    mentions: [deletedBy, sentBy]
+                });
+            } catch (error) {
+                console.error("Failed to download video:", error);
+                await client.sendMessage(targetJid, {
+                    text: `${notificationText}🎥 *Deleted Video* (Failed to download media)`,
+                    mentions: [deletedBy, sentBy]
+                });
+            }
+        }
+        else if (msgContent?.stickerMessage) {
+            try {
+                const buffer = await downloadContentFromMessage(msgContent.stickerMessage, 'sticker');
+                let stickerBuffer = Buffer.from([]);
+                for await (const chunk of buffer) {
+                    stickerBuffer = Buffer.concat([stickerBuffer, chunk]);
+                }
+                
+                await client.sendMessage(targetJid, { 
+                    sticker: stickerBuffer,
+                    mentions: [deletedBy, sentBy]
+                });
+                await client.sendMessage(targetJid, {
+                    text: `${notificationText}🔖 *Deleted Sticker*`,
+                    mentions: [deletedBy, sentBy]
+                });
+            } catch (error) {
+                console.error("Failed to download sticker:", error);
+                await client.sendMessage(targetJid, {
+                    text: `${notificationText}🔖 *Deleted Sticker* (Failed to download media)`,
+                    mentions: [deletedBy, sentBy]
+                });
+            }
+        }
+        else if (msgContent?.documentMessage) {
+            try {
+                const buffer = await downloadContentFromMessage(msgContent.documentMessage, 'document');
+                let documentBuffer = Buffer.from([]);
+                for await (const chunk of buffer) {
+                    documentBuffer = Buffer.concat([documentBuffer, chunk]);
+                }
+                
+                const doc = msgContent.documentMessage;
+                await client.sendMessage(targetJid, {
+                    document: documentBuffer,
+                    fileName: doc.fileName || "document",
+                    mimetype: doc.mimetype,
+                    caption: `${notificationText}📄 *Deleted Document:* ${doc.fileName || "Untitled"}`,
+                    mentions: [deletedBy, sentBy]
+                });
+            } catch (error) {
+                console.error("Failed to download document:", error);
+                await client.sendMessage(targetJid, {
+                    text: `${notificationText}📄 *Deleted Document:* ${msgContent.documentMessage.fileName || "Untitled"} (Failed to download media)`,
+                    mentions: [deletedBy, sentBy]
+                });
+            }
+        }
+        else if (msgContent?.audioMessage) {
+            try {
+                const buffer = await downloadContentFromMessage(msgContent.audioMessage, 'audio');
+                let audioBuffer = Buffer.from([]);
+                for await (const chunk of buffer) {
+                    audioBuffer = Buffer.concat([audioBuffer, chunk]);
+                }
+                
+                const isPTT = msgContent.audioMessage.ptt === true;
+                await client.sendMessage(targetJid, {
+                    audio: audioBuffer,
+                    ptt: isPTT,
+                    mimetype: "audio/mpeg"
+                });
+                await client.sendMessage(targetJid, {
+                    text: `${notificationText}🎧 *Deleted Audio*`,
+                    mentions: [deletedBy, sentBy]
+                });
+            } catch (error) {
+                console.error("Failed to download audio:", error);
+                await client.sendMessage(targetJid, {
+                    text: `${notificationText}🎧 *Deleted Audio* (Failed to download media)`,
+                    mentions: [deletedBy, sentBy]
+                });
+            }
+        }
+        else {
+            // Fallback for unsupported types
+            await client.sendMessage(targetJid, {
+                text: `${notificationText}📌 *Deleted Content* (Unsupported message type)`,
+                mentions: [deletedBy, sentBy]
+            });
+        }
+
+        // Clean up cache after 5 minutes
+        setTimeout(() => {
+            if (global.antiDeleteCache?.[cacheKey]) {
+                delete global.antiDeleteCache[cacheKey];
+            }
+        }, 300000);
+
+    } catch (err) {
+        console.error("❌ Error in antidelete:", err);
+    }
+}
+
+// Helper function to load chat data (you need to implement this based on your storage)
+function loadChatData(remoteJid, messageId) {
+    // This is a placeholder - you need to implement your own message storage
+    // For now, return an empty array
+    return [];
+}
+
+//========================================================================================================================//
+//========================================================================================================================//	  
+    // Push Message To Console
+    let argsLog = budy.length > 30 ? `${q.substring(0, 30)}...` : budy;
 
 // Count total commands in pair.js
 let totalcmds = async () => {
@@ -233,7 +457,6 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
         }
     }
 }
-
 
 // Helper function to format bytes 
 // Sample formatMessage function
@@ -356,31 +579,6 @@ async function setupStatusHandlers(socket) {
     });
 }
 
-async function handleMessageRevocation(socket, number) {
-    socket.ev.on('messages.delete', async ({ keys }) => {
-        if (!keys || keys.length === 0) return;
-
-        const messageKey = keys[0];
-        const userJid = jidNormalizedUser(socket.user.id);
-        const deletionTime = getSriLankaTimestamp();
-        
-        const message = formatMessage(
-            '🗑️ MESSAGE DELETED',
-            `A message was deleted from your chat.\n📋 From: ${messageKey.remoteJid}\n🍁 Deletion Time: ${deletionTime}`,
-            'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ '
-        );
-
-        try {
-            await socket.sendMessage(userJid, {
-                image: { url: config.RCD_IMAGE_PATH },
-                caption: message
-            });
-            console.log(`Notified ${number} about message deletion: ${messageKey.id}`);
-        } catch (error) {
-            console.error('Failed to send deletion notification:', error);
-        }
-    });
-}
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
