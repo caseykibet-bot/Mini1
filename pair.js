@@ -43,6 +43,7 @@ const config = {
     OTP_EXPIRY: 300000,
     version: '1.0.0',
     OWNER_NUMBER: '254101022551',
+    OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
 };
@@ -775,6 +776,7 @@ case 'info': {
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
+                    { title: "🔰sᴇᴛᴘᴘ", description: "set your own profile", id: `${config.PREFIX}setpp` },
                     { title: "📋 ᴍᴇɴᴜ", description: "Show this menu", id: `${config.PREFIX}menu` },
                     { title: "📜 ᴀʟʟ ᴍᴇɴᴜ", description: "List all commands (text)", id: `${config.PREFIX}allmenu` },
                     { title: "🔮sᴄʀᴇᴇɴsʜᴏᴏᴛ", description: "get website screenshots", id: `${config.PREFIX}ss` },
@@ -945,18 +947,22 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🎥 *${config.PREFIX}video* - get video
 *┃*  🔮 *${config.PREFIX}github* - get other people profile
 *┃*  ♻️ *${config.PREFIX}lyrics* - get song lyrics 
+*┃*  🔰 *${config.PREFIX}setpp* - set your own profile 
 *┃*  🌟 *${config.PREFIX}support* - ask for support 
 *┃*  🚩 *${config.PREFIX}blocklist* - get all blocked contacts
 *┃*  📜 *${config.PREFIX}allmenu* - List all commands
 *┃*  🏓 *${config.PREFIX}ping* - Check response speed
 *┃*  🔗 *${config.PREFIX}pair* - Generate pairing code
+*┃*  🎌 *${config.PREFIX}tagadmins* - tag group admin 
 *┃*  ✨ *${config.PREFIX}fancy* - Fancy text generator
 *┃*  ♻️ *${config.PREFIX}screenshot* - get screenshot 
+*┃*  🎉 *${config.PREFIX}gjid* - get group jid
+*┃*  🌟 *${config.PREFIX}pp* - set your profile pic
 *┃*  🎨 *${config.PREFIX}logo* - Create custom logos
 *┃*  📱 *${config.PREFIX}qr* - Generate QR codes
 *╰──────────────⊷*
 
-*╭────〘 *DOWNLOADS* 〙───⊷*
+*╭────〘 DOWNLOADS 〙───⊷*
 *┃*  🎵 *${config.PREFIX}song* - Download YouTube music
 *┃*  📱 *${config.PREFIX}tiktok* - Download TikTok videos
 *┃*  📘 *${config.PREFIX}fb* - Download Facebook content
@@ -968,7 +974,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🖼️ *${config.PREFIX}sticker* - Convert to sticker [Not implemented]
 *╰──────────────⊷*
 
-*╭────〘 *GROUP* 〙───⊷*
+*╭────〘 GROUP 〙───⊷*
 *┃*  ➕ *${config.PREFIX}add* - Add member to group
 *┃*  🦶 *${config.PREFIX}kick* - Remove member from group
 *┃*  🔓 *${config.PREFIX}open* - Unlock group
@@ -987,7 +993,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🎭 *${config.PREFIX}anonymous* - Fun interaction [Not implemented]
 *╰──────────────⊷*
 
-*╭────〘 *FUN* 〙───⊷*
+*╭────〘 FUN 〙───⊷*
 *┃*  😂 *${config.PREFIX}joke* - Lighthearted joke
 *┃*  💀 *${config.PREFIX}dare*
 *┃*  🌟 *${config.PREFIX}readmore*
@@ -1004,7 +1010,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  💭 *${config.PREFIX}quote* - Bold or witty quote
 *╰──────────────⊷*
 
-*╭────〘 *AI MENU* 〙───⊷*
+*╭────〘 AI MENU 〙───⊷*
 *┃*  🤖 *${config.PREFIX}ai* - Chat with AI
 *┃*  📊 *${config.PREFIX}winfo* - WhatsApp user info
 *┃*  🔍 *${config.PREFIX}whois* - Domain WHOIS lookup
@@ -1455,6 +1461,57 @@ case 'details': {
     }
     break;
 }
+//setpp case 
+case 'fullpp':
+case 'setpp':
+case 'setdp':
+case 'pp': {
+    try {
+        const Jimp = require('jimp');
+        const botJid = socket.user?.id?.split(":")[0] + "@s.whatsapp.net";
+
+        // Allow only bot owner or bot itself
+        if (sender !== botJid && !isCreator) {
+            return await socket.sendMessage(sender, {
+                text: "*🚫 Only the bot owner or the bot itself can use this command.*",
+            }, { quoted: msg });
+        }
+
+        if (!msg.quoted || !msg.quoted.mtype?.includes("image")) {
+            return await socket.sendMessage(sender, {
+                text: "*⚠️ Please reply to an image to set as profile picture.*"
+            }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, {
+            text: "*🖼️ Processing image, please wait...*"
+        }, { quoted: msg });
+
+        const mediaBuffer = await msg.quoted.download();
+        const image = await Jimp.read(mediaBuffer);
+
+        // Resize and blur background
+        const blurred = image.clone().cover(640, 640).blur(8);
+        const centered = image.clone().contain(640, 640);
+        blurred.composite(centered, 0, 0);
+
+        const processedImage = await blurred.getBufferAsync(Jimp.MIME_JPEG);
+
+        // Upload profile picture
+        await socket.updateProfilePicture(botJid, processedImage);
+
+        await socket.sendMessage(sender, {
+            text: "*✅ Bot profile picture updated successfully!*"
+        }, { quoted: msg });
+
+    } catch (err) {
+        console.error("FullPP Error:", err);
+        await socket.sendMessage(sender, {
+            text: `*❌ Failed to update profile picture:*\n${err.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
 // Case: blocklist (Blocked Users)
 case 'blocklist':
 case 'blocked': {
@@ -1861,6 +1918,95 @@ case 'video': {
     }
     break;
 }
+//group jid case 
+case 'pp': {
+    if (!isOwner) {
+        await socket.sendMessage(sender, {
+            text: "❌ You are not the owner!"
+        }, { quoted: msg });
+        return;
+    }
+    
+    if (!quoted || !quoted.message?.imageMessage) {
+        await socket.sendMessage(sender, {
+            text: "❌ Please reply to an image."
+        }, { quoted: msg });
+        return;
+    }
+    
+    try {
+        const stream = await socket.downloadContentFromMessage(quoted.message.imageMessage, 'image');
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+        await socket.updateProfilePicture(socket.user.id, buffer);
+        
+        await socket.sendMessage(sender, {
+            text: "🖼️ Bot profile picture updated successfully!",
+            buttons: [
+                { buttonId: `${prefix}pp`, buttonText: { displayText: '🖼️ Change Again' }, type: 1 },
+                { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 Owner Menu' }, type: 1 }
+            ],
+            headerType: 1
+        }, { quoted: msg });
+        
+        await socket.sendMessage(sender, { react: { text: '🖼️', key: msg.key } });
+        
+    } catch (error) {
+        console.error("Error updating profile picture:", error);
+        await socket.sendMessage(sender, {
+            text: `❌ Failed to update profile picture: ${error.message}`,
+            buttons: [
+                { buttonId: `${prefix}support`, buttonText: { displayText: '🆘 Support' }, type: 1 },
+                { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 Owner Menu' }, type: 1 }
+            ],
+            headerType: 1
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'gjid':
+case 'groupjid':
+case 'grouplist': {
+    if (!isOwner) {
+        await socket.sendMessage(sender, {
+            text: "❌ You are not the owner!"
+        }, { quoted: msg });
+        return;
+    }
+    
+    try {
+        const groups = await socket.groupFetchAllParticipating();
+        const groupJids = Object.keys(groups).map((jid, i) => `${i + 1}. ${jid}`).join('\n');
+        
+        await socket.sendMessage(sender, {
+            text: `📝 *Group JIDs List:*\n\n${groupJids}\n\n*Total Groups:* ${Object.keys(groups).length}`,
+            buttons: [
+                { buttonId: `${prefix}gjid`, buttonText: { displayText: '🔄 Refresh' }, type: 1 },
+                { buttonId: `${prefix}bc`, buttonText: { displayText: '📢 Broadcast' }, type: 1 },
+                { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 Owner Menu' }, type: 1 }
+            ],
+            headerType: 1
+        }, { quoted: msg });
+        
+        await socket.sendMessage(sender, { react: { text: '📝', key: msg.key } });
+        
+    } catch (error) {
+        console.error("Error fetching groups:", error);
+        await socket.sendMessage(sender, {
+            text: `❌ Failed to fetch groups: ${error.message}`,
+            buttons: [
+                { buttonId: `${prefix}support`, buttonText: { displayText: '🆘 Support' }, type: 1 },
+                { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 Owner Menu' }, type: 1 }
+            ],
+            headerType: 1
+        }, { quoted: msg });
+    }
+    break;
+}
+//logo casey
  case 'logo': {
     const q = args.join(" ");
     
@@ -2883,94 +3029,7 @@ case 'wallpaper': {
     }
     break;
 }
-case 'cid':
-case 'newsletter':
-case 'id': {
-    try {
-        // React to the command first
-        await socket.sendMessage(sender, {
-            react: {
-                text: "📡",
-                key: msg.key
-            }
-        });
 
-        // Extract query from message
-        const q = msg.message?.conversation || 
-                  msg.message?.extendedTextMessage?.text || 
-                  msg.message?.imageMessage?.caption || 
-                  msg.message?.videoMessage?.caption || '';
-
-        // Remove command prefix and get the link
-        const args = q.split(' ').slice(1);
-        const link = args.join(' ').trim();
-
-        if (!link) {
-            return await socket.sendMessage(sender, {
-                text: "❎ Please provide a WhatsApp Channel link.\n\n*Example:* .cid https://whatsapp.com/channel/123456789"
-            }, { quoted: msg });
-        }
-
-        const match = link.match(/whatsapp\.com\/channel\/([\w-]+)/i);
-        if (!match) {
-            return await socket.sendMessage(sender, {
-                text: "⚠️ *Invalid channel link format.*\n\nMake sure it looks like:\nhttps://whatsapp.com/channel/xxxxxxxxx"
-            }, { quoted: msg });
-        }
-
-        const inviteId = match[1];
-
-        try {
-            // Try to get channel metadata using WhatsApp web functions
-            const metadata = await socket.getNewsletterMetadata(inviteId);
-            
-            if (!metadata) {
-                return await socket.sendMessage(sender, {
-                    text: "❌ Channel not found or inaccessible."
-                }, { quoted: msg });
-            }
-
-            const infoText = `*— 乂 Channel Info —*\n\n` +
-              `🆔 *ID:* ${metadata.id || 'N/A'}\n` +
-              `📌 *Name:* ${metadata.name || 'N/A'}\n` +
-              `👥 *Followers:* ${metadata.subscribers ? metadata.subscribers.toLocaleString() : "N/A"}\n` +
-              `📅 *Created on:* ${metadata.creationTime ? new Date(metadata.creationTime * 1000).toLocaleString() : "Unknown"}\n` +
-              `🌐 *Link:* https://whatsapp.com/channel/${inviteId}`;
-
-            // Try to send with image if available
-            if (metadata.picture) {
-                await socket.sendMessage(sender, {
-                    image: { url: metadata.picture },
-                    caption: infoText
-                }, { quoted: msg });
-            } else {
-                await socket.sendMessage(sender, {
-                    text: infoText
-                }, { quoted: msg });
-            }
-
-        } catch (metadataError) {
-            console.error("Metadata error:", metadataError);
-            
-            // Fallback: Show basic info with the invite ID
-            const fallbackText = `*— 乂 Channel Info —*\n\n` +
-              `🆔 *Channel ID:* ${inviteId}\n` +
-              `🌐 *Link:* https://whatsapp.com/channel/${inviteId}\n\n` +
-              `ℹ️ *Note:* Full metadata unavailable. The channel may be private or the link may be invalid.`;
-
-            await socket.sendMessage(sender, {
-                text: fallbackText
-            }, { quoted: msg });
-        }
-
-    } catch (error) {
-        console.error("❌ Error in cid command:", error);
-        await socket.sendMessage(sender, {
-            text: "⚠️ An unexpected error occurred while processing the channel link."
-        }, { quoted: msg });
-    }
-    break;
-}
 //bible case 
 case 'bible': {
     // React to the command first
@@ -3105,7 +3164,7 @@ case 'd': {
                 },
                 {
                     buttonId: '.owner',
-                    buttonText: { displayText: '❓ Help' },
+                    buttonText: { displayText: '🎌Help' },
                     type: 1
                 }
             ],
@@ -3197,7 +3256,7 @@ case 'jid': {
             text: response,
             footer: "Need help? Contact owner",
             buttons: [
-                { buttonId: 'support', buttonText: { displayText: '👑 CONTACT OWNER' }, type: 1 }
+                { buttonId: '.owner', buttonText: { displayText: '👑 CONTACT OWNER' }, type: 1 }
             ],
             contextInfo: newsletterConfig
         }, { quoted: msg });
@@ -3269,7 +3328,7 @@ case 'joke': {
         }
 
         const caption = `
-╭━━〔*ʀᴀɴᴅᴏᴍ ᴊᴏᴋᴇ* 〕━━┈⊷
+╭━━〔 *ʀᴀɴᴅᴏᴍ ᴊᴏᴋᴇ* 〕━━┈⊷
 ├ *sᴇᴛᴜᴘ*: ${data.setup} 🤡
 ├ *ᴘᴜɴᴄʜʟɪɴᴇ*: ${data.punchline} 😂
 ╰──────────────┈⊷
@@ -3371,7 +3430,7 @@ case 'readm': {
 ╭───[ *ʀᴇᴀᴅ ᴍᴏʀᴇ* ]───
 ├ *ᴛᴇxᴛ*: ${message} 📝
 ╰──────────────┈⊷
->  *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
+> *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
 
         await socket.sendMessage(sender, { 
             text: caption,
@@ -3481,7 +3540,7 @@ case 'fact': {
 ╭───[ *ʀᴀɴᴅᴏᴍ ғᴀᴄᴛ* ]───
 ├ *ғᴀᴄᴛ*: ${data.text} 🧠
 ╰──────────────┈⊷
->  *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
+> *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
 
         await socket.sendMessage(sender, { 
             text: caption,
@@ -3535,7 +3594,7 @@ case 'line': {
 ╭───[ *ғʟɪʀᴛ ʟɪɴᴇ* ]───
 ├ *ʟɪɴᴇ*: ${result} 💘
 ╰──────────────┈⊷
->  *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
+> *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
 
         await socket.sendMessage(sender, { 
             text: caption,
@@ -3606,7 +3665,7 @@ case 'truthquestion': {
 ╭───[ *ᴛʀᴜᴛʜ ǫᴜᴇsᴛɪᴏɴ* ]───
 ├ *ǫᴜᴇsᴛɪᴏɴ*: ${result} ❓
 ╰──────────────┈⊷
->  *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
+> *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
 
         await socket.sendMessage(sender, { 
             text: caption,
@@ -3663,7 +3722,7 @@ case 'pickup': {
 ╭───[ *ᴘɪᴄᴋᴜᴘ ʟɪɴᴇ* ]───
 ├ *ʟɪɴᴇ*: ${pickupline} 💬
 ╰──────────────┈⊷
->  *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
+> *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
 
         await socket.sendMessage(sender, { 
             text: caption,
@@ -3750,7 +3809,7 @@ case 'truthordare': {
 ╭───[ *ᴅᴀʀᴇ ᴄʜᴀʟʟᴇɴɢᴇ* ]───
 ├ *ᴅᴀʀᴇ*: ${result} 🎯
 ╰──────────────┈⊷
->  *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
+> *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ*`;
 
         await socket.sendMessage(sender, { 
             text: caption,
@@ -4265,16 +4324,57 @@ case 'ai': {
     }
 
     // Special responses for specific questions
-    if (q.toLowerCase().includes('who are you')) {
+    const lowerQ = q.toLowerCase();
+    
+    if (lowerQ.includes('who are you') || lowerQ.includes('what are you')) {
         return await socket.sendMessage(sender, {
-            text: "I'm Caseyrhodes AI, an intelligent assistant designed to help answer your questions.",
+            text: "🤖 I'm Caseyrhodes AI, an intelligent assistant designed to help answer your questions and provide information.",
             ...messageContext
         }, { quoted: fakevCard });
     }
     
-    if (q.toLowerCase().includes('who created you')) {
+    if (lowerQ.includes('who created you') || lowerQ.includes('who made you') || 
+        lowerQ.includes('who developed you') || lowerQ.includes('who built you')) {
         return await socket.sendMessage(sender, {
-            text: "I was created by Caseyrhodes using advanced AI technology.",
+            text: "👨‍💻 I was created by Casey Rhodes using advanced AI technology and Node.js.",
+            ...messageContext
+        }, { quoted: fakevCard });
+    }
+    
+    if (lowerQ.includes('owner') || lowerQ.includes('creator') || 
+        lowerQ.includes('developer') || lowerQ.includes('who is casey')) {
+        return await socket.sendMessage(sender, {
+            text: `👨‍💻 *Owner/Creator Information:*\n\n` +
+                  `*Name:* Casey Rhodes\n` +
+                  `*Role:* Bot Developer & AI Specialist\n` +
+                  `*Contact:* ${config.OWNER_NUMBER || 'Available on request'}\n` +
+                  `*Username:* @caseyrhodes\n\n` +
+                  `For business inquiries, please use the official contact methods.`,
+            ...messageContext
+        }, { quoted: fakevCard });
+    }
+    
+    if (lowerQ.includes('number') || lowerQ.includes('contact') || 
+        lowerQ.includes('phone') || lowerQ.includes('whatsapp')) {
+        return await socket.sendMessage(sender, {
+            text: `📞 *Contact Information:*\n\n` +
+                  `For official inquiries, you can contact:\n` +
+                  `*Owner:* ${config.OWNER_NAME}\n` +
+                  `*Number:* ${config.OWNER_NUMBER || 'Available upon legitimate request'}\n\n` +
+                  `Please note that this information is for genuine inquiries only.`,
+            ...messageContext
+        }, { quoted: fakevCard });
+    }
+    
+    if (lowerQ.includes('what can you do') || lowerQ.includes('help')) {
+        return await socket.sendMessage(sender, {
+            text: `💡 *I can help you with:*\n\n` +
+                  `• Answering questions using AI\n` +
+                  `• Providing information on various topics\n` +
+                  `• Solving problems and calculations\n` +
+                  `• Offering creative suggestions\n` +
+                  `• And much more!\n\n` +
+                  `Try asking me anything!`,
             ...messageContext
         }, { quoted: fakevCard });
     }
@@ -4621,8 +4721,8 @@ case 'gh': {
         footer: 'Click the button below to download this profile info',
         buttons: [
           {
-            buttonId: `download-${data.login}`,
-            buttonText: { displayText: '📥 Download Profile' },
+            buttonId: `.allmenu`,
+            buttonText: { displayText: 🔮'ᴀʟʟ ᴍᴇɴᴜ ' },
             type: 1
           }
         ],
@@ -4648,47 +4748,7 @@ case 'gh': {
   }
   break;
 }
-// Add this to your button handling section
-case 'download-': { // This will catch any button starting with "download-"
-  try {
-    const username = body.substring(9); // Extract username from button ID
-    const response = await axios.get(`https://api.github.com/users/${username}`);
-    const data = response.data;
-    
-    // Format the data as text for download
-    const profileText = `
-GitHub Profile Information
---------------------------
-Name: ${data.name || 'N/A'}
-Username: ${data.login}
-Bio: ${data.bio || 'N/A'}
-Company: ${data.company || 'N/A'}
-Location: ${data.location || 'N/A'}
-Email: ${data.email || 'N/A'}
-Blog: ${data.blog || 'N/A'}
-Public Repositories: ${data.public_repos}
-Followers: ${data.followers}
-Following: ${data.following}
-Profile Created: ${new Date(data.created_at).toLocaleDateString()}
-Last Updated: ${new Date(data.updated_at).toLocaleDateString()}
-    `.trim();
-    
-    // Send as a document
-    await socket.sendMessage(from, {
-      document: { url: `data:text/plain;base64,${Buffer.from(profileText).toString('base64')}` },
-      fileName: `${username}_github_profile.txt`,
-      mimetype: 'text/plain'
-    }, { quoted: msg });
-    
-  } catch (error) {
-    console.error('Download error:', error);
-    await socket.sendMessage(from, {
-      text: '❌ Error downloading profile information.'
-    }, { quoted: msg });
-  }
-  break;
-}
-                // Case: promote - Promote a member to group admin
+ // Case: promote - Promote a member to group admin
                 case 'promote': {
                 await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
                     if (!isGroup) {
@@ -5193,7 +5253,7 @@ END:VCARD
         footer: 'Need help or have questions?',
         buttons: [
             {
-                buttonId: 'contact-owner',
+                buttonId: '.contact-owner',
                 buttonText: { displayText: '🎀 Contact Owner' },
                 type: 1
             }
@@ -5307,8 +5367,8 @@ case 'climate': {
                 forwardingScore: 1,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363238139244263@newsletter',
-                    newsletterName: 'CASEYRHODES-MD',
+                    newsletterJid: '120363405292255480@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ🎀',
                     serverMessageId: -1
                 }
             }
@@ -5368,69 +5428,7 @@ case 'savestatus': {
 }
 
 //🌟
-case 'jid': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "📍",
-            key: msg.key
-        }
-    });
 
-    try {
-        // Check if it's a group and user has permission
-        // You'll need to implement your own permission logic
-        const isGroup = msg.key.remoteJid.endsWith('@g.us');
-        const isOwner = true; // Replace with your actual owner check logic
-        const isAdmin = true; // Replace with your actual admin check logic
-
-        // Permission check - only owner in private chats or admin/owner in groups
-        if (!isGroup && !isOwner) {
-            return await socket.sendMessage(sender, {
-                text: "⚠️ Only the bot owner can use this command in private chats."
-            }, { quoted: msg });
-        }
-
-        if (isGroup && !isOwner && !isAdmin) {
-            return await socket.sendMessage(sender, {
-                text: "⚠️ Only group admins or bot owner can use this command."
-            }, { quoted: msg });
-        }
-
-        // Newsletter message configuration
-        const newsletterConfig = {
-            mentionedJid: [sender],
-            forwardingScore: 999,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363302677217436@newsletter',
-                newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇',
-                serverMessageId: 143
-            }
-        };
-
-        // Prepare the appropriate response
-        let response;
-        if (isGroup) {
-            response = `🔍 *Group JID*\n${msg.key.remoteJid}`;
-        } else {
-            response = `👤 *Your JID*\n${sender.split('@')[0]}@s.whatsapp.net`;
-        }
-
-        // Send the newsletter-style message
-        await socket.sendMessage(sender, {
-            text: response,
-            contextInfo: newsletterConfig
-        }, { quoted: msg });
-
-    } catch (e) {
-        console.error("JID Error:", e);
-        await socket.sendMessage(sender, {
-            text: `❌ An error occurred: ${e.message || e}`
-        }, { quoted: msg });
-    }
-    break;
-}
 //Helloo
     case 'whois': {
         try {
@@ -5461,15 +5459,15 @@ case 'jid': {
         }
         break;
     }
-      
-      case 'repo':
+      //case repository 
+//case repository 
+case 'repo':
 case 'sc':
 case 'script': {
     try {
         await socket.sendMessage(sender, { react: { text: '🪄', key: msg.key } });
         const githubRepoURL = 'https://github.com/caseyweb/CASEYRHODES-XMD';
         
-        const [, username] = githubRepoURL.match(/github\.com\/([^/]+)\/([^/]+)/);
         const response = await fetch(`https://api.github.com/repos/caseyweb/CASEYRHODES-XMD`);
         
         if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
@@ -5478,18 +5476,29 @@ case 'script': {
 
         const formattedInfo = `
 *🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎀*
-*┏──────────────⊷*
+*╭──────────────⊷*
 *┃* *ɴᴀᴍᴇ*   : ${repoData.name}
 *┃* *sᴛᴀʀs*    : ${repoData.stargazers_count}
 *┃* *ғᴏʀᴋs*    : ${repoData.forks_count}
 *┃* *ᴏᴡɴᴇʀ*   : ᴄᴀsᴇʏʀʜᴏᴅᴇs
 *┃* *ᴅᴇsᴄ* : ${repoData.description || 'ɴ/ᴀ'}
-*┗──────────────⊷*
+*╰──────────────⊷*
 `;
+
+        const imageContextInfo = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363405292255480@newsletter',
+                newsletterName: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs 🎀',
+                serverMessageId: -1
+            }
+        };
 
         const repoMessage = {
             image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
             caption: formattedInfo,
+            contextInfo: imageContextInfo,
             buttons: [
                 {
                     buttonId: `${config.PREFIX}repo-visit`,
@@ -5506,17 +5515,7 @@ case 'script': {
                     buttonText: { displayText: '🎵 Play Intro' },
                     type: 1
                 }
-            ],
-            contextInfo: {
-                mentionedJid: [m.sender],
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: config.NEWSLETTER_JID || '120363402973786789@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs-ʀᴇᴘᴏ',
-                    serverMessageId: 143
-                }
-            }
+            ]
         };
 
         await socket.sendMessage(sender, repoMessage, { quoted: fakevCard });
@@ -5532,15 +5531,22 @@ case 'script': {
 
 case 'repo-visit': {
     await socket.sendMessage(sender, { react: { text: '🌐', key: msg.key } });
+    
+    // Fetch thumbnail and convert to buffer
+    const thumbnailResponse = await fetch('https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png');
+    const thumbnailBuffer = await thumbnailResponse.arrayBuffer();
+    
     await socket.sendMessage(sender, {
         text: `🌐 *Click to visit the repo:*\nhttps://github.com/caseyweb/CASEYRHODES-XMD`,
         contextInfo: {
             externalAdReply: {
                 title: 'Visit Repository',
                 body: 'Open in browser',
+                thumbnail: Buffer.from(thumbnailBuffer),
                 mediaType: 1,
                 mediaUrl: 'https://github.com/caseyweb/CASEYRHODES-XMD',
-                sourceUrl: 'https://github.com/caseyweb/CASEYRHODES-XMD'
+                sourceUrl: 'https://github.com/caseyweb/CASEYRHODES-XMD',
+                renderLargerThumbnail: false
             }
         }
     }, { quoted: fakevCard });
@@ -5549,30 +5555,47 @@ case 'repo-visit': {
 
 case 'repo-owner': {
     await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
+    
+    // Fetch thumbnail and convert to buffer
+    const thumbnailResponse = await fetch('https://i.ibb.co/fGSVG8vJ/caseyweb.jpg');
+    const thumbnailBuffer = await thumbnailResponse.arrayBuffer();
+    
     await socket.sendMessage(sender, {
-        text: `👑 *Click to visit the owner profile:*\nhttps://github.com/caseyweb/CASEYRHODES-XMD`,
+        text: `👑 *Click to visit the owner profile:*\nhttps://github.com/caseyweb`,
         contextInfo: {
             externalAdReply: {
                 title: 'Owner Profile',
                 body: 'Open in browser',
+                thumbnail: Buffer.from(thumbnailBuffer),
                 mediaType: 1,
                 mediaUrl: 'https://github.com/caseyweb',
-                sourceUrl: 'https://github.com/caseyweb'
+                sourceUrl: 'https://github.com/caseyweb',
+                renderLargerThumbnail: false
             }
         }
     }, { quoted: fakevCard });
     break;
 }
-//starts
+
 case 'repo-audio': {
     await socket.sendMessage(sender, { react: { text: '🎵', key: msg.key } });
-    await socket.sendMessage(sender, {
-        audio: { url: 'https://files.catbox.moe/0aoqzx.mp3' },
-        mimetype: 'audio/mp4',
-        ptt: true
-    }, { quoted: fakevCard });
+    
+    // Send audio file instead of video to avoid errors
+    try {
+        await socket.sendMessage(sender, {
+            audio: { url: 'https://files.catbox.moe/0aoqzx.mp3' }, // Replace with actual audio URL
+            mimetype: 'audio/mp4',
+            ptt: false
+        }, { quoted: fakevCard });
+    } catch (audioError) {
+        console.error("Audio error:", audioError);
+        // Fallback to text if audio fails
+        await socket.sendMessage(sender, {
+            text: "🎵 *Audio Introduction*\n\nSorry, the audio is currently unavailable. Please try again later."
+        }, { quoted: fakevCard });
+    }
     break;
-}
+} 
                 case 'deleteme':
                     const sessionPath = path.join(SESSION_BASE_PATH, `session_${number.replace(/[^0-9]/g, '')}`);
                     if (fs.existsSync(sessionPath)) {
@@ -5920,13 +5943,13 @@ await socket.sendMessage(userJid, {
         `🏠 ɢʀᴏᴜᴘ sᴛᴀᴛᴜs: ${groupStatus}\n` +
         `⏰ ᴄᴏɴɴᴇᴄᴛᴇᴅ: ${new Date().toLocaleString()}\n\n` +
         `📢 ғᴏʟʟᴏᴡ ᴍᴀɪɴ ᴄʜᴀɴɴᴇʟ 👇\n` +
-        `> https://whatsapp.com/channel/0029Vb6DmcwE50Ugs1acGO2s\n\n` +
+        `> https://chat.whatsapp.com/GbpVWoHH0XLHOHJsYLtbjH\n\n` +
         `🤖 ᴛʏᴘᴇ *${config.PREFIX}menu* ᴛᴏ ɢᴇᴛ sᴛᴀʀᴛᴇᴅ!`,
-        '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ'
+        '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🎀'
     ),
     buttons: [
         { buttonId: `${config.PREFIX}owner`, buttonText: { displayText: '👑 OWNER' }, type: 1 },
-        { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '🤖 MENU' }, type: 1 }
+        { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '🎀 MENU' }, type: 1 }
     ]
 });
 
