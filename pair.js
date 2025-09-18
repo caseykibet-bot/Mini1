@@ -169,7 +169,7 @@ async function handleMessageRevocation(client, revocationMessage, antideleteMode
         const deletedDate = localNow.toLocaleDateString();
 
         // Base notification text
-        let notificationText = `🚨 *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴀɴᴛɪᴅᴇʟᴇᴛᴇ* 🚨\n\n` +
+        let notificationText = `🚨 *ᴘᴇᴀᴄᴇ ʜᴜʙ ᴀɴᴛɪᴅᴇʟᴇᴛᴇ* 🚨\n\n` +
             `👤 ᴅᴇʟᴇᴛᴇᴅ ʙʏ: ${deletedByFormatted}\n` +
             `✉️ sᴇɴᴛ ʙʏ: ${sentByFormatted}\n` +
             `📅 ᴅᴀᴛᴇ: ${deletedDate}\n` +
@@ -348,9 +348,43 @@ function loadChatData(remoteJid, messageId) {
     return [];
 }
 
+// ================== MESSAGE HANDLER FUNCTION ==================
+function handleIncomingMessage(message) {
+    // Your normal message handling logic here
+    console.log("Normal message received:", message.key.id);
+    // Add your normal message processing logic
+}
+
+// ================== CORRECTED SENDCONTACT FUNCTION ==================
+async function sendContact(client, chatId, numbers, text = '', options = {}) {
+    try {
+        const contacts = numbers.map(number => ({
+            displayName: 'ᴘᴇᴀᴄᴇᴍᴀᴋᴇʀ',
+            vcard: `BEGIN:VCARD\nVERSION:3.0\nN:ᴘᴇᴀᴄᴇᴍᴀᴋᴇʀ\nFN:ᴘᴇᴀᴄᴇᴍᴀᴋᴇʀ\nitem1.TEL;waid=${number}:${number}\nitem1.X-ABLabel:Number\nitem2.EMAIL;type=INTERNET:muuoemmanuel649@gmail.com\nitem2.X-ABLabel:Email\nitem3.URL:https://instagram.com/peacemaker_hunter72\nitem3.X-ABLabel:Instagram\nitem4.ADR:;;Kenya;;\nitem4.X-ABLabel:Region\nEND:VCARD`
+        }));
+
+        await client.sendMessage(chatId, {
+            contacts: {
+                displayName: 'ᴘᴇᴀᴄᴇᴍᴀᴋᴇʀ',
+                contacts: contacts
+            },
+            ...options
+        });
+
+        // If text is provided, send it as a separate message
+        if (text) {
+            await client.sendMessage(chatId, { text: text });
+        }
+    } catch (error) {
+        console.error('Error sending contact:', error);
+        throw error;
+    }
+}
+
 //========================================================================================================================//
 //========================================================================================================================//	  
-
+    // Push Message To Console
+    let argsLog = budy.length > 30 ? `${q.substring(0, 30)}...` : budy;
 
 // Count total commands in pair.js
 let totalcmds = async () => {
@@ -638,6 +672,58 @@ async function oneViewmeg(socket, isOwner, msg, sender) {
         });
     }
 }
+// Antidelete listener function
+function setupAntideleteListener(socket, antideleteMode) {
+    socket.ev.on('messages.upsert', async ({ messages }) => {
+        const mek = messages[0];
+        
+        // ================== ANTIDELETE LISTENER ==================
+        if (antideleteMode !== "off") {
+            if (mek.message?.protocolMessage && mek.message.protocolMessage.type === 0) {
+                // 0 = message delete - Only trigger on deleted messages
+                await handleMessageRevocation(socket, mek, antideleteMode);
+            } else {
+                handleIncomingMessage(mek); // Normal incoming message
+            }
+        } else {
+            handleIncomingMessage(mek); // Normal incoming message when antidelete is off
+        }
+    });
+}
+
+// Handle message revocation (deleted messages)
+async function handleMessageRevocation(socket, mek, antideleteMode) {
+    try {
+        const key = mek.message.protocolMessage.key;
+        const chat = key.remoteJid;
+        
+        // Get the deleted message info
+        const deletedMsg = {
+            id: key.id,
+            from: key.participant || key.remoteJid,
+            timestamp: new Date(mek.messageTimestamp * 1000)
+        };
+        
+        // Send notification about deleted message
+        if (antideleteMode === "on") {
+            await socket.sendMessage(chat, {
+                text: `🗑️ *Message Deleted*\n\n` +
+                      `• Message ID: ${deletedMsg.id}\n` +
+                      `• Deleted by: @${deletedMsg.from.split('@')[0]}\n` +
+                      `• Time: ${deletedMsg.timestamp.toLocaleTimeString()}`,
+                mentions: [deletedMsg.from]
+            });
+        }
+    } catch (error) {
+        console.error("Error handling message deletion:", error);
+    }
+}
+
+// Handle normal incoming messages
+function handleIncomingMessage(mek) {
+    // Your normal message handling logic here
+    console.log("Normal message received:", mek.key.id);
+}
 
 function setupCommandHandlers(socket, number) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
@@ -745,6 +831,34 @@ function setupCommandHandlers(socket, number) {
             switch (command) {
                 // Your command cases here
                 // Case: alive
+                // Case command for antidelete
+case 'antidelete':
+case 'antidel':
+case 'ad': {
+    const mode = body.substring(1).trim().toLowerCase();
+    
+    if (mode === 'on' || mode === 'enable') {
+        antideleteMode = "on";
+        await socket.sendMessage(sender, { 
+            text: "✅ *Antidelete enabled*\nI will now notify you when messages are deleted."
+        }, { quoted: fakevCard });
+    } else if (mode === 'off' || mode === 'disable') {
+        antideleteMode = "off";
+        await socket.sendMessage(sender, { 
+            text: "❌ *Antidelete disabled*\nMessage deletion notifications are now off."
+        }, { quoted: fakevCard });
+    } else if (mode === 'status') {
+        await socket.sendMessage(sender, { 
+            text: `📊 *Antidelete Status:* ${antideleteMode === "on" ? "✅ Enabled" : "❌ Disabled"}`
+        }, { quoted: fakevCard });
+    } else {
+        await socket.sendMessage(sender, { 
+            text: `⚙️ *Antidelete Usage:*\n• ${prefix}antidelete on - Enable\n• ${prefix}antidelete off - Disable\n• ${prefix}antidelete status - Check status`
+        }, { quoted: fakevCard });
+    }
+    break;
+}
+
                 case 'alive': {
                     try {
                         await socket.sendMessage(sender, { react: { text: '🔮', key: msg.key } });
