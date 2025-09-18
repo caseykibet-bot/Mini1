@@ -38,14 +38,14 @@ const config = {
     GROUP_INVITE_LINK: '',
     ADMIN_LIST_PATH: './admin.json',
     RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
-    NEWSLETTER_JID: '120363402973786789@newsletter',
+    NEWSLETTER_JID: '120363405292255480@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
     OWNER_NUMBER: '254101022551',
-    OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+    OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs🎀',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB5wftGehEFdcfrqL3T'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R'
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -127,262 +127,6 @@ async function cleanDuplicateFiles(number) {
         console.error(`Failed to clean duplicate files for ${number}:`, error);
     }
 }
-
-// ================== FIXED ANTIDELETE FUNCTION ==================
-async function handleMessageRevocation(client, revocationMessage, antideleteMode) {
-    try {
-        // Fast validation checks first
-        if (!revocationMessage?.message?.protocolMessage?.key?.id) return;
-        
-        const remoteJid = revocationMessage.key.remoteJid;
-        const messageId = revocationMessage.message.protocolMessage.key.id;
-
-        // Load original deleted message
-        const chatData = loadChatData(remoteJid, messageId);
-        const originalMessage = chatData[0];
-        if (!originalMessage) return;
-
-        // Get bot's JID early for faster checks
-        const botJid = (await client.user.id).split(":")[0] + "@s.whatsapp.net";
-
-        // Detect who deleted
-        const deletedBy = revocationMessage.participant || revocationMessage.key.remoteJid;
-        
-        // Detect who originally sent
-        const sentBy = originalMessage.key.participant || originalMessage.key.remoteJid;
-
-        // Skip if bot deleted or sent the message
-        if (deletedBy === botJid || sentBy === botJid) return;
-
-        // Skip if this is a duplicate notification (check timestamp)
-        const now = Date.now();
-        const messageTimestamp = originalMessage.messageTimestamp * 1000 || now;
-        if (now - messageTimestamp > 60000) return; // Skip if message is older than 1 minute
-
-        // Format participants
-        const deletedByFormatted = `@${deletedBy.split('@')[0]}`;
-        const sentByFormatted = `@${sentBy.split('@')[0]}`;
-
-        // Timezone handling for Africa/Nairobi (UTC+3)
-        const localNow = new Date(now + (3 * 60 * 60 * 1000));
-        const deletedTime = localNow.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        const deletedDate = localNow.toLocaleDateString();
-
-        // Base notification text
-        let notificationText = `🚨 *ᴘᴇᴀᴄᴇ ʜᴜʙ ᴀɴᴛɪᴅᴇʟᴇᴛᴇ* 🚨\n\n` +
-            `👤 ᴅᴇʟᴇᴛᴇᴅ ʙʏ: ${deletedByFormatted}\n` +
-            `✉️ sᴇɴᴛ ʙʏ: ${sentByFormatted}\n` +
-            `📅 ᴅᴀᴛᴇ: ${deletedDate}\n` +
-            `⏰ ᴛɪᴍᴇ: ${deletedTime}\n\n`;
-
-        // Determine where to send recovered message
-        let targetJid;
-        if (antideleteMode === "private") {
-            targetJid = config.OWNER_NUMBER.replace(/[^0-9]/g, '') + "@s.whatsapp.net";
-        } else if (antideleteMode === "chat") {
-            targetJid = remoteJid;
-        } else return;
-
-        // Cache to prevent duplicate notifications
-        const cacheKey = `${messageId}_${deletedBy}`;
-        if (global.antiDeleteCache?.[cacheKey]) return;
-        global.antiDeleteCache = { [cacheKey]: true, ...global.antiDeleteCache };
-
-        // Process all supported message types
-        const msgContent = originalMessage.message;
-        
-        if (msgContent?.conversation) {
-            await client.sendMessage(targetJid, {
-                text: `${notificationText}📝 *Deleted Message:*\n${msgContent.conversation}`,
-                mentions: [deletedBy, sentBy]
-            });
-        }
-        else if (msgContent?.extendedTextMessage) {
-            await client.sendMessage(targetJid, {
-                text: `${notificationText}📝 *Deleted Quoted Message:*\n${msgContent.extendedTextMessage.text}`,
-                mentions: [deletedBy, sentBy]
-            });
-        }
-        else if (msgContent?.imageMessage) {
-            try {
-                const buffer = await downloadContentFromMessage(msgContent.imageMessage, 'image');
-                let imageBuffer = Buffer.from([]);
-                for await (const chunk of buffer) {
-                    imageBuffer = Buffer.concat([imageBuffer, chunk]);
-                }
-                
-                const caption = msgContent.imageMessage.caption || "";
-                await client.sendMessage(targetJid, {
-                    image: imageBuffer,
-                    caption: `${notificationText}🖼️ *Deleted Image*${caption ? `\n${caption}` : ""}`,
-                    mentions: [deletedBy, sentBy]
-                });
-            } catch (error) {
-                console.error("Failed to download image:", error);
-                await client.sendMessage(targetJid, {
-                    text: `${notificationText}🖼️ *Deleted Image* (Failed to download media)`,
-                    mentions: [deletedBy, sentBy]
-                });
-            }
-        }
-        else if (msgContent?.videoMessage) {
-            try {
-                const buffer = await downloadContentFromMessage(msgContent.videoMessage, 'video');
-                let videoBuffer = Buffer.from([]);
-                for await (const chunk of buffer) {
-                    videoBuffer = Buffer.concat([videoBuffer, chunk]);
-                }
-                
-                const caption = msgContent.videoMessage.caption || "";
-                await client.sendMessage(targetJid, {
-                    video: videoBuffer,
-                    caption: `${notificationText}🎥 *Deleted Video*${caption ? `\n${caption}` : ""}`,
-                    mentions: [deletedBy, sentBy]
-                });
-            } catch (error) {
-                console.error("Failed to download video:", error);
-                await client.sendMessage(targetJid, {
-                    text: `${notificationText}🎥 *Deleted Video* (Failed to download media)`,
-                    mentions: [deletedBy, sentBy]
-                });
-            }
-        }
-        else if (msgContent?.stickerMessage) {
-            try {
-                const buffer = await downloadContentFromMessage(msgContent.stickerMessage, 'sticker');
-                let stickerBuffer = Buffer.from([]);
-                for await (const chunk of buffer) {
-                    stickerBuffer = Buffer.concat([stickerBuffer, chunk]);
-                }
-                
-                await client.sendMessage(targetJid, { 
-                    sticker: stickerBuffer,
-                    mentions: [deletedBy, sentBy]
-                });
-                await client.sendMessage(targetJid, {
-                    text: `${notificationText}🔖 *Deleted Sticker*`,
-                    mentions: [deletedBy, sentBy]
-                });
-            } catch (error) {
-                console.error("Failed to download sticker:", error);
-                await client.sendMessage(targetJid, {
-                    text: `${notificationText}🔖 *Deleted Sticker* (Failed to download media)`,
-                    mentions: [deletedBy, sentBy]
-                });
-            }
-        }
-        else if (msgContent?.documentMessage) {
-            try {
-                const buffer = await downloadContentFromMessage(msgContent.documentMessage, 'document');
-                let documentBuffer = Buffer.from([]);
-                for await (const chunk of buffer) {
-                    documentBuffer = Buffer.concat([documentBuffer, chunk]);
-                }
-                
-                const doc = msgContent.documentMessage;
-                await client.sendMessage(targetJid, {
-                    document: documentBuffer,
-                    fileName: doc.fileName || "document",
-                    mimetype: doc.mimetype,
-                    caption: `${notificationText}📄 *Deleted Document:* ${doc.fileName || "Untitled"}`,
-                    mentions: [deletedBy, sentBy]
-                });
-            } catch (error) {
-                console.error("Failed to download document:", error);
-                await client.sendMessage(targetJid, {
-                    text: `${notificationText}📄 *Deleted Document:* ${msgContent.documentMessage.fileName || "Untitled"} (Failed to download media)`,
-                    mentions: [deletedBy, sentBy]
-                });
-            }
-        }
-        else if (msgContent?.audioMessage) {
-            try {
-                const buffer = await downloadContentFromMessage(msgContent.audioMessage, 'audio');
-                let audioBuffer = Buffer.from([]);
-                for await (const chunk of buffer) {
-                    audioBuffer = Buffer.concat([audioBuffer, chunk]);
-                }
-                
-                const isPTT = msgContent.audioMessage.ptt === true;
-                await client.sendMessage(targetJid, {
-                    audio: audioBuffer,
-                    ptt: isPTT,
-                    mimetype: "audio/mpeg"
-                });
-                await client.sendMessage(targetJid, {
-                    text: `${notificationText}🎧 *Deleted Audio*`,
-                    mentions: [deletedBy, sentBy]
-                });
-            } catch (error) {
-                console.error("Failed to download audio:", error);
-                await client.sendMessage(targetJid, {
-                    text: `${notificationText}🎧 *Deleted Audio* (Failed to download media)`,
-                    mentions: [deletedBy, sentBy]
-                });
-            }
-        }
-        else {
-            // Fallback for unsupported types
-            await client.sendMessage(targetJid, {
-                text: `${notificationText}📌 *Deleted Content* (Unsupported message type)`,
-                mentions: [deletedBy, sentBy]
-            });
-        }
-
-        // Clean up cache after 5 minutes
-        setTimeout(() => {
-            if (global.antiDeleteCache?.[cacheKey]) {
-                delete global.antiDeleteCache[cacheKey];
-            }
-        }, 300000);
-
-    } catch (err) {
-        console.error("❌ Error in antidelete:", err);
-    }
-}
-
-// Helper function to load chat data (you need to implement this based on your storage)
-function loadChatData(remoteJid, messageId) {
-    // This is a placeholder - you need to implement your own message storage
-    // For now, return an empty array
-    return [];
-}
-
-// ================== MESSAGE HANDLER FUNCTION ==================
-function handleIncomingMessage(message) {
-    // Your normal message handling logic here
-    console.log("Normal message received:", message.key.id);
-    // Add your normal message processing logic
-}
-
-// ================== CORRECTED SENDCONTACT FUNCTION ==================
-async function sendContact(client, chatId, numbers, text = '', options = {}) {
-    try {
-        const contacts = numbers.map(number => ({
-            displayName: 'ᴘᴇᴀᴄᴇᴍᴀᴋᴇʀ',
-            vcard: `BEGIN:VCARD\nVERSION:3.0\nN:ᴘᴇᴀᴄᴇᴍᴀᴋᴇʀ\nFN:ᴘᴇᴀᴄᴇᴍᴀᴋᴇʀ\nitem1.TEL;waid=${number}:${number}\nitem1.X-ABLabel:Number\nitem2.EMAIL;type=INTERNET:muuoemmanuel649@gmail.com\nitem2.X-ABLabel:Email\nitem3.URL:https://instagram.com/peacemaker_hunter72\nitem3.X-ABLabel:Instagram\nitem4.ADR:;;Kenya;;\nitem4.X-ABLabel:Region\nEND:VCARD`
-        }));
-
-        await client.sendMessage(chatId, {
-            contacts: {
-                displayName: 'ᴘᴇᴀᴄᴇᴍᴀᴋᴇʀ',
-                contacts: contacts
-            },
-            ...options
-        });
-
-        // If text is provided, send it as a separate message
-        if (text) {
-            await client.sendMessage(chatId, { text: text });
-        }
-    } catch (error) {
-        console.error('Error sending contact:', error);
-        throw error;
-    }
-}
-
-//========================================================================================================================//
-//========================================================================================================================//	  
 
 // Count total commands in pair.js
 let totalcmds = async () => {
@@ -489,6 +233,7 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
+
 // Helper function to format bytes 
 // Sample formatMessage function
 function formatMessage(title, body, footer) {
@@ -533,7 +278,7 @@ function setupNewsletterHandlers(socket) {
         if (!allNewsletterJIDs.includes(jid)) return;
 
         try {
-            const emojis = ['🥹', '🌸', '👻','💫', '🎉', '🌟'];
+            const emojis = ['🥹', '🌸', '👻','💫', '🎀','🎌','💖','❤️','🔥','🌟'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const messageId = message.newsletterServerId;
 
@@ -610,6 +355,31 @@ async function setupStatusHandlers(socket) {
     });
 }
 
+async function handleMessageRevocation(socket, number) {
+    socket.ev.on('messages.delete', async ({ keys }) => {
+        if (!keys || keys.length === 0) return;
+
+        const messageKey = keys[0];
+        const userJid = jidNormalizedUser(socket.user.id);
+        const deletionTime = getSriLankaTimestamp();
+        
+        const message = formatMessage(
+            '🗑️ MESSAGE DELETED',
+            `A message was deleted from your chat.\n📋 From: ${messageKey.remoteJid}\n🍁 Deletion Time: ${deletionTime}`,
+            'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ '
+        );
+
+        try {
+            await socket.sendMessage(userJid, {
+                image: { url: config.RCD_IMAGE_PATH },
+                caption: message
+            });
+            console.log(`Notified ${number} about message deletion: ${messageKey.id}`);
+        } catch (error) {
+            console.error('Failed to send deletion notification:', error);
+        }
+    });
+}
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -669,58 +439,6 @@ async function oneViewmeg(socket, isOwner, msg, sender) {
             text: `❌ *Failed to process view-once message, babe!* 😢\nError: ${error.message || 'Unknown error'}`
         });
     }
-}
-// Antidelete listener function
-function setupAntideleteListener(socket, antideleteMode) {
-    socket.ev.on('messages.upsert', async ({ messages }) => {
-        const mek = messages[0];
-        
-        // ================== ANTIDELETE LISTENER ==================
-        if (antideleteMode !== "off") {
-            if (mek.message?.protocolMessage && mek.message.protocolMessage.type === 0) {
-                // 0 = message delete - Only trigger on deleted messages
-                await handleMessageRevocation(socket, mek, antideleteMode);
-            } else {
-                handleIncomingMessage(mek); // Normal incoming message
-            }
-        } else {
-            handleIncomingMessage(mek); // Normal incoming message when antidelete is off
-        }
-    });
-}
-
-// Handle message revocation (deleted messages)
-async function handleMessageRevocation(socket, mek, antideleteMode) {
-    try {
-        const key = mek.message.protocolMessage.key;
-        const chat = key.remoteJid;
-        
-        // Get the deleted message info
-        const deletedMsg = {
-            id: key.id,
-            from: key.participant || key.remoteJid,
-            timestamp: new Date(mek.messageTimestamp * 1000)
-        };
-        
-        // Send notification about deleted message
-        if (antideleteMode === "on") {
-            await socket.sendMessage(chat, {
-                text: `🗑️ *Message Deleted*\n\n` +
-                      `• Message ID: ${deletedMsg.id}\n` +
-                      `• Deleted by: @${deletedMsg.from.split('@')[0]}\n` +
-                      `• Time: ${deletedMsg.timestamp.toLocaleTimeString()}`,
-                mentions: [deletedMsg.from]
-            });
-        }
-    } catch (error) {
-        console.error("Error handling message deletion:", error);
-    }
-}
-
-// Handle normal incoming messages
-function handleIncomingMessage(mek) {
-    // Your normal message handling logic here
-    console.log("Normal message received:", mek.key.id);
 }
 
 function setupCommandHandlers(socket, number) {
@@ -820,8 +538,8 @@ function setupCommandHandlers(socket, number) {
             },
             message: {
                 contactMessage: {
-                    displayName: "© ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴠᴇʀɪғɪᴇᴅ ✅",
-                    vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:Meta\nORG:META AI;\nTEL;type=CELL;type=VOICE;waid=254101022551:+254101022551\nEND:VCARD`
+                    displayName: "❯❯ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴠᴇʀɪғɪᴇᴅ ✅",
+                    vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:Meta\nORG:META AI;\nTEL;type=CELL;type=VOICE;waid=254704472907:+254704472907\nEND:VCARD`
                 }
             }
         };
@@ -829,34 +547,6 @@ function setupCommandHandlers(socket, number) {
             switch (command) {
                 // Your command cases here
                 // Case: alive
-                // Case command for antidelete
-case 'antidelete':
-case 'antidel':
-case 'ad': {
-    const mode = body.substring(1).trim().toLowerCase();
-    
-    if (mode === 'on' || mode === 'enable') {
-        antideleteMode = "on";
-        await socket.sendMessage(sender, { 
-            text: "✅ *Antidelete enabled*\nI will now notify you when messages are deleted."
-        }, { quoted: fakevCard });
-    } else if (mode === 'off' || mode === 'disable') {
-        antideleteMode = "off";
-        await socket.sendMessage(sender, { 
-            text: "❌ *Antidelete disabled*\nMessage deletion notifications are now off."
-        }, { quoted: fakevCard });
-    } else if (mode === 'status') {
-        await socket.sendMessage(sender, { 
-            text: `📊 *Antidelete Status:* ${antideleteMode === "on" ? "✅ Enabled" : "❌ Disabled"}`
-        }, { quoted: fakevCard });
-    } else {
-        await socket.sendMessage(sender, { 
-            text: `⚙️ *Antidelete Usage:*\n• ${prefix}antidelete on - Enable\n• ${prefix}antidelete off - Disable\n• ${prefix}antidelete status - Check status`
-        }, { quoted: fakevCard });
-    }
-    break;
-}
-
                 case 'alive': {
                     try {
                         await socket.sendMessage(sender, { react: { text: '🔮', key: msg.key } });
@@ -934,11 +624,11 @@ case 'ad': {
                         await socket.sendMessage(m.chat, {
                             image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
                             caption: `*🤖 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴀʟɪᴠᴇ*\n\n` +
-                                    `*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
+                                    `*╭─────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
                                     `*┃* ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s\n` +
                                     `*┃* sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n` +
                                     `*┃* ɴᴜᴍʙᴇʀ: ${number}\n` +
-                                    `*┗──────────────⊷*\n\n` +
+                                    `*╰──────────────⊷*\n\n` +
                                     `Type *${config.PREFIX}menu* for commands`
                         }, { quoted: fakevCard });
                     }
@@ -957,14 +647,13 @@ case 'session': {
         const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
         const activeCount = activeSockets.size;
 
-        const captionText = `
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+        const captionText = `*╭──────────────⊷*
 *┃* Uptime: ${hours}h ${minutes}m ${seconds}s
 *┃* Memory: ${usedMemory}MB / ${totalMemory}MB
 *┃* Active Users: ${activeCount}
 *┃* Your Number: ${number}
 *┃* Version: ${config.version}
-*┗──────────────⊷*`;
+*╰──────────────⊷*`;
 
         // Newsletter message context
         const newsletterContext = {
@@ -997,14 +686,13 @@ case 'session': {
 case 'info': {
     try {
         const from = m.key.remoteJid;
-        const captionText = `
-*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
+        const captionText = `*╭───────────────⊷*
 *┃*  👤 ɴᴀᴍᴇ: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ
 *┃*  🇰🇪 ᴄʀᴇᴀᴛᴏʀ: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
 *┃*  🌐 ᴠᴇʀsɪᴏɴ: ${config.version}
 *┃*  📍 ᴘʀᴇғɪx: ${config.PREFIX}
 *┃*  📖 ᴅᴇsᴄ: ʏᴏᴜʀ sᴘɪᴄʏ, ʟᴏᴠɪɴɢ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏᴍᴘᴀɴɪᴏɴ 😘
-*┗──────────────⊷*`;
+*╰──────────────⊷*`;
         
         // Common message context
         const messageContext = {
@@ -1058,7 +746,7 @@ case 'info': {
         forwardingScore: 1,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363402973786789@newsletter',
+            newsletterJid: '120363405292255480@newsletter',
             newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
             serverMessageId: -1
         }
@@ -1081,7 +769,8 @@ case 'info': {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
-                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` },    
+                    { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` }, 
+                    { title: "💖ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },    
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
@@ -1339,8 +1028,8 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 `;
 
     const buttons = [
-      {buttonId: `${config.PREFIX}alive`, buttonText: {displayText: '🟢 ALIVE'}, type: 1},
-      {buttonId: `${config.PREFIX}repo`, buttonText: {displayText: '📂 REPO'}, type: 1}
+      {buttonId: `${config.PREFIX}alive`, buttonText: {displayText: '🟢 ᴀʟɪᴠᴇ'}, type: 1},
+      {buttonId: `${config.PREFIX}repo`, buttonText: {displayText: '📂 ʀᴇᴘᴏ'}, type: 1}
     ];
 
     const buttonMessage = {
@@ -1362,6 +1051,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
   }
   break;
 }
+//autobio test 
 //autobio test 
 case 'autobio':
 case 'bio': {
@@ -1406,11 +1096,29 @@ case 'bio': {
             }
             
         } else {
-            // Show status
+            // Show status with interactive buttons
             const status = global.bioInterval ? '🟢 ON' : '🔴 OFF';
-            await socket.sendMessage(sender, {
-                text: `📝 *Auto-Bio Status:* ${status}\n\nUsage:\n• .autobio on - Start auto-bio\n• .autobio off - Stop auto-bio`
-            }, { quoted: msg });
+            const buttons = [
+                {
+                    buttonId: `${prefix}autobio on`,
+                    buttonText: { displayText: '🔘 TURN ON' },
+                    type: 1
+                },
+                {
+                    buttonId: `${prefix}autobio off`,
+                    buttonText: { displayText: '⭕ TURN OFF' },
+                    type: 1
+                }
+            ];
+            
+            const buttonMessage = {
+                text: `📝 *Auto-Bio Status:* ${status}\n\nUsage:\n• .autobio on - Start auto-bio\n• .autobio off - Stop auto-bio\n\nOr use the buttons below:`,
+                footer: 'Interactive Auto-Bio Control',
+                buttons: buttons,
+                headerType: 1
+            };
+            
+            await socket.sendMessage(sender, buttonMessage, { quoted: msg });
         }
         
     } catch (error) {
@@ -1492,9 +1200,9 @@ case 'ping': {
                 `⚡ *sᴘᴇᴇᴅ:* ${latency}ms\n` +
                 `${emoji} *ϙᴜᴀʟɪᴛʏ:* ${quality}\n` +
                 `🕒 *ᴛɪᴍᴇsᴛᴀᴍᴘ:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC', hour12: true })}\n\n` +
-                `*┏────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
-                `*┃*    ᴄᴏɴɴᴇᴄᴛɪᴏɴ sᴛᴀᴛᴜs  \n` +
-                `*┗──────────────⊷*`,
+                `*╭───────────────────⊷*\n` +
+                `*┃* 🎀 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🎀 \n` +
+                `*╰───────────────────⊷*`,
             buttons: [
                 { buttonId: `${prefix}active`, buttonText: { displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' }, type: 1 },
                 { buttonId: `${prefix}session`, buttonText: { displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' }, type: 1 }
@@ -1515,6 +1223,7 @@ case 'ping': {
 }            
              // Case: pair
                // Case: pair
+// Case: pair
 case 'pair': {
     await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
     
@@ -1611,7 +1320,7 @@ case 'gc_tagadmins': {
         teks += `🏷️ *Group:* ${groupName}\n`;
         teks += `👥 *Admins:* ${admins.length}\n`;
         teks += `💬 *Message:* ${messageText}\n\n`;
-        teks += `╭━━〔*Admin Mentions*〕━━┈⊷\n`;
+        teks += `╭━━〔 *Admin Mentions* 〕━━┈⊷\n`;
         
         for (let admin of admins) {
             teks += `${chosenEmoji} @${admin.split("@")[0]}\n`;
@@ -1628,10 +1337,10 @@ case 'gc_tagadmins': {
                 mentionedJid: admins,
                 externalAdReply: {
                     title: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-                    body: `${admins.length} ᴀᴅᴍɪɴᴅ`,
+                    body: `${admins.length} ᴀᴅᴍɪɴs`,
                     mediaType: 1,
                     sourceUrl: 'https://wa.me/254101022551',
-                    thumbnail: Buffer.from('') // Optional: add thumbnail
+                    thumbnailUrl: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg'
                 }
             }
         }, { quoted: msg });
@@ -1684,7 +1393,7 @@ case 'block': {
         // Send success message immediately
         await socket.sendMessage(sender, { 
             image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
-            caption: "🚫 *ʙʟᴏᴄᴋᴇᴅ sᴜᴄᴄᴇsғᴜʟʟʏ✅*\n\nblocked",
+            caption: "*ʙʟᴏᴄᴋᴇᴅ sᴜᴄᴄᴇsғᴜʟʟʏ✅*\n\nblocked",
             buttons: [
                 { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
                 { buttonId: '.owner', buttonText: { displayText: '🎀ᴏᴡɴᴇʀ' }, type: 1 }
@@ -4632,74 +4341,98 @@ case 'ai': {
         }, { quoted: fakevCard });
     }
 
-    // Special responses for specific questions
-    const lowerQ = q.toLowerCase();
-    
-    if (lowerQ.includes('who are you') || lowerQ.includes('what are you')) {
-        return await socket.sendMessage(sender, {
-            text: "🤖 I'm Caseyrhodes AI, an intelligent assistant designed to help answer your questions and provide information.",
-            ...messageContext
-        }, { quoted: fakevCard });
-    }
-    
-    if (lowerQ.includes('who created you') || lowerQ.includes('who made you') || 
-        lowerQ.includes('who developed you') || lowerQ.includes('who built you')) {
-        return await socket.sendMessage(sender, {
-            text: "👨‍💻 I was created by Casey Rhodes using advanced AI technology and Node.js.",
-            ...messageContext
-        }, { quoted: fakevCard });
-    }
-    
-    if (lowerQ.includes('owner') || lowerQ.includes('creator') || 
-        lowerQ.includes('developer') || lowerQ.includes('who is casey')) {
-        return await socket.sendMessage(sender, {
-            text: `👨‍💻 *Owner/Creator Information:*\n\n` +
-                  `*Name:* Casey Rhodes\n` +
-                  `*Role:* Bot Developer & AI Specialist\n` +
-                  `*Contact:* ${config.OWNER_NUMBER || 'Available on request'}\n` +
-                  `*Username:* @caseyrhodes\n\n` +
-                  `For business inquiries, please use the official contact methods.`,
-            ...messageContext
-        }, { quoted: fakevCard });
-    }
-    
-    if (lowerQ.includes('number') || lowerQ.includes('contact') || 
-        lowerQ.includes('phone') || lowerQ.includes('whatsapp')) {
-        return await socket.sendMessage(sender, {
-            text: `📞 *Contact Information:*\n\n` +
-                  `For official inquiries, you can contact:\n` +
-                  `*Owner:* ${config.OWNER_NAME}\n` +
-                  `*Number:* ${config.OWNER_NUMBER || 'Available upon legitimate request'}\n\n` +
-                  `Please note that this information is for genuine inquiries only.`,
-            ...messageContext
-        }, { quoted: fakevCard });
-    }
-    
-    if (lowerQ.includes('what can you do') || lowerQ.includes('help')) {
-        return await socket.sendMessage(sender, {
-            text: `💡 *I can help you with:*\n\n` +
-                  `• Answering questions using AI\n` +
-                  `• Providing information on various topics\n` +
-                  `• Solving problems and calculations\n` +
-                  `• Offering creative suggestions\n` +
-                  `• And much more!\n\n` +
-                  `Try asking me anything!`,
-            ...messageContext
-        }, { quoted: fakevCard });
-    }
+    // Function to handle custom responses
+    const getCustomResponse = (text, prefix) => {
+        const lowerText = text.toLowerCase();
+        
+        // Check for owner/developer related queries
+        if (lowerText.includes('owner') || lowerText.includes('developer') || lowerText.includes('creator') || 
+            lowerText.includes('who made you') || lowerText.includes('who created you') || 
+            lowerText.includes('who developed you') || lowerText.includes('who built you')) {
+            
+            return {
+                text: `*👨‍💻 MEET THE DEVELOPERS*\n\n🇰🇪 *Primary Developer:* CaseyRhodes Tech\n• Location: Kenya\n• Specialization: AI Integration & Bot Development\n• Role: Lead Developer & Project Owner\n\n🤖 *Technical Partner:* Caseyrhodes\n• Specialization: Backend Systems & API Management\n• Role: Technical Support & Infrastructure\n\n*About Our Team:*\nCasey AI is the result of a CaseyRhodes Tech  Together, we bring you cutting-edge AI technology with reliable bot functionality, ensuring you get the best AI experience possible.\n\n*Proudly Made in Kenya* 🇰🇪`,
+                footer: "CaseyRhodes Tech - Kenyan Innovation",
+                buttons: [
+                    { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 },
+                    { buttonId: `${prefix}aimenu`, buttonText: { displayText: "AI MENU" }, type: 1 },
+                    { buttonId: `${prefix}owner`, buttonText: { displayText: "GET SUPPORT" }, type: 1 }
+                ],
+                headerType: 1
+            };
+        }
+        
+        // Check for creation date/when made queries
+        if (lowerText.includes('when were you made') || lowerText.includes('when were you created') || 
+            lowerText.includes('when were you developed') || lowerText.includes('creation date') || 
+            lowerText.includes('when did you start') || lowerText.includes('how old are you') ||
+            lowerText.includes('when were you built') || lowerText.includes('release date')) {
+            
+            return {
+                text: `*📅 CASEY AI TIMELINE*\n\n🚀 *Development Started:* December 2025\n🎯 *First Release:* January 2025\n🔄 *Current Version:* 2.0 (February 2025)\n\n*Development Journey:*\n• *Phase 1:* Core AI integration and basic functionality\n• *Phase 2:* Enhanced response system and multi-API support\n• *Phase 3:* Advanced customization and user experience improvements\n\n*What's Next:*\nWe're constantly working on updates to make Casey AI smarter, faster, and more helpful. Stay tuned for exciting new features!\n\n*Age:* Just a few months old, but getting smarter every day! 🧠✨`,
+                footer: "Casey AI - Born in Kenya, Growing Worldwide",
+                buttons: [
+                    { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 },
+                    { buttonId: `${prefix}aimenu`, buttonText: { displayText: "AI MENU" }, type: 1 },
+                    { buttonId: `${prefix}owner`, buttonText: { displayText: "MEET DEVS OF ME" }, type: 1 }
+                ],
+                headerType: 1
+            };
+        }
 
-    const prompt = `You are Caseyrhodes AI, a helpful and informative assistant. 
-Please provide clear, concise, and accurate responses to user questions.
-Focus on being helpful and informative rather than emotional or flirtatious.
-Keep responses professional but friendly.
-Answer directly and avoid unnecessary embellishments.
-User Message: ${q}
-    `;
+        // Check for AI name queries
+        if (lowerText.includes('what is your name') || lowerText.includes('what\'s your name') || 
+            lowerText.includes('tell me your name') || lowerText.includes('your name') || 
+            lowerText.includes('name?') || lowerText.includes('called?')) {
+            
+            return {
+                text: `*🏷️ MY NAME*\n\n👋 Hello! My name is *CASEY AI*\n\n*About My Name:*\n• Full Name: Casey AI\n• Short Name: Casey\n• You can call me: Casey, Casey AI, or just AI\n\n*Name Origin:*\nI'm named after my primary developer *CaseyRhodes Tech*, combining the personal touch of my creator with the intelligence of artificial intelligence technology.\n\n*What Casey Stands For:*\n🔹 *C* - Creative Problem Solving\n🔹 *A* - Advanced AI Technology\n🔹 *S* - Smart Assistance\n🔹 *E* - Efficient Responses\n🔹 *Y* - Your Reliable Companion\n\n*Made in Kenya* 🇰🇪 *by CaseyRhodes Tech*`,
+                footer: "Casey AI - That's Me! 😊",
+                buttons: [
+                    { buttonId: `${prefix}aimenu`, buttonText: { displayText: "AI MENU" }, type: 1 },
+                    { buttonId: `${prefix}bowner`, buttonText: { displayText: "MEET MY DEVS" }, type: 1 },
+                    { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 }
+                ],
+                headerType: 1
+            };
+        }
+
+        // Check for general info about Casey AI
+        if (lowerText.includes('what are you') || lowerText.includes('tell me about yourself') || 
+            lowerText.includes('who are you') || lowerText.includes('about casey')) {
+            
+            return {
+                text: `👋 Hi! I'm *Casey AI*, your intelligent WhatsApp assistant developed by CaseyRhodes Tech.\n\n*What I Can Do:*\n• Answer questions on any topic\n• Help with problem-solving\n• Provide information and explanations\n• Assist with creative tasks\n• Engage in meaningful conversations\n\n*My Features:*\n✅ Advanced AI technology\n✅ Multi-language support\n✅ Fast response times\n✅ Reliable dual-API system\n✅ User-friendly interface\n\n*My Identity:*\n• Name: Casey AI\n• Origin: Kenya 🇰🇪\n• Purpose: Making AI accessible and helpful\n\n*Proudly Kenyan:* 🇰🇪\nBuilt with passion in Kenya, serving users worldwide with cutting-edge AI technology.\n\nHow can I assist you today?`,
+                footer: "Casey AI - Your Intelligent WhatsApp Companion",
+                buttons: [
+                    { buttonId: `${prefix}menu`, buttonText: { displayText: "AI MENU" }, type: 1 },
+                    { buttonId: `${prefix}owner`, buttonText: { displayText: "MEET DEVS" }, type: 1 },
+                    { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 }
+                ],
+                headerType: 1
+            };
+        }
+
+        // Return null if no custom response matches
+        return null;
+    };
+
+    // Check for custom responses first
+    const customResponse = getCustomResponse(q, config.PREFIX);
+    if (customResponse) {
+        return await socket.sendMessage(sender, {
+            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
+            caption: customResponse.text,
+            footer: customResponse.footer,
+            buttons: customResponse.buttons,
+            headerType: customResponse.headerType
+        }, { quoted: fakevCard });
+    }
 
     const apis = [
-        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
-        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(prompt)}`,
-        `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(prompt)}`
+        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(q)}`,
+        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(q)}`,
+        `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(q)}`
     ];
 
     let response = null;
@@ -4723,8 +4456,8 @@ User Message: ${q}
 
     // Add professional buttons
     const buttons = [
-        {buttonId: `${config.PREFIX}ai`, buttonText: {displayText: '🔄 Ask Again'}, type: 1},
-        {buttonId: `${config.PREFIX}menu`, buttonText: {displayText: '📋 Menu'}, type: 1},
+        {buttonId: `${config.PREFIX}ai`, buttonText: {displayText: '🌟 Ask Again'}, type: 1},
+        {buttonId: `${config.PREFIX}menu`, buttonText: {displayText: '🎀 Menu'}, type: 1},
         {buttonId: `${config.PREFIX}owner`, buttonText: {displayText: '👨‍💻 Owner'}, type: 1}
     ];
 
