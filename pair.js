@@ -383,8 +383,6 @@ async function sendContact(client, chatId, numbers, text = '', options = {}) {
 
 //========================================================================================================================//
 //========================================================================================================================//	  
-    // Push Message To Console
-    let argsLog = budy.length > 30 ? `${q.substring(0, 30)}...` : budy;
 
 // Count total commands in pair.js
 let totalcmds = async () => {
