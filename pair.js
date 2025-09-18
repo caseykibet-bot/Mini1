@@ -4722,7 +4722,7 @@ case 'gh': {
         buttons: [
           {
             buttonId: `.allmenu`,
-            buttonText: { displayText: 🔮'ᴀʟʟ ᴍᴇɴᴜ ' },
+            buttonText: { displayText: '🎀ᴀʟʟ ᴍᴇɴᴜ ' },
             type: 1
           }
         ],
