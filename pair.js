@@ -947,6 +947,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  🔮 *${config.PREFIX}github* - get other people profile
 *┃*  ♻️ *${config.PREFIX}lyrics* - get song lyrics 
 *┃*  🔰 *${config.PREFIX}setpp* - set your own profile 
+*┃*  🔥 *${config.PREFIX}online* - get online members 
 *┃*  🌟 *${config.PREFIX}support* - ask for support 
 *┃*  🚩 *${config.PREFIX}blocklist* - get all blocked contacts
 *┃*  📜 *${config.PREFIX}allmenu* - List all commands
@@ -1176,7 +1177,7 @@ case 'autorecod': {
     // If no status provided, show interactive buttons
     if (!status || !["on", "off"].includes(status)) {
         const buttonMessage = {
-            text: `*🔊 Auto Recording Settings*\\n\\nCurrent status: ${config.AUTO_RECORDING === "true" ? "✅ ON" : "❌ OFF"}\\n\\nPlease select an option:`,
+            text: `*🔊 Auto Recording Settings*\n\nCurrent status: ${config.AUTO_RECORDING === "true" ? "✅ ON" : "❌ OFF"}\n\nPlease select an option:`,
             footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ",
             headerType: 1,
             buttons: [
@@ -1195,7 +1196,7 @@ case 'autorecod': {
     if (status === "on") {
         await socket.sendPresenceUpdate("recording", sender);
         await socket.sendMessage(sender, {
-            text: "✅ *Auto recording is now enabled.*\\nBot is recording..."
+            text: "✅ *Auto recording is now enabled.*\nBot is recording..."
         }, { quoted: msg });
     } else {
         await socket.sendPresenceUpdate("available", sender);
@@ -1768,35 +1769,37 @@ case 'lyrics': {
     break;
 }
 //yydl core test
+//xasey video 
 case 'play':
 case 'song': {
-    try {
-        // React to the command first
-        await socket.sendMessage(sender, {
-            react: {
-                text: "🎸",
-                key: msg.key
-            }
-        });
-
-        const yts = require('yt-search');
-        const ytdl = require('ytdl-core');
-
-        // Extract query from message
-        const q = msg.message?.conversation || 
-                  msg.message?.extendedTextMessage?.text || 
-                  msg.message?.imageMessage?.caption || 
-                  msg.message?.videoMessage?.caption || '';
-        
-        const args = q.split(' ').slice(1);
-        const query = args.join(' ').trim();
-
-        if (!query) {
-            return await socket.sendMessage(sender, {
-                text: '*🎵 Please provide a song name or YouTube link*'
-            }, { quoted: msg });
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🎸",
+            key: msg.key
         }
+    });
 
+    const axios = require('axios');
+    const yts = require('yt-search');
+    const BASE_URL = 'https://noobs-api.top';
+
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1);
+    const query = args.join(' ').trim();
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: '*🎵 Please provide a song name or YouTube link*'
+        }, { quoted: msg });
+    }
+
+    try {
         console.log('[PLAY] Searching YT for:', query);
         const search = await yts(query);
         const video = search.videos[0];
@@ -1809,6 +1812,7 @@ case 'song': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.url)}&format=mp3`;
 
         // Send song info first
         const buttonMessage = {
@@ -1821,71 +1825,72 @@ case 'song': {
                      `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
                      `╰─────────────────◆\n\n` +
-                     `*📥 Downloading audio...*`,
-            footer: 'Powered by CASEYRHODES TECH',
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
+            footer: 'Click the button below for all commands',
+            buttons: [
+                { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
+            ],
             headerType: 4
         };
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Download and send audio directly
-        try {
-            // Get audio stream
-            const audioStream = ytdl(video.url, {
-                filter: 'audioonly',
-                quality: 'highestaudio',
-            });
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 30000 });
+        const data = response.data;
 
-            // Collect audio data into buffer
-            const chunks = [];
-            audioStream.on('data', (chunk) => chunks.push(chunk));
-            audioStream.on('end', async () => {
-                try {
-                    const audioBuffer = Buffer.concat(chunks);
-                    
-                    // Send audio directly without success message
-                    await socket.sendMessage(sender, {
-                        audio: audioBuffer,
-                        mimetype: 'audio/mpeg',
-                        fileName: fileName,
-                        ptt: false,
-                        contextInfo: {
-                            externalAdReply: {
-                                title: video.title.substring(0, 50),
-                                body: `By ${video.author.name}`,
-                                mediaType: 1,
-                                sourceUrl: video.url,
-                                thumbnailUrl: video.thumbnail
-                            }
-                        }
-                    });
-
-                } catch (sendError) {
-                    console.error('[PLAY] Error sending audio:', sendError);
-                    await socket.sendMessage(sender, {
-                        text: '*❌ Failed to send audio.*'
-                    }, { quoted: msg });
-                }
-            });
-
-            audioStream.on('error', async (error) => {
-                console.error('[PLAY] Stream error:', error);
-                await socket.sendMessage(sender, {
-                    text: '*❌ Error downloading audio.*'
-                }, { quoted: msg });
-            });
-
-        } catch (error) {
-            console.error('[PLAY] Audio processing error:', error);
-            await socket.sendMessage(sender, {
-                text: '*❌ Failed to process audio.*'
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
             }, { quoted: msg });
         }
 
-    } catch (err) {
-        console.error('[PLAY] General error:', err);
+        // Fetch thumbnail for the context info
+        let thumbnailBuffer;
+        try {
+            const thumbnailResponse = await axios.get(video.thumbnail, { 
+                responseType: 'arraybuffer',
+                timeout: 10000
+            });
+            thumbnailBuffer = Buffer.from(thumbnailResponse.data);
+        } catch (err) {
+            console.error('[PLAY] Error fetching thumbnail:', err);
+            // Continue without thumbnail if there's an error
+        }
+
+        // Send audio with context info after a short delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
         await socket.sendMessage(sender, {
-            text: '*❌ An error occurred.*'
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false,
+            contextInfo: thumbnailBuffer ? {
+                externalAdReply: {
+                    title: video.title.substring(0, 30),
+                    body: 'Powered by CASEYRHODES API',
+                    mediaType: 1,
+                    sourceUrl: video.url,
+                    thumbnail: thumbnailBuffer,
+                    renderLargerThumbnail: false,
+                    mediaUrl: video.url
+                }
+            } : undefined
+        });
+
+    } catch (err) {
+        console.error('[PLAY] Error:', err);
+        let errorMessage = '*❌ An error occurred while processing your request.*';
+        
+        if (err.code === 'ECONNABORTED') {
+            errorMessage = '*⏰ Request timeout. Please try again.*';
+        } else if (err.response?.status === 404) {
+            errorMessage = '*❌ Audio service is temporarily unavailable.*';
+        }
+        
+        await socket.sendMessage(sender, {
+            text: errorMessage
         }, { quoted: msg });
     }
     break;
@@ -2009,14 +2014,25 @@ case 'video': {
         // Clean title for filename
         const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
 
-        // Send video directly from URL
+        // Send the video with external ad reply
         await socket.sendMessage(sender, {
             video: { url: downloadUrl },
-            mimetype: "video/mp4",
+            caption: `📥 ${videoInfo.title}`,
             fileName: `${cleanTitle}.mp4`,
-            caption: `*${videoInfo.title}*`
-        });
-        
+            mimetype: 'video/mp4',
+            contextInfo: {
+                externalAdReply: {
+                    title: videoInfo.title.substring(0, 30),
+                    body: 'Powered by CASEYRHODES API',
+                    mediaType: 2, // 2 for video
+                    thumbnail: { url: videoInfo.thumbnail },
+                    mediaUrl: videoInfo.url,
+                    sourceUrl: videoInfo.url,
+                    showAdAttribution: true
+                }
+            }
+        }, { quoted: msg });
+
     } catch (err) {
         console.error('Video command error:', err);
         
@@ -3952,7 +3968,128 @@ case 'truthordare': {
     }
     break;
 }
+///online membership 
+case 'online':
+case 'whosonline':
+case 'onlinemembers': {
+    try {
+        // Check if it's a group
+        const isGroup = sender.endsWith('@g.us');
+        if (!isGroup) {
+            return await socket.sendMessage(sender, {
+                text: '❌ This command can only be used in a group!'
+            }, { quoted: msg });
+        }
 
+        // Get group metadata to check admin status
+        const groupMetadata = await socket.groupMetadata(sender);
+        const participant = groupMetadata.participants.find(p => p.id === sender);
+        const isAdmin = participant?.admin === 'admin' || participant?.admin === 'superadmin';
+        
+        // Check if user is either creator or admin
+        if (!isCreator && !isAdmin && sender !== socket.user.id) {
+            return await socket.sendMessage(sender, {
+                text: '❌ Only bot owner and group admins can use this command!'
+            }, { quoted: msg });
+        }
+
+        const onlineMembers = new Set();
+        
+        // Request presence updates for all participants
+        const presencePromises = groupMetadata.participants.map(participant => 
+            socket.presenceSubscribe(participant.id)
+                .then(() => socket.sendPresenceUpdate('composing', participant.id))
+                .catch(() => {}) // Silently handle errors for individual participants
+        );
+
+        await Promise.all(presencePromises);
+
+        // Presence update handler
+        const presenceHandler = (json) => {
+            try {
+                for (const id in json.presences) {
+                    const presence = json.presences[id]?.lastKnownPresence;
+                    if (['available', 'composing', 'recording', 'online'].includes(presence)) {
+                        onlineMembers.add(id);
+                    }
+                }
+            } catch (e) {
+                console.error("Error in presence handler:", e);
+            }
+        };
+
+        socket.ev.on('presence.update', presenceHandler);
+
+        // Setup cleanup and response
+        const checks = 3;
+        const checkInterval = 5000;
+        let checksDone = 0;
+
+        const checkOnline = async () => {
+            try {
+                checksDone++;
+                
+                if (checksDone >= checks) {
+                    clearInterval(interval);
+                    socket.ev.off('presence.update', presenceHandler);
+                    
+                    if (onlineMembers.size === 0) {
+                        return await socket.sendMessage(sender, {
+                            text: "⚠️ Couldn't detect any online members. They might be hiding their presence."
+                        }, { quoted: msg });
+                    }
+                    
+                    const onlineArray = Array.from(onlineMembers);
+                    const onlineList = onlineArray.map((member, index) => 
+                        `${index + 1}. @${member.split('@')[0]}`
+                    ).join('\n');
+                    
+                    // Prepare message
+                    const messageData = {
+                        image: { url: 'https://files.catbox.moe/y3j3kl.jpg' },
+                        caption: `🟢 *CASEYRHODES XMD ONLINE MEMBERS* (${onlineArray.length}/${groupMetadata.participants.length}):\n\n${onlineList}\n\n🔊 _BOT IS ACTIVE AND MONITORING_ 🔊`,
+                        mentions: onlineArray,
+                        contextInfo: {
+                            mentionedJid: onlineArray,
+                            forwardingScore: 999,
+                            isForwarded: true,
+                            externalAdReply: {
+                                title: 'ONLINE MEMBERS DETECTED',
+                                body: 'Powered by CASEYRHODES TECH',
+                                mediaType: 1,
+                                sourceUrl: 'https://whatsapp.com/channel/0029Va9l3IC2Jp2oV6nKkK1k',
+                                thumbnailUrl: 'https://files.catbox.moe/y3j3kl.jpg'
+                            }
+                        }
+                    };
+
+                    // Send message only (audio removed)
+                    await socket.sendMessage(sender, messageData, { quoted: msg });
+                }
+            } catch (e) {
+                console.error("Error in checkOnline:", e);
+                await socket.sendMessage(sender, {
+                    text: '⚠️ An error occurred while checking online status.'
+                }, { quoted: msg });
+            }
+        };
+
+        const interval = setInterval(checkOnline, checkInterval);
+
+        // Set timeout to clean up if something goes wrong
+        setTimeout(() => {
+            clearInterval(interval);
+            socket.ev.off('presence.update', presenceHandler);
+        }, checkInterval * checks + 10000); // Extra 10 seconds buffer
+
+    } catch (e) {
+        console.error("Error in online command:", e);
+        await socket.sendMessage(sender, {
+            text: `❌ An error occurred: ${e.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
 //===============================
 case 'fbdl':
 case 'facebook':
@@ -5290,65 +5427,55 @@ case 'apk': {
     break;
 }
 // case 38: shorturl
+case 'tiny':
+case 'short':
 case 'shorturl': {
-  try {
-    await socket.sendMessage(sender, { react: { text: '🔗', key: msg.key } });
-
-    const url = args.join(' ').trim();
-    if (!url) {
-      await socket.sendMessage(sender, {
-        text: `📌 *ᴜsᴀɢᴇ:* ${config.PREFIX}shorturl <ᴜʀʟ>\n` +
-              `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}shorturl https://example.com/very-long-url`
-      }, { quoted: msg });
-      break;
-    }
-    if (url.length > 2000) {
-      await socket.sendMessage(sender, {
-        text: `❌ *ᴜʀʟ ᴛᴏᴏ ʟᴏɴɢ, ʙᴀʙᴇ! 😢*\n` +
-              `ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴜʀʟ ᴜɴᴅᴇʀ 2,000 ᴄʜᴀʀᴀᴄᴛᴇʀs.`
-      }, { quoted: msg });
-      break;
-    }
-    if (!/^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/.test(url)) {
-      await socket.sendMessage(sender, {
-        text: `❌ *ɪɴᴠᴀʟɪᴅ ᴜʀʟ, ᴅᴀʀʟɪɴɢ! 😘*\n` +
-              `ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴜʀʟ sᴛᴀʀᴛɪɴɢ ᴡɪᴛʜ http:// ᴏʀ https://.\n` +
-              `💋 *ᴇxᴀᴍᴘʟᴇ:* ${config.PREFIX}shorturl https://example.com/very-long-url`
-      }, { quoted: msg });
-      break;
+    console.log("Command tiny triggered");
+    
+    if (!args[0]) {
+        console.log("No URL provided");
+        return await socket.sendMessage(sender, {
+            text: "*🏷️ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴍᴇ ᴀ ʟɪɴᴋ.*"
+        }, { quoted: msg });
     }
 
-    const response = await axios.get(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(url)}`, { timeout: 5000 });
-    const shortUrl = response.data.trim();
+    try {
+        const link = args[0];
+        console.log("URL to shorten:", link);
+        const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(link)}`);
+        const shortenedUrl = response.data;
 
-    if (!shortUrl || !shortUrl.startsWith('https://is.gd/')) {
-      throw new Error('Failed to shorten URL or invalid response from is.gd');
+        console.log("Shortened URL:", shortenedUrl);
+        
+        // Fetch an image for thumbnail (using a generic URL shortener icon)
+        const thumbnailResponse = await axios.get('https://cdn-icons-png.flaticon.com/512/1006/1006771.png', { 
+            responseType: 'arraybuffer' 
+        });
+        const thumbnailBuffer = Buffer.from(thumbnailResponse.data);
+        
+        const messageOptions = {
+            text: `*🛡️ YOUR SHORTENED URL*\n\n${shortenedUrl}`,
+            headerType: 4,
+            contextInfo: {
+                mentionedJid: [msg.key.participant || msg.key.remoteJid],
+                externalAdReply: {
+                    title: 'URL Shortener Service',
+                    body: 'Link shortened successfully',
+                    mediaType: 1,
+                    sourceUrl: link,
+                    thumbnail: thumbnailBuffer
+                }
+            }
+        };
+        
+        return await socket.sendMessage(sender, messageOptions, { quoted: msg });
+    } catch (e) {
+        console.error("Error shortening URL:", e);
+        return await socket.sendMessage(sender, {
+            text: "An error occurred while shortening the URL. Please try again."
+        }, { quoted: msg });
     }
-
-    await socket.sendMessage(sender, {
-      text: `✅ *sʜᴏʀᴛ ᴜʀʟ ᴄʀᴇᴀᴛᴇᴅ, ʙᴀʙᴇ!* 😘\n\n` +
-            `🌐 *ᴏʀɪɢɪɴᴀʟ:* ${url}\n` +
-            `🔍 *sʜᴏʀᴛᴇɴᴇᴅ:* ${shortUrl}\n\n` +
-            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`
-    }, { 
-      quoted: msg
-    });
-
-    // Send clean URL after 2-second delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    await socket.sendMessage(sender, { text: shortUrl }, { quoted: msg });
-
-  } catch (error) {
-    console.error('Shorturl command error:', error.message);
-    let errorMessage = `❌ *ᴏʜ, ʟᴏᴠᴇ, ᴄᴏᴜʟᴅɴ'ᴛ sʜᴏʀᴛᴇɴ ᴛʜᴀᴛ ᴜʀʟ! 😢*\n` +
-                      `💡 *ᴛʀʏ ᴀɢᴀɪɴ, ᴅᴀʀʟɪɴɢ?*`;
-    if (error.message.includes('Failed to shorten') || error.message.includes('network') || error.message.includes('timeout')) {
-      errorMessage = `❌ *ғᴀɪʟᴇᴅ ᴛᴏ sʜᴏʀᴛᴇɴ ᴜʀʟ:* ${error.message}\n` +
-                     `💡 *ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ, sᴡᴇᴇᴛɪᴇ.*`;
-    }
-    await socket.sendMessage(sender, { text: errorMessage }, { quoted: msg });
-  }
-  break;
+    break;
 }
 ///ᴏᴡɴᴇʀ ᴅᴇᴀᴛᴀɪʟs
 case 'owner':
