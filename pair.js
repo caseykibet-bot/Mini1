@@ -1059,7 +1059,9 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 case 'autobio':
 case 'bio': {
     try {
-        const args = msg.message?.conversation?.split(' ').slice(1) || [];
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || '';
+        const args = q.split(' ').slice(1);
         const action = args[0]?.toLowerCase();
         
         if (action === 'on' || action === 'start') {
@@ -1070,7 +1072,7 @@ case 'bio': {
             
             const updateBio = () => {
                 const date = new Date();
-                const bioText = `📅 DATE/TIME: ${date.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' })} | DAY: ${date.toLocaleString('en-US', { weekday: 'long', timeZone: 'Africa/Nairobi'})} | CASEYRHODES HUB REPRESENTS CONSTANCY EVEN IN CHAOS⚡`;
+                const bioText = `🎀ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ🎀🌸 |📅 DATE/TIME: ${date.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' })} | DAY: ${date.toLocaleString('en-US', { weekday: 'long', timeZone: 'Africa/Nairobi'})}`;
                 
                 socket.updateProfileStatus(bioText)
                     .then(() => console.log('✅ Bio updated successfully'))
@@ -1080,18 +1082,43 @@ case 'bio': {
             updateBio(); // Update immediately
             global.bioInterval = setInterval(updateBio, 10 * 1000);
             
-            await socket.sendMessage(sender, {
-                text: '✅ *Auto-Bio Started!*\nBio will update every 10 seconds.'
-            }, { quoted: msg });
+            // Success message with button
+            const successMessage = {
+                text: '✅ *Auto-Bio Started!*',
+                footer: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+                buttons: [
+                    {
+                        buttonId: `${prefix}autobio off`,
+                        buttonText: { displayText: '❌ STOP AUTO-BIO' },
+                        type: 1
+                    }
+                ],
+                headerType: 1
+            };
+            
+            await socket.sendMessage(sender, successMessage, { quoted: msg });
             
         } else if (action === 'off' || action === 'stop') {
             // Stop auto-bio
             if (global.bioInterval) {
                 clearInterval(global.bioInterval);
                 global.bioInterval = null;
-                await socket.sendMessage(sender, {
-                    text: '✅ *Auto-Bio Stopped!*'
-                }, { quoted: msg });
+                
+                // Success message with button
+                const successMessage = {
+                    text: '✅ *Auto-Bio Stopped!*',
+                    footer: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+                    buttons: [
+                        {
+                            buttonId: `${prefix}autobio on`,
+                            buttonText: { displayText: '✅ START AUTO-BIO' },
+                            type: 1
+                        }
+                    ],
+                    headerType: 1
+                };
+                
+                await socket.sendMessage(sender, successMessage, { quoted: msg });
             } else {
                 await socket.sendMessage(sender, {
                     text: 'ℹ️ *Auto-Bio is not currently running.*'
@@ -1101,23 +1128,22 @@ case 'bio': {
         } else {
             // Show status with interactive buttons
             const status = global.bioInterval ? '🟢 ON' : '🔴 OFF';
-            const buttons = [
-                {
-                    buttonId: `${prefix}autobio on`,
-                    buttonText: { displayText: '🔘 TURN ON' },
-                    type: 1
-                },
-                {
-                    buttonId: `${prefix}autobio off`,
-                    buttonText: { displayText: '⭕ TURN OFF' },
-                    type: 1
-                }
-            ];
             
             const buttonMessage = {
-                text: `📝 *Auto-Bio Status:* ${status}\n\nUsage:\n• .autobio on - Start auto-bio\n• .autobio off - Stop auto-bio\n\nOr use the buttons below:`,
+                text: `📝 *Auto-Bio Status:* ${status}\n\nUsage:\n• ${prefix}autobio on - Start auto-bio\n• ${prefix}autobio off - Stop auto-bio\n\nOr use the buttons below:`,
                 footer: 'Interactive Auto-Bio Control',
-                buttons: buttons,
+                buttons: [
+                    {
+                        buttonId: `${prefix}autobio on`,
+                        buttonText: { displayText: '✅ TURN ON' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${prefix}autobio off`, 
+                        buttonText: { displayText: '❌ TURN OFF' },
+                        type: 1
+                    }
+                ],
                 headerType: 1
             };
             
@@ -1132,78 +1158,52 @@ case 'bio': {
     }
     break;
 }
-case 'autorecoding': {
-    try {
-        await socket.sendMessage(sender, { react: { text: '⚙️', key: msg.key } });
-        
-        // Check if user is owner/creator
-        const botNumber = await socket.decodeJid(socket.user.id);
-        const isCreator = [botNumber, config.OWNER_NUMBER + '@s.whatsapp.net'].includes(sender);
-        
-        if (!isCreator) {
-            return await socket.sendMessage(sender, {
-                text: "📛 *THIS IS AN OWNER COMMAND*\n\nOnly the bot owner can use this command."
-            }, { quoted: fakevCard });
-        }
-        
-        const text = msg.message?.conversation ||
-                    msg.message?.extendedTextMessage?.text || '';
-        const args = text.trim().split(' ');
-        const subcmd = args[1] ? args[1].toLowerCase() : '';
-        
-        // If no argument provided, show buttons
-        if (!subcmd || (subcmd !== 'on' && subcmd !== 'off')) {
-            const buttons = [
-                {buttonId: `${config.PREFIX}autorecoding on`, buttonText: {displayText: '✅ ENABLE'}, type: 1},
-                {buttonId: `${config.PREFIX}autorecoding off`, buttonText: {displayText: '❌ DISABLE'}, type: 1},
-            ];
-            
-            const buttonMessage = {
-                text: "🎛️ *AUTO-RECODING SETTINGS*\n\nSelect an option:",
-                footer: config.BOT_NAME,
-                buttons: buttons,
-                headerType: 1
-            };
-            
-            await socket.sendMessage(sender, buttonMessage, { quoted: fakevCard });
-            return;
-        }
-        
-        let responseMessage;
-        let buttonText;
-
-        if (subcmd === 'on') {
-            config.AUTO_RECODING = true;
-            responseMessage = "✅ *Auto-Recoding has been enabled.*\n\nThe bot will now automatically process recordings.";
-            buttonText = {displayText: '❌ DISABLE'};
-        } else if (subcmd === 'off') {
-            config.AUTO_RECODING = false;
-            responseMessage = "❌ *Auto-Recoding has been disabled.*\n\nThe bot will no longer automatically process recordings.";
-            buttonText = {displayText: '✅ ENABLE'};
-        }
-
-        // Create a button to toggle the opposite state
-        const oppositeState = subcmd === 'on' ? 'off' : 'on';
-        const buttons = [
-            {buttonId: `${config.PREFIX}autorecoding ${oppositeState}`, buttonText: buttonText, type: 1},
-            {buttonId: `${config.PREFIX}settings`, buttonText: {displayText: '⚙️ SETTINGS'}, type: 1},
-        ];
-        
-        const buttonMessage = {
-            text: responseMessage,
-            footer: config.BOT_NAME,
-            buttons: buttons,
-            headerType: 1
-        };
-
-        await socket.sendMessage(sender, buttonMessage, { quoted: fakevCard });
-        
-    } catch (error) {
-        console.error("Error in autorecoding command:", error);
-        await socket.sendMessage(sender, { 
-            text: "❌ Error processing your request. Please try again later."
-        }, { quoted: fakevCard });
+//---------------------------------------------------------------------------
+//          𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟
+//---------------------------------------------------------------------------
+//  ⚠️ DO NOT MODIFY THIS FILE ⚠️  
+//---------------------------------------------------------------------------
+case 'autorecording':
+case 'autorecod': {
+    if (!isCreator) {
+        return await socket.sendMessage(sender, {
+            text: '*📛 ᴏɴʟʏ ᴛʜᴇ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!*'
+        }, { quoted: msg });
     }
+
+    const status = args[0]?.toLowerCase();
+    
+    // If no status provided, show interactive buttons
+    if (!status || !["on", "off"].includes(status)) {
+        const buttonMessage = {
+            text: `*🔊 Auto Recording Settings*\\n\\nCurrent status: ${config.AUTO_RECORDING === "true" ? "✅ ON" : "❌ OFF"}\\n\\nPlease select an option:`,
+            footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ",
+            headerType: 1,
+            buttons: [
+                { buttonId: `${prefix}autorecording on`, buttonText: { displayText: "✅ TURN ON" }, type: 1 },
+                { buttonId: `${prefix}autorecording off`, buttonText: { displayText: "❌ TURN OFF" }, type: 1 }
+            ]
+        };
+        
+        return await socket.sendMessage(sender, buttonMessage, { quoted: msg });
+    }
+
+    // Update the configuration
+    config.AUTO_RECORDING = status === "on" ? "true" : "false";
+    
+    // Send presence update based on status
+    if (status === "on") {
+        await socket.sendPresenceUpdate("recording", sender);
+        await socket.sendMessage(sender, {
+            text: "✅ *Auto recording is now enabled.*\\nBot is recording..."
+        }, { quoted: msg });
+    } else {
+        await socket.sendPresenceUpdate("available", sender);
+        await socket.sendMessage(sender, {
+            text: "❌ *Auto recording has been disabled.*"
+        }, { quoted: msg });
+    }
+    
     break;
 }
 // Case: fc (follow channel)
@@ -1562,26 +1562,29 @@ case 'setpp':
 case 'setdp':
 case 'pp': {
     try {
-        const Jimp = require('jimp');
-        const botJid = socket.user?.id?.split(":")[0] + "@s.whatsapp.net";
-
-        // Allow only bot owner or bot itself
-        if (sender !== botJid && !isCreator) {
+        // Check if Jimp is available
+        let Jimp;
+        try {
+            Jimp = require('jimp');
+        } catch (e) {
             return await socket.sendMessage(sender, {
-                text: "*🚫 Only the bot owner or the bot itself can use this command.*",
+                text: "*❌ Jimp module is not installed!*\n\nPlease install it with: npm install jimp"
             }, { quoted: msg });
         }
 
+        // Check if message has quoted image
         if (!msg.quoted || !msg.quoted.mtype?.includes("image")) {
             return await socket.sendMessage(sender, {
                 text: "*⚠️ Please reply to an image to set as profile picture.*"
             }, { quoted: msg });
         }
 
+        // Send processing message
         await socket.sendMessage(sender, {
             text: "*🖼️ Processing image, please wait...*"
         }, { quoted: msg });
 
+        // Download and process the image
         const mediaBuffer = await msg.quoted.download();
         const image = await Jimp.read(mediaBuffer);
 
@@ -1592,17 +1595,28 @@ case 'pp': {
 
         const processedImage = await blurred.getBufferAsync(Jimp.MIME_JPEG);
 
+        // Get bot's JID
+        const botJid = socket.user.id.split(":")[0] + "@s.whatsapp.net";
+
         // Upload profile picture
         await socket.updateProfilePicture(botJid, processedImage);
 
+        // Success message
         await socket.sendMessage(sender, {
-            text: "*✅ Bot profile picture updated successfully!*"
+            text: "*✅ Profile picture updated successfully!*",
+            buttons: [
+                {
+                    buttonId: `${prefix}pp`,
+                    buttonText: { displayText: "🔄 Change Again" },
+                    type: 1
+                }
+            ]
         }, { quoted: msg });
 
     } catch (err) {
-        console.error("FullPP Error:", err);
+        console.error("SetPP Error:", err);
         await socket.sendMessage(sender, {
-            text: `*❌ Failed to update profile picture:*\n${err.message}`
+            text: `*❌ Failed to update profile picture:*\n${err.message || "Unknown error"}`
         }, { quoted: msg });
     }
     break;
@@ -1753,37 +1767,36 @@ case 'lyrics': {
     }
     break;
 }
-//xasey video 
+//yydl core test
 case 'play':
 case 'song': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🎸",
-            key: msg.key
-        }
-    });
-
-    const axios = require('axios');
-    const yts = require('yt-search');
-    const BASE_URL = 'https://noobs-api.top';
-
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
-    
-    const args = q.split(' ').slice(1);
-    const query = args.join(' ').trim();
-
-    if (!query) {
-        return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*'
-        }, { quoted: msg });
-    }
-
     try {
+        // React to the command first
+        await socket.sendMessage(sender, {
+            react: {
+                text: "🎸",
+                key: msg.key
+            }
+        });
+
+        const axios = require('axios');
+        const yts = require('yt-search');
+
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const query = args.join(' ').trim();
+
+        if (!query) {
+            return await socket.sendMessage(sender, {
+                text: '*🎵 Please provide a song name or YouTube link*'
+            }, { quoted: msg });
+        }
+
         console.log('[PLAY] Searching YT for:', query);
         const search = await yts(query);
         const video = search.videos[0];
@@ -1796,7 +1809,6 @@ case 'song': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
         // Send song info first
         const buttonMessage = {
@@ -1819,48 +1831,73 @@ case 'song': {
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link
-        const response = await axios.get(apiURL, { timeout: 10000 });
-        const data = response.data;
-
-        if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
-        }
-
-        // Fetch thumbnail for the context info
-        let thumbnailBuffer;
-        try {
-            const thumbnailResponse = await axios.get(video.thumbnail, { 
-                responseType: 'arraybuffer',
-                timeout: 5000
-            });
-            thumbnailBuffer = Buffer.from(thumbnailResponse.data);
-        } catch (err) {
-            console.error('[PLAY] Error fetching thumbnail:', err);
-            // Continue without thumbnail if there's an error
-        }
-
-        // Send audio with context info after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Use yt-dlp-core for better audio extraction
+        const ytdl = require('ytdl-core');
+        const { exec } = require('child_process');
+        const fs = require('fs');
+        const path = require('path');
         
-        await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: fileName,
-            ptt: false,
-            contextInfo: {
-                externalAdReply: {
-                    title: video.title.substring(0, 30),
-                    body: 'Powered by CASEYRHODES API',
-                    mediaType: 1,
-                    sourceUrl: video.url,
-                    thumbnail: thumbnailBuffer,
-                    renderLargerThumbnail: false,
-                    mediaUrl: video.url
+        // Create temp directory if it doesn't exist
+        const tempDir = './temp';
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir);
+        }
+        
+        const tempFile = path.join(tempDir, `${Date.now()}_${safeTitle}.mp3`);
+        
+        return new Promise((resolve, reject) => {
+            // Download audio directly using ytdl
+            const audioStream = ytdl(video.url, {
+                filter: 'audioonly',
+                quality: 'highestaudio',
+            });
+            
+            const writeStream = fs.createWriteStream(tempFile);
+            
+            audioStream.pipe(writeStream);
+            
+            writeStream.on('finish', async () => {
+                try {
+                    // Send audio file
+                    await socket.sendMessage(sender, {
+                        audio: fs.readFileSync(tempFile),
+                        mimetype: 'audio/mpeg',
+                        fileName: fileName,
+                        ptt: false,
+                        contextInfo: {
+                            externalAdReply: {
+                                title: video.title.substring(0, 30),
+                                body: 'Powered by CASEYRHODES TECH',
+                                mediaType: 1,
+                                sourceUrl: video.url,
+                                thumbnailUrl: video.thumbnail,
+                                renderLargerThumbnail: true
+                            }
+                        }
+                    });
+                    
+                    // Clean up temp file
+                    fs.unlinkSync(tempFile);
+                    resolve();
+                } catch (error) {
+                    console.error('[PLAY] Error sending audio:', error);
+                    // Clean up temp file even if there's an error
+                    if (fs.existsSync(tempFile)) {
+                        fs.unlinkSync(tempFile);
+                    }
+                    reject(error);
                 }
-            }
+            });
+            
+            writeStream.on('error', (error) => {
+                console.error('[PLAY] Error writing audio file:', error);
+                reject(error);
+            });
+            
+            audioStream.on('error', (error) => {
+                console.error('[PLAY] Error downloading audio:', error);
+                reject(error);
+            });
         });
 
     } catch (err) {
@@ -2013,55 +2050,6 @@ case 'video': {
     }
     break;
 }
-//group jid case 
-case 'pp': {
-    if (!isOwner) {
-        await socket.sendMessage(sender, {
-            text: "❌ You are not the owner!"
-        }, { quoted: msg });
-        return;
-    }
-    
-    if (!quoted || !quoted.message?.imageMessage) {
-        await socket.sendMessage(sender, {
-            text: "❌ Please reply to an image."
-        }, { quoted: msg });
-        return;
-    }
-    
-    try {
-        const stream = await socket.downloadContentFromMessage(quoted.message.imageMessage, 'image');
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
-        }
-        await socket.updateProfilePicture(socket.user.id, buffer);
-        
-        await socket.sendMessage(sender, {
-            text: "🖼️ Bot profile picture updated successfully!",
-            buttons: [
-                { buttonId: `${prefix}pp`, buttonText: { displayText: '🖼️ Change Again' }, type: 1 },
-                { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 Owner Menu' }, type: 1 }
-            ],
-            headerType: 1
-        }, { quoted: msg });
-        
-        await socket.sendMessage(sender, { react: { text: '🖼️', key: msg.key } });
-        
-    } catch (error) {
-        console.error("Error updating profile picture:", error);
-        await socket.sendMessage(sender, {
-            text: `❌ Failed to update profile picture: ${error.message}`,
-            buttons: [
-                { buttonId: `${prefix}support`, buttonText: { displayText: '🆘 Support' }, type: 1 },
-                { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 Owner Menu' }, type: 1 }
-            ],
-            headerType: 1
-        }, { quoted: msg });
-    }
-    break;
-}
-
 case 'gjid':
 case 'groupjid':
 case 'grouplist': {
@@ -3982,179 +3970,7 @@ case 'truthordare': {
     }
     break;
 }
-//ginfo vase 
-case 'ginfo':
-case 'gpinfo':
-case 'groupinfo':
-case 'gcinfo': {
-    try {
-        await socket.sendMessage(sender, { react: { text: '🏷️', key: msg.key } });
-        
-        // Function to format creation date
-        const formatCreationDate = (timestamp) => {
-            if (!timestamp) return 'Unknown';
-            const date = new Date(timestamp * 1000);
-            return date.toLocaleString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                timeZoneName: 'short'
-            });
-        };
 
-        // Function to fetch and format group info
-        const getGroupInfo = async (groupId) => {
-            try {
-                const groupMetadata = await socket.groupMetadata(groupId);
-                const participants = groupMetadata.participants;
-                
-                // Get creator info
-                const creator = groupMetadata.owner || groupMetadata.ownerJid || 'Unknown';
-                
-                // Get admins
-                const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id);
-                
-                // Prepare decorated response with emojis
-                let response = `*🏷️ GROUP INFORMATION* 🏷️\n\n`;
-                response += `*📛 Name:* ${groupMetadata.subject}\n`;
-                response += `*📝 Description:* ${groupMetadata.desc || 'No description'}\n`;
-                response += `*🕒 Created:* ${formatCreationDate(groupMetadata.creation)}\n`;
-                response += `*👑 Creator:* ${creator.split('@')[0]}\n`;
-                response += `*👥 Total Members:* ${participants.length}\n`;
-                response += `*⭐ Admins:* ${admins.length}\n`;
-                response += `*🔐 Restricted:* ${groupMetadata.restrict ? '✅ Yes' : '❌ No'}\n`;
-                response += `*📢 Announcement:* ${groupMetadata.announce ? '✅ Yes' : '❌ No'}\n`;
-                response += `*⏱️ Ephemeral:* ${groupMetadata.ephemeralDuration ? `${groupMetadata.ephemeralDuration} seconds` : '❌ Disabled'}\n`;
-                
-                // Try to get group picture
-                try {
-                    const ppUrl = await socket.profilePictureUrl(groupId);
-                    return { response, ppUrl, groupMetadata };
-                } catch (e) {
-                    return { response, groupMetadata };
-                }
-            } catch (error) {
-                throw error;
-            }
-        };
-
-        // Check if the message is from a group
-        const isGroup = sender.endsWith('@g.us');
-        const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-        const groupLink = text.replace(/^(ginfo|gpinfo|groupinfo|gcinfo)\s+/i, '').trim();
-
-        if (isGroup) {
-            // Fetch info for the current group
-            const { response, ppUrl, groupMetadata } = await getGroupInfo(sender);
-            
-            // Create interactive buttons
-            const buttons = [
-                {
-                    buttonId: `${config.PREFIX}join`,
-                    buttonText: { displayText: '🔗 Invite Link' },
-                    type: 1
-                },
-                {
-                    buttonId: `${config.PREFIX}tagadmins`,
-                    buttonText: { displayText: '⭐ Admins List' },
-                    type: 1
-                },
-                {
-                    buttonId: `${config.PREFIX}tagall`,
-                    buttonText: { displayText: '👥 Members List' },
-                    type: 1
-                }
-            ];
-            
-            if (ppUrl) {
-                await socket.sendMessage(sender, { 
-                    image: { url: ppUrl },
-                    caption: response,
-                    footer: `Group ID: ${sender.split('@')[0]}`,
-                    buttons: buttons,
-                    headerType: 4
-                }, { quoted: fakevCard });
-            } else {
-                await socket.sendMessage(sender, {
-                    text: response,
-                    footer: `Group ID: ${sender.split('@')[0]}`,
-                    buttons: buttons,
-                    headerType: 1
-                }, { quoted: fakevCard });
-            }
-        } else if (groupLink) {
-            // Handle group invite link
-            if (!groupLink.includes('chat.whatsapp.com')) {
-                await socket.sendMessage(sender, { 
-                    text: '❌ *Please provide a valid WhatsApp group invite link.*\n\nExample: https://chat.whatsapp.com/XXXXXXXXXXXX' 
-                }, { quoted: fakevCard });
-                return;
-            }
-            
-            // Extract group ID from link
-            const groupId = groupLink.split('/').pop() + '@g.us';
-            
-            try {
-                // Verify the group exists and get basic info first
-                const inviteInfo = await socket.groupGetInviteInfo(groupId.split('@')[0]);
-                
-                // Now fetch full metadata
-                const { response, ppUrl, groupMetadata } = await getGroupInfo(inviteInfo.id);
-                
-                // Create buttons for group link context
-                const buttons = [
-                    {
-                        buttonId: `${config.PREFIX}join ${groupId.split('@')[0]}`,
-                        buttonText: { displayText: '🚪 Join Group' },
-                        type: 1
-                    },
-                    {
-                        buttonId: `${config.PREFIX}moreinfo ${groupId.split('@')[0]}`,
-                        buttonText: { displayText: '📊 More Info' },
-                        type: 1
-                    }
-                ];
-                
-                if (ppUrl) {
-                    await socket.sendMessage(sender, { 
-                        image: { url: ppUrl },
-                        caption: response,
-                        footer: `Group ID: ${inviteInfo.id.split('@')[0]}`,
-                        buttons: buttons,
-                        headerType: 4
-                    }, { quoted: fakevCard });
-                } else {
-                    await socket.sendMessage(sender, {
-                        text: response,
-                        footer: `Group ID: ${inviteInfo.id.split('@')[0]}`,
-                        buttons: buttons,
-                        headerType: 1
-                    }, { quoted: fakevCard });
-                }
-            } catch (error) {
-                console.error("Error fetching group info from link:", error);
-                await socket.sendMessage(sender, { 
-                    text: '❌ *Error fetching group info.*\n\nMake sure:\n• The link is valid\n• You have permission to view this group\n• The group exists'
-                }, { quoted: fakevCard });
-            }
-        } else {
-            // Command used in private chat without link
-            await socket.sendMessage(sender, { 
-                text: '🤔 *Please use this command in a group or provide a group invite link.*\n\n*Example:* .gcinfo https://chat.whatsapp.com/XXXXXXXXXXXX'
-            }, { quoted: fakevCard });
-        }
-    } catch (error) {
-        console.error("Error in group info command:", error);
-        await socket.sendMessage(sender, { 
-            text: '❌ An error occurred while fetching group information.' 
-        }, { quoted: fakevCard });
-    }
-    break;
-}
 //===============================
 case 'fbdl':
 case 'facebook':
@@ -4643,11 +4459,11 @@ case 'ai': {
         
         // Check for owner/developer related queries
         if (lowerText.includes('owner') || lowerText.includes('developer') || lowerText.includes('creator') || 
-            lowerText.includes('who made you') || lowerText.includes('who created you') || 
+            lowerText.includes('who owns you') || lowerText.includes('who created you') || 
             lowerText.includes('who developed you') || lowerText.includes('who built you')) {
             
             return {
-                text: `*👨‍💻 MEET THE DEVELOPERS*\n\n🇰🇪 *Primary Developer:* CaseyRhodes Tech\n• Location: Kenya\n• Specialization: AI Integration & Bot Development\n• Role: Lead Developer & Project Owner\n\n🤖 *Technical Partner:* Caseyrhodes\n• Specialization: Backend Systems & API Management\n• Role: Technical Support & Infrastructure\n\n*About Our Team:*\nCasey AI is the result of a CaseyRhodes Tech  Together, we bring you cutting-edge AI technology with reliable bot functionality, ensuring you get the best AI experience possible.\n\n*Proudly Made in Kenya* 🇰🇪`,
+                text: `*👨‍💻 MEET THE DEVELOPER*\n\n🇰🇪 *Primary Developer:* CaseyRhodes Tech\n• Location: Kenya\n• Specialization: AI Integration & Bot Development\n• Role: Lead Developer & Project Owner\n\n🤖 *Technical Partner:* Caseyrhodes\n• Specialization: Backend Systems & API Management\n• Role: Technical Support & Infrastructure\n\n*About Our Team:*\nCasey AI is the result of a CaseyRhodes Tech  Together, we bring you cutting-edge AI technology with reliable bot functionality, ensuring you get the best AI experience possible.\n\n*Proudly Made in Kenya* 🇰🇪`,
                 footer: "CaseyRhodes Tech - Kenyan Innovation",
                 buttons: [
                     { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 },
