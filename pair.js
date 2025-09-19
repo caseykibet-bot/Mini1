@@ -1779,8 +1779,8 @@ case 'song': {
             }
         });
 
-        const axios = require('axios');
         const yts = require('yt-search');
+        const ytdl = require('ytdl-core');
 
         // Extract query from message
         const q = msg.message?.conversation || 
@@ -1821,89 +1821,71 @@ case 'song': {
                      `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
                      `╰─────────────────◆\n\n` +
-                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
-            footer: 'Click the button below for all commands',
-            buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
-            ],
+                     `*📥 Downloading audio...*`,
+            footer: 'Powered by CASEYRHODES TECH',
             headerType: 4
         };
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Use yt-dlp-core for better audio extraction
-        const ytdl = require('ytdl-core');
-        const { exec } = require('child_process');
-        const fs = require('fs');
-        const path = require('path');
-        
-        // Create temp directory if it doesn't exist
-        const tempDir = './temp';
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir);
-        }
-        
-        const tempFile = path.join(tempDir, `${Date.now()}_${safeTitle}.mp3`);
-        
-        return new Promise((resolve, reject) => {
-            // Download audio directly using ytdl
+        // Download and send audio directly
+        try {
+            // Get audio stream
             const audioStream = ytdl(video.url, {
                 filter: 'audioonly',
                 quality: 'highestaudio',
             });
-            
-            const writeStream = fs.createWriteStream(tempFile);
-            
-            audioStream.pipe(writeStream);
-            
-            writeStream.on('finish', async () => {
+
+            // Collect audio data into buffer
+            const chunks = [];
+            audioStream.on('data', (chunk) => chunks.push(chunk));
+            audioStream.on('end', async () => {
                 try {
-                    // Send audio file
+                    const audioBuffer = Buffer.concat(chunks);
+                    
+                    // Send audio directly without success message
                     await socket.sendMessage(sender, {
-                        audio: fs.readFileSync(tempFile),
+                        audio: audioBuffer,
                         mimetype: 'audio/mpeg',
                         fileName: fileName,
                         ptt: false,
                         contextInfo: {
                             externalAdReply: {
-                                title: video.title.substring(0, 30),
-                                body: 'Powered by CASEYRHODES TECH',
+                                title: video.title.substring(0, 50),
+                                body: `By ${video.author.name}`,
                                 mediaType: 1,
                                 sourceUrl: video.url,
-                                thumbnailUrl: video.thumbnail,
-                                renderLargerThumbnail: true
+                                thumbnailUrl: video.thumbnail
                             }
                         }
                     });
-                    
-                    // Clean up temp file
-                    fs.unlinkSync(tempFile);
-                    resolve();
-                } catch (error) {
-                    console.error('[PLAY] Error sending audio:', error);
-                    // Clean up temp file even if there's an error
-                    if (fs.existsSync(tempFile)) {
-                        fs.unlinkSync(tempFile);
-                    }
-                    reject(error);
+
+                } catch (sendError) {
+                    console.error('[PLAY] Error sending audio:', sendError);
+                    await socket.sendMessage(sender, {
+                        text: '*❌ Failed to send audio.*'
+                    }, { quoted: msg });
                 }
             });
-            
-            writeStream.on('error', (error) => {
-                console.error('[PLAY] Error writing audio file:', error);
-                reject(error);
+
+            audioStream.on('error', async (error) => {
+                console.error('[PLAY] Stream error:', error);
+                await socket.sendMessage(sender, {
+                    text: '*❌ Error downloading audio.*'
+                }, { quoted: msg });
             });
-            
-            audioStream.on('error', (error) => {
-                console.error('[PLAY] Error downloading audio:', error);
-                reject(error);
-            });
-        });
+
+        } catch (error) {
+            console.error('[PLAY] Audio processing error:', error);
+            await socket.sendMessage(sender, {
+                text: '*❌ Failed to process audio.*'
+            }, { quoted: msg });
+        }
 
     } catch (err) {
-        console.error('[PLAY] Error:', err);
+        console.error('[PLAY] General error:', err);
         await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*'
+            text: '*❌ An error occurred.*'
         }, { quoted: msg });
     }
     break;
