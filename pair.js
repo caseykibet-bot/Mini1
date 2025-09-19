@@ -1812,7 +1812,7 @@ case 'song': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.url)}&format=mp3`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
         // Send song info first
         const buttonMessage = {
@@ -1836,7 +1836,7 @@ case 'song': {
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
         // Get download link
-        const response = await axios.get(apiURL, { timeout: 30000 });
+        const response = await axios.get(apiURL, { timeout: 10000 });
         const data = response.data;
 
         if (!data.downloadLink) {
@@ -1850,7 +1850,7 @@ case 'song': {
         try {
             const thumbnailResponse = await axios.get(video.thumbnail, { 
                 responseType: 'arraybuffer',
-                timeout: 10000
+                timeout: 5000
             });
             thumbnailBuffer = Buffer.from(thumbnailResponse.data);
         } catch (err) {
@@ -1859,14 +1859,14 @@ case 'song': {
         }
 
         // Send audio with context info after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         await socket.sendMessage(sender, {
             audio: { url: data.downloadLink },
             mimetype: 'audio/mpeg',
             fileName: fileName,
             ptt: false,
-            contextInfo: thumbnailBuffer ? {
+            contextInfo: {
                 externalAdReply: {
                     title: video.title.substring(0, 30),
                     body: 'Powered by CASEYRHODES API',
@@ -1876,21 +1876,13 @@ case 'song': {
                     renderLargerThumbnail: false,
                     mediaUrl: video.url
                 }
-            } : undefined
+            }
         });
 
     } catch (err) {
         console.error('[PLAY] Error:', err);
-        let errorMessage = '*❌ An error occurred while processing your request.*';
-        
-        if (err.code === 'ECONNABORTED') {
-            errorMessage = '*⏰ Request timeout. Please try again.*';
-        } else if (err.response?.status === 404) {
-            errorMessage = '*❌ Audio service is temporarily unavailable.*';
-        }
-        
         await socket.sendMessage(sender, {
-            text: errorMessage
+            text: '*❌ An error occurred while processing your request.*'
         }, { quoted: msg });
     }
     break;
@@ -2908,16 +2900,25 @@ case 'api': {
             }, { quoted: fakevCard });
         }
 
-        if (!/^https?:\/\//.test(url)) {
+        // Validate URL format
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(url);
+        } catch (e) {
             return await socket.sendMessage(sender, { 
-                text: '❌ *URL must start with http:// or https://*' 
+                text: '❌ *Invalid URL format*' 
             }, { quoted: fakevCard });
         }
 
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            return await socket.sendMessage(sender, { 
+                text: '❌ *URL must use http:// or https:// protocol*' 
+            }, { quoted: fakevCard });
+        }
+
+        const cleanUrl = `${parsedUrl.origin}${parsedUrl.pathname}${parsedUrl.search}`;
+        
         try {
-            const _url = new URL(url);
-            const cleanUrl = `${_url.origin}${_url.pathname}${_url.search}`;
-            
             // Add timeout to fetch request
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
@@ -2927,6 +2928,11 @@ case 'api': {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 }
+            }).catch(err => {
+                if (err.name === 'AbortError') {
+                    throw new Error('Request timed out after 30 seconds');
+                }
+                throw err;
             });
             
             clearTimeout(timeout);
@@ -2939,11 +2945,11 @@ case 'api': {
             }
 
             const contentLength = res.headers.get('content-length');
-            const maxSize = 10 * 1024 * 1024; // 10MB limit (reduced for WhatsApp compatibility)
+            const maxSize = 10 * 1024 * 1024; // 10MB limit
             
             if (contentLength && parseInt(contentLength) > maxSize) {
                 return await socket.sendMessage(sender, {
-                    text: `❌ *Content too large:* ${(contentLength / 1024 / 1024).toFixed(2)}MB exceeds limit of ${maxSize / 1024 / 1024}MB`
+                    text: `❌ *Content too large:* ${(parseInt(contentLength) / 1024 / 1024).toFixed(2)}MB exceeds limit of ${maxSize / 1024 / 1024}MB`
                 }, { quoted: fakevCard });
             }
 
@@ -2983,6 +2989,7 @@ case 'api': {
                     content = JSON.stringify(parsedJson, null, 2);
                 } catch (e) {
                     // Not valid JSON, keep as is
+                    console.log('Content is not valid JSON, sending as text');
                 }
             }
             
@@ -2995,10 +3002,9 @@ case 'api': {
             }
             
             // For large content, send as document
+            const documentBuffer = Buffer.from(content);
             const documentMessage = {
-                document: {
-                    url: cleanUrl
-                },
+                document: documentBuffer,
                 fileName: `fetched_data_${Date.now()}.txt`,
                 mimetype: 'text/plain',
                 caption: `📥 *Fetched Data (${content.length} characters)*\n*URL:* ${cleanUrl}`
@@ -3010,14 +3016,12 @@ case 'api': {
             console.error('Error fetching data:', error);
             
             let errorMessage = '❌ Error fetching data';
-            if (error.name === 'AbortError') {
+            if (error.message.includes('timed out')) {
                 errorMessage = '❌ Request timed out after 30 seconds';
             } else if (error.code === 'ENOTFOUND') {
                 errorMessage = '❌ Could not resolve hostname';
             } else if (error.code === 'ECONNREFUSED') {
                 errorMessage = '❌ Connection refused by server';
-            } else if (error.type === 'invalid-url') {
-                errorMessage = '❌ Invalid URL format';
             } else {
                 errorMessage = `❌ ${error.message}`;
             }
@@ -3035,8 +3039,6 @@ case 'api': {
     }
     break;
 }
-//vv case 
-//case catbox url 
 //case wallpaper 
 case 'rw':
 case 'randomwall':
@@ -3985,6 +3987,7 @@ case 'onlinemembers': {
         const groupMetadata = await socket.groupMetadata(sender);
         const participant = groupMetadata.participants.find(p => p.id === sender);
         const isAdmin = participant?.admin === 'admin' || participant?.admin === 'superadmin';
+        const isCreator = participant?.admin === 'superadmin'; // Check if user is group creator
         
         // Check if user is either creator or admin
         if (!isCreator && !isAdmin && sender !== socket.user.id) {
