@@ -1868,7 +1868,7 @@ case 'song': {
             contextInfo: {
                 externalAdReply: {
                     title: video.title.substring(0, 30),
-                    body: 'Powered by CASEYRHODES API',
+                    body: '❯❯ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs🌟',
                     mediaType: 1,
                     sourceUrl: video.url,
                     thumbnail: thumbnailBuffer,
