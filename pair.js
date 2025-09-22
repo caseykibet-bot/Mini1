@@ -1819,12 +1819,13 @@ case 'song': {
         const safeTitle = video.title.replace(/[\\/:*?"<>|\u0000-\u001F\u007F]/g, '').trim() || 'audio';
         const fileName = `${safeTitle.substring(0, 64)}.mp3`;
 
-        // API endpoints with fallbacks
+        // More reliable API endpoints
         const apiEndpoints = [
-            `https://api.giftedtech.co.ke/api/download/ytmp3?apikey=gifted&url=${encodeURIComponent(video.url)}`,
-            `https://noobs-api.top/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`,
-            `https://ytdl.noobs-api.top/audio?id=${encodeURIComponent(video.videoId)}`,
-            `https://api.heckerman06.repl.co/api/ytmp3?url=${encodeURIComponent(video.url)}`
+            `https://api.download-lagu-mp3.com/@api/json/mp3/${video.videoId}`,
+            `https://convert2mp3s.com/api/widgetv2?url=https://www.youtube.com/watch?v=${video.videoId}`,
+            `https://api.vevioz.com/api/button/mp3/${video.videoId}`,
+            `https://ytmp3.ryzmosys.com/ytmp3/?url=https://www.youtube.com/watch?v=${video.videoId}`,
+            `https://api.giftedtech.co.ke/api/download/ytmp3?apikey=gifted&url=${encodeURIComponent(video.url)}`
         ];
 
         // Send song info
@@ -1838,7 +1839,7 @@ case 'song': {
                      `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago || 'N/A'}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author?.name || 'N/A'}\n` +
                      `╰─────────────────◆\n\n` +
-                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
+                     `*⬇️ Downloading audio...*`,
             footer: 'Click the button below for all commands',
             buttons: [
                 { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
@@ -1849,31 +1850,50 @@ case 'song': {
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
         let downloadLink = null;
+        let apiSuccess = false;
 
         // Try API endpoints
         for (const endpoint of apiEndpoints) {
             try {
                 console.log('[PLAY] Trying API:', endpoint);
                 const response = await axios.get(endpoint, { 
-                    timeout: 15000,
-                    validateStatus: function (status) {
-                        return status >= 200 && status < 500;
+                    timeout: 20000,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                     }
                 });
                 
+                console.log('[PLAY] API Response:', JSON.stringify(response.data).substring(0, 200));
+                
+                // Parse different API response formats
                 if (response.data) {
-                    // Handle different response formats
                     const data = response.data;
                     
-                    if (data.downloadLink) downloadLink = data.downloadLink;
-                    else if (data.url) downloadLink = data.url;
-                    else if (data.audio) downloadLink = data.audio;
-                    else if (data.result) downloadLink = data.result;
-                    else if (data.link) downloadLink = data.link;
-                    else if (typeof data === 'string' && data.startsWith('http')) downloadLink = data;
+                    // Format 1: download-lagu-mp3.com
+                    if (data.videoId && data.videoId === video.videoId && data.mp3) {
+                        downloadLink = data.mp3;
+                    }
+                    // Format 2: convert2mp3s.com
+                    else if (data.url) {
+                        downloadLink = data.url;
+                    }
+                    // Format 3: vevioz.com
+                    else if (data.downloadUrl) {
+                        downloadLink = data.downloadUrl;
+                    }
+                    // Format 4: direct mp3 link in response
+                    else if (typeof data === 'string' && data.includes('.mp3')) {
+                        const mp3Match = data.match(/(https?:\/\/[^\s"']+\.mp3)/);
+                        if (mp3Match) downloadLink = mp3Match[1];
+                    }
+                    // Format 5: giftedtech and others
+                    else if (data.result || data.downloadLink || data.link) {
+                        downloadLink = data.result || data.downloadLink || data.link;
+                    }
                     
                     if (downloadLink) {
-                        console.log('[PLAY] Success with endpoint:', endpoint);
+                        console.log('[PLAY] Found download link:', downloadLink);
+                        apiSuccess = true;
                         break;
                     }
                 }
@@ -1883,46 +1903,29 @@ case 'song': {
             }
         }
 
-        if (!downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ All download APIs are currently unavailable. Please try again later.*'
-            }, { quoted: msg });
-        }
-
-        // Validate download link
-        try {
-            const headResponse = await axios.head(downloadLink, { 
-                timeout: 10000,
-                validateStatus: function (status) {
-                    return status >= 200 && status < 400;
+        // Fallback: Use yt-dlp style direct download if APIs fail
+        if (!apiSuccess) {
+            console.log('[PLAY] Trying fallback method...');
+            try {
+                // Simple fallback to a working service
+                downloadLink = `https://ytdl.noobs-api.top/audio?id=${video.videoId}`;
+                const fallbackResponse = await axios.get(downloadLink, { timeout: 15000 });
+                if (fallbackResponse.data && fallbackResponse.data.url) {
+                    downloadLink = fallbackResponse.data.url;
+                    apiSuccess = true;
                 }
-            });
-            
-            const contentLength = parseInt(headResponse.headers['content-length']) || 0;
-            const contentType = headResponse.headers['content-type'] || '';
-            
-            // Check if it's a valid audio file
-            const validAudioTypes = ['audio/', 'octet-stream', 'mpeg', 'mp3', 'm4a'];
-            const isValidAudio = validAudioTypes.some(type => contentType.includes(type));
-            
-            if (!isValidAudio) {
-                throw new Error('Invalid audio format received');
+            } catch (fallbackError) {
+                console.log('[PLAY] Fallback also failed:', fallbackError.message);
             }
-            
-            if (contentLength > 100 * 1024 * 1024) {
-                throw new Error('File too large (max 100MB)');
-            }
-            
-            console.log('[PLAY] Valid audio file found, size:', Math.round(contentLength / 1024 / 1024) + 'MB');
-            
-        } catch (err) {
-            console.error('[PLAY] Link validation failed:', err.message);
+        }
+
+        if (!downloadLink || !apiSuccess) {
             return await socket.sendMessage(sender, {
-                text: '*❌ Invalid audio file received. Please try a different song.*'
+                text: '*❌ Failed to download audio. The YouTube to MP3 service might be temporarily unavailable.*\n\nPlease try again in a few minutes.'
             }, { quoted: msg });
         }
 
-        // Get thumbnail safely
+        // Get thumbnail
         let thumbnailBuffer = null;
         try {
             const thumbnailResponse = await axios.get(video.thumbnail, { 
@@ -1931,39 +1934,48 @@ case 'song': {
             });
             thumbnailBuffer = Buffer.from(thumbnailResponse.data);
         } catch (err) {
-            console.log('[PLAY] Using default thumbnail due to error:', err.message);
+            console.log('[PLAY] Thumbnail fetch failed, using default');
         }
 
-        // Send audio file
-        const audioMessage = {
-            audio: { url: downloadLink },
-            mimetype: 'audio/mpeg',
-            fileName: fileName,
-            ptt: false
-        };
-
-        // Add context info only if we have thumbnail
-        if (thumbnailBuffer) {
-            audioMessage.contextInfo = {
-                externalAdReply: {
-                    title: (video.title || 'Audio').substring(0, 30),
-                    body: `Duration: ${video.timestamp || 'N/A'} | ${video.author?.name || 'Unknown'}`,
-                    mediaType: 1,
-                    sourceUrl: video.url || '',
-                    thumbnail: thumbnailBuffer,
-                    renderLargerThumbnail: false
-                }
+        // Send audio with minimal validation
+        try {
+            const audioMessage = {
+                audio: { url: downloadLink },
+                mimetype: 'audio/mpeg',
+                fileName: fileName,
+                ptt: false
             };
-        }
 
-        await socket.sendMessage(sender, audioMessage);
-        console.log('[PLAY] Audio sent successfully');
+            if (thumbnailBuffer) {
+                audioMessage.contextInfo = {
+                    externalAdReply: {
+                        title: (video.title || 'Audio').substring(0, 30),
+                        body: `Duration: ${video.timestamp || 'N/A'}`,
+                        mediaType: 1,
+                        sourceUrl: video.url || '',
+                        thumbnail: thumbnailBuffer,
+                        renderLargerThumbnail: false
+                    }
+                };
+            }
+
+            await socket.sendMessage(sender, audioMessage);
+            console.log('[PLAY] Audio sent successfully');
+
+        } catch (sendError) {
+            console.error('[PLAY] Failed to send audio:', sendError);
+            
+            // Final fallback: Send direct download link
+            await socket.sendMessage(sender, {
+                text: `*📥 Alternative Download Link:*\n${downloadLink}\n\n*Copy this link and download manually if the audio doesn't play.*`
+            }, { quoted: msg });
+        }
 
     } catch (error) {
         console.error('[PLAY] Critical Error:', error);
         try {
             await socket.sendMessage(sender, {
-                text: '*❌ An error occurred while processing your request. Please try again.*'
+                text: '*❌ An error occurred. Please try a different song or try again later.*'
             }, { quoted: msg });
         } catch (sendError) {
             console.error('[PLAY] Failed to send error message:', sendError);
