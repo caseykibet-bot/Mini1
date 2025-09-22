@@ -153,11 +153,11 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-}
+  }
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'EDAXNxijugw22HVdVPAuIr'; // Hardcoded default
+    let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -233,10 +233,14 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
+
+// Helper function to format bytes 
+// Sample formatMessage function
 function formatMessage(title, body, footer) {
   return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
 }
 
+// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -376,7 +380,6 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
-
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -390,251 +393,53 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
-
-// ============================ ENHANCED VIEW-ONCE HANDLERS ============================
-
-/**
- * Enhanced View-Once Message Handler with Download Support
- */
-async function handleViewOnceMessage(socket, isOwner, quotedMsg, sender, msgKey) {
+async function oneViewmeg(socket, isOwner, msg, sender) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
-            text: '❌ *Only bot owner can view once messages!*'
+            text: '❌ *Only bot owner can view once messages, darling!* 😘'
         });
         return;
     }
-
     try {
-        if (!quotedMsg) {
-            return await socket.sendMessage(sender, {
-                text: '❌ *Please reply to a view-once message!*'
-            });
-        }
-
-        await socket.sendMessage(sender, {
-            react: { text: '⏳', key: msgKey }
-        });
-
-        let mediaBuffer, caption, mimeType, fileName, fileExtension;
-        
-        // Enhanced view-once detection with better error handling
-        const viewOnceData = extractViewOnceData(quotedMsg);
-        
-        if (!viewOnceData) {
-            return await socket.sendMessage(sender, {
-                text: '❌ *No view-once content found in this message!*'
-            });
-        }
-
-        const { type, message: viewOnceMessage } = viewOnceData;
-        
-        // Download the media
-        mediaBuffer = await downloadViewOnceMedia(socket, viewOnceMessage);
-        if (!mediaBuffer) {
-            throw new Error('Failed to download media');
-        }
-
-        caption = viewOnceMessage.caption || "";
-        mimeType = type === 'image' ? 'image/jpeg' : type === 'video' ? 'video/mp4' : 'audio/mpeg';
-        fileExtension = type === 'image' ? 'jpg' : type === 'video' ? 'mp4' : 'mp3';
-        fileName = `viewonce_${Date.now()}.${fileExtension}`;
-
-        // Create thumbnail for preview
-        let thumbnailBuffer;
-        try {
-            if (type === 'image') {
-                thumbnailBuffer = await Jimp.read(mediaBuffer).then(img => 
-                    img.resize(300, 300).getBufferAsync(Jimp.MIME_JPEG)
-                );
-            } else if (type === 'video') {
-                // Use a default thumbnail for videos
-                thumbnailBuffer = await Jimp.read('https://i.ibb.co/fGSVG8vJ/caseyweb.jpg')
-                    .then(img => img.resize(300, 300).getBufferAsync(Jimp.MIME_JPEG));
-            }
-        } catch (thumbError) {
-            console.warn('Thumbnail creation failed:', thumbError);
-        }
-
-        // Send the media with enhanced options
-        const messageOptions = {
-            caption: `📸 *View Once Opened*\n\n${caption || 'No caption'}\n\n🔐 *Originally sent as view-once*`,
-            fileName: fileName,
-            contextInfo: {
-                mentionedJid: [sender],
-                externalAdReply: {
-                    title: 'View Once Opener',
-                    body: `Type: ${type.toUpperCase()} | Powered by CaseyRhodes`,
-                    mediaType: type === 'image' ? 1 : type === 'video' ? 2 : 3,
-                    thumbnail: thumbnailBuffer,
-                    sourceUrl: 'https://github.com/caseyweb',
-                    renderLargerThumbnail: true
-                }
-            }
-        };
-
-        // Send based on media type
-        if (type === 'image') {
-            await socket.sendMessage(sender, {
-                image: mediaBuffer,
-                ...messageOptions
-            });
-        } else if (type === 'video') {
-            await socket.sendMessage(sender, {
-                video: mediaBuffer,
-                mimetype: 'video/mp4',
-                ...messageOptions
-            });
-        } else if (type === 'audio') {
-            await socket.sendMessage(sender, {
-                audio: mediaBuffer,
-                mimetype: 'audio/mpeg',
-                ptt: false,
-                ...messageOptions
-            });
-        }
-
-        // Send download option as document
-        await socket.sendMessage(sender, {
-            document: mediaBuffer,
-            fileName: `download_${fileName}`,
-            mimetype: mimeType,
-            caption: `💾 *Downloadable Version*\n\nSave this file to your device.`,
-            buttons: [
-                { buttonId: `${config.PREFIX}viewonce`, buttonText: { displayText: '🔄 Open Another' }, type: 1 },
-                { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '📋 Menu' }, type: 1 }
-            ]
-        });
-
-        // Clean up
-        if (mediaBuffer && fs.existsSync(mediaBuffer)) {
-            fs.unlinkSync(mediaBuffer);
-        }
-
-        await socket.sendMessage(sender, {
-            react: { text: '✅', key: msgKey }
-        });
-
-    } catch (error) {
-        console.error('View once handler error:', error);
-        await socket.sendMessage(sender, {
-            react: { text: '❌', key: msgKey }
-        });
-        await socket.sendMessage(sender, {
-            text: `❌ *Failed to process view-once message!*\nError: ${error.message || 'Unknown error'}`
-        });
-    }
-}
-
-/**
- * Extract view-once data from different message formats
- */
-function extractViewOnceData(quotedMsg) {
-    // Check various view-once message formats
-    if (quotedMsg.imageMessage?.viewOnce) {
-        return { type: 'image', message: quotedMsg.imageMessage };
-    } else if (quotedMsg.videoMessage?.viewOnce) {
-        return { type: 'video', message: quotedMsg.videoMessage };
-    } else if (quotedMsg.audioMessage?.viewOnce) {
-        return { type: 'audio', message: quotedMsg.audioMessage };
-    } else if (quotedMsg.viewOnceMessageV2?.message?.imageMessage) {
-        return { type: 'image', message: quotedMsg.viewOnceMessageV2.message.imageMessage };
-    } else if (quotedMsg.viewOnceMessageV2?.message?.videoMessage) {
-        return { type: 'video', message: quotedMsg.viewOnceMessageV2.message.videoMessage };
-    } else if (quotedMsg.viewOnceMessageV2Extension?.message?.audioMessage) {
-        return { type: 'audio', message: quotedMsg.viewOnceMessageV2Extension.message.audioMessage };
-    } else if (quotedMsg.viewOnceMessage) {
-        // Handle legacy viewOnceMessage format
-        const innerMessage = quotedMsg.viewOnceMessage.message;
-        if (innerMessage.imageMessage) {
-            return { type: 'image', message: { ...innerMessage.imageMessage, viewOnce: true } };
-        } else if (innerMessage.videoMessage) {
-            return { type: 'video', message: { ...innerMessage.videoMessage, viewOnce: true } };
-        }
-    }
-    
-    return null;
-}
-
-/**
- * Download view-once media with enhanced error handling
- */
-async function downloadViewOnceMedia(socket, mediaMessage) {
-    try {
-        const tempPath = `./temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        let stream;
-        if (mediaMessage.imageMessage) {
-            stream = await downloadContentFromMessage(mediaMessage.imageMessage, 'image');
-        } else if (mediaMessage.videoMessage) {
-            stream = await downloadContentFromMessage(mediaMessage.videoMessage, 'video');
-        } else if (mediaMessage.audioMessage) {
-            stream = await downloadContentFromMessage(mediaMessage.audioMessage, 'audio');
+        const quoted = msg;
+        let cap, anu;
+        if (quoted.imageMessage?.viewOnce) {
+            cap = quoted.imageMessage.caption || "";
+            anu = await socket.downloadAndSaveMediaMessage(quoted.imageMessage);
+            await socket.sendMessage(sender, { image: { url: anu }, caption: cap });
+        } else if (quoted.videoMessage?.viewOnce) {
+            cap = quoted.videoMessage.caption || "";
+            anu = await socket.downloadAndSaveMediaMessage(quoted.videoMessage);
+            await socket.sendMessage(sender, { video: { url: anu }, caption: cap });
+        } else if (quoted.audioMessage?.viewOnce) {
+            cap = quoted.audioMessage.caption || "";
+            anu = await socket.downloadAndSaveMediaMessage(quoted.audioMessage);
+            await socket.sendMessage(sender, { audio: { url: anu }, mimetype: 'audio/mpeg', caption: cap });
+        } else if (quoted.viewOnceMessageV2?.message?.imageMessage) {
+            cap = quoted.viewOnceMessageV2.message.imageMessage.caption || "";
+            anu = await socket.downloadAndSaveMediaMessage(quoted.viewOnceMessageV2.message.imageMessage);
+            await socket.sendMessage(sender, { image: { url: anu }, caption: cap });
+        } else if (quoted.viewOnceMessageV2?.message?.videoMessage) {
+            cap = quoted.viewOnceMessageV2.message.videoMessage.caption || "";
+            anu = await socket.downloadAndSaveMediaMessage(quoted.viewOnceMessageV2.message.videoMessage);
+            await socket.sendMessage(sender, { video: { url: anu }, caption: cap });
+        } else if (quoted.viewOnceMessageV2Extension?.message?.audioMessage) {
+            cap = quoted.viewOnceMessageV2Extension.message.audioMessage.caption || "";
+            anu = await socket.downloadAndSaveMediaMessage(quoted.viewOnceMessageV2Extension.message.audioMessage);
+            await socket.sendMessage(sender, { audio: { url: anu }, mimetype: 'audio/mpeg', caption: cap });
         } else {
-            stream = await downloadContentFromMessage(mediaMessage, 
-                mediaMessage.mimetype?.includes('image') ? 'image' : 
-                mediaMessage.mimetype?.includes('video') ? 'video' : 'audio'
-            );
+            await socket.sendMessage(sender, {
+                text: '❌ *Not a valid view-once message, love!* 😢'
+            });
         }
-
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
-        }
-
-        // Save to temporary file
-        await fs.writeFile(tempPath, buffer);
-        return tempPath;
-
+        if (anu && fs.existsSync(anu)) fs.unlinkSync(anu); // Clean up temporary file
     } catch (error) {
-        console.error('Media download error:', error);
-        throw new Error(`Download failed: ${error.message}`);
+        console.error('oneViewmeg error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ *Failed to process view-once message, babe!* 😢\nError: ${error.message || 'Unknown error'}`
+        });
     }
 }
-
-/**
- * Setup View-Once Message Auto-Detection
- */
-function setupViewOnceDetection(socket, number) {
-    socket.ev.on('messages.upsert', async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg.message || msg.key.fromMe) return;
-
-        const isOwner = msg.key.remoteJid === `${config.OWNER_NUMBER.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
-        
-        // Check if message contains view-once content
-        const hasViewOnce = 
-            msg.message?.imageMessage?.viewOnce ||
-            msg.message?.videoMessage?.viewOnce ||
-            msg.message?.audioMessage?.viewOnce ||
-            msg.message?.viewOnceMessageV2 ||
-            msg.message?.viewOnceMessageV2Extension ||
-            msg.message?.viewOnceMessage;
-
-        if (hasViewOnce && isOwner) {
-            try {
-                await socket.sendMessage(msg.key.remoteJid, {
-                    text: `👀 *View Once Message Received!*\n\nUse *${config.PREFIX}viewonce* by replying to this message to open it.`,
-                    buttons: [
-                        { 
-                            buttonId: `${config.PREFIX}viewonce`, 
-                            buttonText: { displayText: '🔓 Open View Once' }, 
-                            type: 1 
-                        },
-                        { 
-                            buttonId: `${config.PREFIX}vo`, 
-                            buttonText: { displayText: '📥 Quick Open' }, 
-                            type: 1 
-                        }
-                    ]
-                }, { quoted: msg });
-            } catch (error) {
-                console.error('View once detection message failed:', error);
-            }
-        }
-    });
-}
-
-// ============================ MAIN COMMAND HANDLER ============================
 
 function setupCommandHandlers(socket, number) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
@@ -706,40 +511,19 @@ function setupCommandHandlers(socket, number) {
 
         const isSenderGroupAdmin = isGroup ? await isGroupAdmin(from, nowsender) : false;
 
-        // Enhanced download function
         socket.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
-            try {
-                let quoted = message.msg ? message.msg : message;
-                let mime = (message.msg || message).mimetype || '';
-                let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
-                
-                const stream = await downloadContentFromMessage(quoted, messageType);
-                let buffer = Buffer.from([]);
-                for await (const chunk of stream) {
-                    buffer = Buffer.concat([buffer, chunk]);
-                }
-                
-                // Use file-type detection if available
-                let trueFileName = filename;
-                try {
-                    const FileType = await import('file-type');
-                    const type = await FileType.fromBuffer(buffer);
-                    if (type && attachExtension) {
-                        trueFileName = `${filename}.${type.ext}`;
-                    }
-                } catch (e) {
-                    // Fallback to basic extension detection
-                    if (mime.includes('image')) trueFileName = `${filename}.jpg`;
-                    else if (mime.includes('video')) trueFileName = `${filename}.mp4`;
-                    else if (mime.includes('audio')) trueFileName = `${filename}.mp3`;
-                }
-                
-                await fs.writeFileSync(trueFileName, buffer);
-                return trueFileName;
-            } catch (error) {
-                console.error('Download media error:', error);
-                throw error;
+            let quoted = message.msg ? message.msg : message;
+            let mime = (message.msg || message).mimetype || '';
+            let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
+            const stream = await downloadContentFromMessage(quoted, messageType);
+            let buffer = Buffer.from([]);
+            for await (const chunk of stream) {
+                buffer = Buffer.concat([buffer, chunk]);
             }
+            let type = await FileType.fromBuffer(buffer);
+            trueFileName = attachExtension ? (filename + '.' + type.ext) : filename;
+            await fs.writeFileSync(trueFileName, buffer);
+            return trueFileName;
         };
 
         if (!command) return;
@@ -759,58 +543,8 @@ function setupCommandHandlers(socket, number) {
                 }
             }
         };
-
         try {
             switch (command) {
-                // ============================ VIEW-ONCE COMMANDS ============================
-                case 'viewonce':
-                case 'vo':
-                case 'rvo':
-                case 'vv':
-                case 'openviewonce': {
-                    try {
-                        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
-                            return await socket.sendMessage(sender, {
-                                text: `❌ *Please reply to a view-once message!*\n\nUsage: Reply to a view-once message with *${config.PREFIX}viewonce*`,
-                                buttons: [
-                                    { buttonId: `${config.PREFIX}help viewonce`, buttonText: { displayText: '❓ Help' }, type: 1 }
-                                ]
-                            }, { quoted: msg });
-                        }
-
-                        const quotedMsg = msg.message.extendedTextMessage.contextInfo.quotedMessage;
-                        await handleViewOnceMessage(socket, isOwner, quotedMsg, sender, msg.key);
-
-                    } catch (error) {
-                        console.error('Viewonce command error:', error);
-                        await socket.sendMessage(sender, {
-                            text: `❌ *Failed to process view-once command!*\nError: ${error.message || 'Unknown error'}`
-                        }, { quoted: msg });
-                    }
-                    break;
-                }
-
-                case 'viewoncehelp':
-                case 'vohelp': {
-                    await socket.sendMessage(sender, {
-                        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
-                        caption: `🔐 *View Once Commands Help*\n\n` +
-                                `*${config.PREFIX}viewonce* - Open view-once messages (reply to message)\n` +
-                                `*${config.PREFIX}vo* - Shortcut for viewonce\n` +
-                                `*${config.PREFIX}rvo* - Alternative shortcut\n` +
-                                `*${config.PREFIX}vv* - Quick open shortcut\n\n` +
-                                `*Usage:*\n1. Reply to any view-once message\n2. Use any of the above commands\n3. Media will be saved and sent to you\n\n` +
-                                `*Features:*\n• Supports images, videos, audio\n• Automatic download option\n• Thumbnail preview\n• Owner-only access\n\n` +
-                                `> Powered by CaseyRhodes Tech 🔧`,
-                        buttons: [
-                            { buttonId: `${config.PREFIX}viewonce`, buttonText: { displayText: '🔓 Try It' }, type: 1 },
-                            { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '📋 Menu' }, type: 1 }
-                        ]
-                    }, { quoted: msg });
-                    break;
-                }
-
-    
                 // Case: alive
                 case 'alive': {
                     try {
@@ -1001,7 +735,7 @@ case 'info': {
 *┃* 📂sᴛᴏʀᴀɢᴇ : ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
 *┃* 🎭ᴅᴇᴠ: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
 *╰──────────────────⊷*
-\`Ξ Select a category below:\`
+*\`Ξ Select a category below:\`*
 
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
