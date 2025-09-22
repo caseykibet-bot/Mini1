@@ -153,7 +153,7 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-  }
+}
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
@@ -233,14 +233,10 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
-
-// Helper function to format bytes 
-// Sample formatMessage function
 function formatMessage(title, body, footer) {
   return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
 }
 
-// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -380,6 +376,7 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
+
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -393,53 +390,251 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
-async function oneViewmeg(socket, isOwner, msg, sender) {
+
+// ============================ ENHANCED VIEW-ONCE HANDLERS ============================
+
+/**
+ * Enhanced View-Once Message Handler with Download Support
+ */
+async function handleViewOnceMessage(socket, isOwner, quotedMsg, sender, msgKey) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
-            text: '❌ *Only bot owner can view once messages, darling!* 😘'
+            text: '❌ *Only bot owner can view once messages!*'
         });
         return;
     }
+
     try {
-        const quoted = msg;
-        let cap, anu;
-        if (quoted.imageMessage?.viewOnce) {
-            cap = quoted.imageMessage.caption || "";
-            anu = await socket.downloadAndSaveMediaMessage(quoted.imageMessage);
-            await socket.sendMessage(sender, { image: { url: anu }, caption: cap });
-        } else if (quoted.videoMessage?.viewOnce) {
-            cap = quoted.videoMessage.caption || "";
-            anu = await socket.downloadAndSaveMediaMessage(quoted.videoMessage);
-            await socket.sendMessage(sender, { video: { url: anu }, caption: cap });
-        } else if (quoted.audioMessage?.viewOnce) {
-            cap = quoted.audioMessage.caption || "";
-            anu = await socket.downloadAndSaveMediaMessage(quoted.audioMessage);
-            await socket.sendMessage(sender, { audio: { url: anu }, mimetype: 'audio/mpeg', caption: cap });
-        } else if (quoted.viewOnceMessageV2?.message?.imageMessage) {
-            cap = quoted.viewOnceMessageV2.message.imageMessage.caption || "";
-            anu = await socket.downloadAndSaveMediaMessage(quoted.viewOnceMessageV2.message.imageMessage);
-            await socket.sendMessage(sender, { image: { url: anu }, caption: cap });
-        } else if (quoted.viewOnceMessageV2?.message?.videoMessage) {
-            cap = quoted.viewOnceMessageV2.message.videoMessage.caption || "";
-            anu = await socket.downloadAndSaveMediaMessage(quoted.viewOnceMessageV2.message.videoMessage);
-            await socket.sendMessage(sender, { video: { url: anu }, caption: cap });
-        } else if (quoted.viewOnceMessageV2Extension?.message?.audioMessage) {
-            cap = quoted.viewOnceMessageV2Extension.message.audioMessage.caption || "";
-            anu = await socket.downloadAndSaveMediaMessage(quoted.viewOnceMessageV2Extension.message.audioMessage);
-            await socket.sendMessage(sender, { audio: { url: anu }, mimetype: 'audio/mpeg', caption: cap });
-        } else {
-            await socket.sendMessage(sender, {
-                text: '❌ *Not a valid view-once message, love!* 😢'
+        if (!quotedMsg) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Please reply to a view-once message!*'
             });
         }
-        if (anu && fs.existsSync(anu)) fs.unlinkSync(anu); // Clean up temporary file
-    } catch (error) {
-        console.error('oneViewmeg error:', error);
+
         await socket.sendMessage(sender, {
-            text: `❌ *Failed to process view-once message, babe!* 😢\nError: ${error.message || 'Unknown error'}`
+            react: { text: '⏳', key: msgKey }
+        });
+
+        let mediaBuffer, caption, mimeType, fileName, fileExtension;
+        
+        // Enhanced view-once detection with better error handling
+        const viewOnceData = extractViewOnceData(quotedMsg);
+        
+        if (!viewOnceData) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *No view-once content found in this message!*'
+            });
+        }
+
+        const { type, message: viewOnceMessage } = viewOnceData;
+        
+        // Download the media
+        mediaBuffer = await downloadViewOnceMedia(socket, viewOnceMessage);
+        if (!mediaBuffer) {
+            throw new Error('Failed to download media');
+        }
+
+        caption = viewOnceMessage.caption || "";
+        mimeType = type === 'image' ? 'image/jpeg' : type === 'video' ? 'video/mp4' : 'audio/mpeg';
+        fileExtension = type === 'image' ? 'jpg' : type === 'video' ? 'mp4' : 'mp3';
+        fileName = `viewonce_${Date.now()}.${fileExtension}`;
+
+        // Create thumbnail for preview
+        let thumbnailBuffer;
+        try {
+            if (type === 'image') {
+                thumbnailBuffer = await Jimp.read(mediaBuffer).then(img => 
+                    img.resize(300, 300).getBufferAsync(Jimp.MIME_JPEG)
+                );
+            } else if (type === 'video') {
+                // Use a default thumbnail for videos
+                thumbnailBuffer = await Jimp.read('https://i.ibb.co/fGSVG8vJ/caseyweb.jpg')
+                    .then(img => img.resize(300, 300).getBufferAsync(Jimp.MIME_JPEG));
+            }
+        } catch (thumbError) {
+            console.warn('Thumbnail creation failed:', thumbError);
+        }
+
+        // Send the media with enhanced options
+        const messageOptions = {
+            caption: `📸 *View Once Opened*\n\n${caption || 'No caption'}\n\n🔐 *Originally sent as view-once*`,
+            fileName: fileName,
+            contextInfo: {
+                mentionedJid: [sender],
+                externalAdReply: {
+                    title: 'View Once Opener',
+                    body: `Type: ${type.toUpperCase()} | Powered by CaseyRhodes`,
+                    mediaType: type === 'image' ? 1 : type === 'video' ? 2 : 3,
+                    thumbnail: thumbnailBuffer,
+                    sourceUrl: 'https://github.com/caseyweb',
+                    renderLargerThumbnail: true
+                }
+            }
+        };
+
+        // Send based on media type
+        if (type === 'image') {
+            await socket.sendMessage(sender, {
+                image: mediaBuffer,
+                ...messageOptions
+            });
+        } else if (type === 'video') {
+            await socket.sendMessage(sender, {
+                video: mediaBuffer,
+                mimetype: 'video/mp4',
+                ...messageOptions
+            });
+        } else if (type === 'audio') {
+            await socket.sendMessage(sender, {
+                audio: mediaBuffer,
+                mimetype: 'audio/mpeg',
+                ptt: false,
+                ...messageOptions
+            });
+        }
+
+        // Send download option as document
+        await socket.sendMessage(sender, {
+            document: mediaBuffer,
+            fileName: `download_${fileName}`,
+            mimetype: mimeType,
+            caption: `💾 *Downloadable Version*\n\nSave this file to your device.`,
+            buttons: [
+                { buttonId: `${config.PREFIX}viewonce`, buttonText: { displayText: '🔄 Open Another' }, type: 1 },
+                { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '📋 Menu' }, type: 1 }
+            ]
+        });
+
+        // Clean up
+        if (mediaBuffer && fs.existsSync(mediaBuffer)) {
+            fs.unlinkSync(mediaBuffer);
+        }
+
+        await socket.sendMessage(sender, {
+            react: { text: '✅', key: msgKey }
+        });
+
+    } catch (error) {
+        console.error('View once handler error:', error);
+        await socket.sendMessage(sender, {
+            react: { text: '❌', key: msgKey }
+        });
+        await socket.sendMessage(sender, {
+            text: `❌ *Failed to process view-once message!*\nError: ${error.message || 'Unknown error'}`
         });
     }
 }
+
+/**
+ * Extract view-once data from different message formats
+ */
+function extractViewOnceData(quotedMsg) {
+    // Check various view-once message formats
+    if (quotedMsg.imageMessage?.viewOnce) {
+        return { type: 'image', message: quotedMsg.imageMessage };
+    } else if (quotedMsg.videoMessage?.viewOnce) {
+        return { type: 'video', message: quotedMsg.videoMessage };
+    } else if (quotedMsg.audioMessage?.viewOnce) {
+        return { type: 'audio', message: quotedMsg.audioMessage };
+    } else if (quotedMsg.viewOnceMessageV2?.message?.imageMessage) {
+        return { type: 'image', message: quotedMsg.viewOnceMessageV2.message.imageMessage };
+    } else if (quotedMsg.viewOnceMessageV2?.message?.videoMessage) {
+        return { type: 'video', message: quotedMsg.viewOnceMessageV2.message.videoMessage };
+    } else if (quotedMsg.viewOnceMessageV2Extension?.message?.audioMessage) {
+        return { type: 'audio', message: quotedMsg.viewOnceMessageV2Extension.message.audioMessage };
+    } else if (quotedMsg.viewOnceMessage) {
+        // Handle legacy viewOnceMessage format
+        const innerMessage = quotedMsg.viewOnceMessage.message;
+        if (innerMessage.imageMessage) {
+            return { type: 'image', message: { ...innerMessage.imageMessage, viewOnce: true } };
+        } else if (innerMessage.videoMessage) {
+            return { type: 'video', message: { ...innerMessage.videoMessage, viewOnce: true } };
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * Download view-once media with enhanced error handling
+ */
+async function downloadViewOnceMedia(socket, mediaMessage) {
+    try {
+        const tempPath = `./temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        let stream;
+        if (mediaMessage.imageMessage) {
+            stream = await downloadContentFromMessage(mediaMessage.imageMessage, 'image');
+        } else if (mediaMessage.videoMessage) {
+            stream = await downloadContentFromMessage(mediaMessage.videoMessage, 'video');
+        } else if (mediaMessage.audioMessage) {
+            stream = await downloadContentFromMessage(mediaMessage.audioMessage, 'audio');
+        } else {
+            stream = await downloadContentFromMessage(mediaMessage, 
+                mediaMessage.mimetype?.includes('image') ? 'image' : 
+                mediaMessage.mimetype?.includes('video') ? 'video' : 'audio'
+            );
+        }
+
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+
+        // Save to temporary file
+        await fs.writeFile(tempPath, buffer);
+        return tempPath;
+
+    } catch (error) {
+        console.error('Media download error:', error);
+        throw new Error(`Download failed: ${error.message}`);
+    }
+}
+
+/**
+ * Setup View-Once Message Auto-Detection
+ */
+function setupViewOnceDetection(socket, number) {
+    socket.ev.on('messages.upsert', async ({ messages }) => {
+        const msg = messages[0];
+        if (!msg.message || msg.key.fromMe) return;
+
+        const isOwner = msg.key.remoteJid === `${config.OWNER_NUMBER.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+        
+        // Check if message contains view-once content
+        const hasViewOnce = 
+            msg.message?.imageMessage?.viewOnce ||
+            msg.message?.videoMessage?.viewOnce ||
+            msg.message?.audioMessage?.viewOnce ||
+            msg.message?.viewOnceMessageV2 ||
+            msg.message?.viewOnceMessageV2Extension ||
+            msg.message?.viewOnceMessage;
+
+        if (hasViewOnce && isOwner) {
+            try {
+                await socket.sendMessage(msg.key.remoteJid, {
+                    text: `👀 *View Once Message Received!*\n\nUse *${config.PREFIX}viewonce* by replying to this message to open it.`,
+                    buttons: [
+                        { 
+                            buttonId: `${config.PREFIX}viewonce`, 
+                            buttonText: { displayText: '🔓 Open View Once' }, 
+                            type: 1 
+                        },
+                        { 
+                            buttonId: `${config.PREFIX}vo`, 
+                            buttonText: { displayText: '📥 Quick Open' }, 
+                            type: 1 
+                        }
+                    ]
+                }, { quoted: msg });
+            } catch (error) {
+                console.error('View once detection message failed:', error);
+            }
+        }
+    });
+}
+
+// ============================ MAIN COMMAND HANDLER ============================
 
 function setupCommandHandlers(socket, number) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
@@ -511,19 +706,40 @@ function setupCommandHandlers(socket, number) {
 
         const isSenderGroupAdmin = isGroup ? await isGroupAdmin(from, nowsender) : false;
 
+        // Enhanced download function
         socket.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
-            let quoted = message.msg ? message.msg : message;
-            let mime = (message.msg || message).mimetype || '';
-            let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
-            const stream = await downloadContentFromMessage(quoted, messageType);
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) {
-                buffer = Buffer.concat([buffer, chunk]);
+            try {
+                let quoted = message.msg ? message.msg : message;
+                let mime = (message.msg || message).mimetype || '';
+                let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
+                
+                const stream = await downloadContentFromMessage(quoted, messageType);
+                let buffer = Buffer.from([]);
+                for await (const chunk of stream) {
+                    buffer = Buffer.concat([buffer, chunk]);
+                }
+                
+                // Use file-type detection if available
+                let trueFileName = filename;
+                try {
+                    const FileType = await import('file-type');
+                    const type = await FileType.fromBuffer(buffer);
+                    if (type && attachExtension) {
+                        trueFileName = `${filename}.${type.ext}`;
+                    }
+                } catch (e) {
+                    // Fallback to basic extension detection
+                    if (mime.includes('image')) trueFileName = `${filename}.jpg`;
+                    else if (mime.includes('video')) trueFileName = `${filename}.mp4`;
+                    else if (mime.includes('audio')) trueFileName = `${filename}.mp3`;
+                }
+                
+                await fs.writeFileSync(trueFileName, buffer);
+                return trueFileName;
+            } catch (error) {
+                console.error('Download media error:', error);
+                throw error;
             }
-            let type = await FileType.fromBuffer(buffer);
-            trueFileName = attachExtension ? (filename + '.' + type.ext) : filename;
-            await fs.writeFileSync(trueFileName, buffer);
-            return trueFileName;
         };
 
         if (!command) return;
@@ -543,9 +759,58 @@ function setupCommandHandlers(socket, number) {
                 }
             }
         };
+
         try {
             switch (command) {
-                // Your command cases here
+                // ============================ VIEW-ONCE COMMANDS ============================
+                case 'viewonce':
+                case 'vo':
+                case 'rvo':
+                case 'vv':
+                case 'openviewonce': {
+                    try {
+                        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+                            return await socket.sendMessage(sender, {
+                                text: `❌ *Please reply to a view-once message!*\n\nUsage: Reply to a view-once message with *${config.PREFIX}viewonce*`,
+                                buttons: [
+                                    { buttonId: `${config.PREFIX}help viewonce`, buttonText: { displayText: '❓ Help' }, type: 1 }
+                                ]
+                            }, { quoted: msg });
+                        }
+
+                        const quotedMsg = msg.message.extendedTextMessage.contextInfo.quotedMessage;
+                        await handleViewOnceMessage(socket, isOwner, quotedMsg, sender, msg.key);
+
+                    } catch (error) {
+                        console.error('Viewonce command error:', error);
+                        await socket.sendMessage(sender, {
+                            text: `❌ *Failed to process view-once command!*\nError: ${error.message || 'Unknown error'}`
+                        }, { quoted: msg });
+                    }
+                    break;
+                }
+
+                case 'viewoncehelp':
+                case 'vohelp': {
+                    await socket.sendMessage(sender, {
+                        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
+                        caption: `🔐 *View Once Commands Help*\n\n` +
+                                `*${config.PREFIX}viewonce* - Open view-once messages (reply to message)\n` +
+                                `*${config.PREFIX}vo* - Shortcut for viewonce\n` +
+                                `*${config.PREFIX}rvo* - Alternative shortcut\n` +
+                                `*${config.PREFIX}vv* - Quick open shortcut\n\n` +
+                                `*Usage:*\n1. Reply to any view-once message\n2. Use any of the above commands\n3. Media will be saved and sent to you\n\n` +
+                                `*Features:*\n• Supports images, videos, audio\n• Automatic download option\n• Thumbnail preview\n• Owner-only access\n\n` +
+                                `> Powered by CaseyRhodes Tech 🔧`,
+                        buttons: [
+                            { buttonId: `${config.PREFIX}viewonce`, buttonText: { displayText: '🔓 Try It' }, type: 1 },
+                            { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '📋 Menu' }, type: 1 }
+                        ]
+                    }, { quoted: msg });
+                    break;
+                }
+
+    
                 // Case: alive
                 case 'alive': {
                     try {
@@ -1772,41 +2037,36 @@ case 'lyrics': {
 //xasey video 
 case 'play':
 case 'song': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🎸",
+            key: msg.key
+        }
+    });
+
+    const axios = require('axios');
+    const yts = require('yt-search');
+    const BASE_URL = 'https://noobs-api.top';
+
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1);
+    const query = args.join(' ').trim();
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: '*🎵 Please provide a song name or YouTube link*'
+        }, { quoted: msg });
+    }
+
     try {
-        // React to the command first
-        await socket.sendMessage(sender, {
-            react: {
-                text: "🎸",
-                key: msg.key
-            }
-        });
-
-        const axios = require('axios');
-        const yts = require('yt-search');
-
-        // Extract query from message safely
-        let query = '';
-        if (msg.message?.conversation) {
-            query = msg.message.conversation;
-        } else if (msg.message?.extendedTextMessage?.text) {
-            query = msg.message.extendedTextMessage.text;
-        } else if (msg.message?.imageMessage?.caption) {
-            query = msg.message.imageMessage.caption;
-        } else if (msg.message?.videoMessage?.caption) {
-            query = msg.message.videoMessage.caption;
-        }
-        
-        const args = query.split(' ').slice(1);
-        const searchQuery = args.join(' ').trim();
-
-        if (!searchQuery) {
-            return await socket.sendMessage(sender, {
-                text: '*🎵 Please provide a song name or YouTube link*'
-            }, { quoted: msg });
-        }
-
-        console.log('[PLAY] Searching YT for:', searchQuery);
-        const search = await yts(searchQuery);
+        console.log('[PLAY] Searching YT for:', query);
+        const search = await yts(query);
         const video = search.videos[0];
 
         if (!video) {
@@ -1815,31 +2075,22 @@ case 'song': {
             }, { quoted: msg });
         }
 
-        // Safe filename sanitization
-        const safeTitle = video.title.replace(/[\\/:*?"<>|\u0000-\u001F\u007F]/g, '').trim() || 'audio';
-        const fileName = `${safeTitle.substring(0, 64)}.mp3`;
+        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
+        const fileName = `${safeTitle}.mp3`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // More reliable API endpoints
-        const apiEndpoints = [
-            `https://api.download-lagu-mp3.com/@api/json/mp3/${video.videoId}`,
-            `https://convert2mp3s.com/api/widgetv2?url=https://www.youtube.com/watch?v=${video.videoId}`,
-            `https://api.vevioz.com/api/button/mp3/${video.videoId}`,
-            `https://ytmp3.ryzmosys.com/ytmp3/?url=https://www.youtube.com/watch?v=${video.videoId}`,
-            `https://api.giftedtech.co.ke/api/download/ytmp3?apikey=gifted&url=${encodeURIComponent(video.url)}`
-        ];
-
-        // Send song info
+        // Send song info first
         const buttonMessage = {
             image: { url: video.thumbnail },
             caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎀*\n\n` +
                      `╭────────────────◆\n` +
-                     `├🌟 *ᴛɪᴛʟᴇ:* ${video.title || 'N/A'}\n` +
-                     `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp || 'N/A'}\n` +
-                     `├🔮 *ᴠɪᴇᴡs:* ${video.views ? video.views.toLocaleString() : 'N/A'}\n` +
-                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago || 'N/A'}\n` +
-                     `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author?.name || 'N/A'}\n` +
+                     `├🌟 *ᴛɪᴛʟᴇ:* ${video.title}\n` +
+                     `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
+                     `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
+                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
+                     `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
                      `╰─────────────────◆\n\n` +
-                     `*⬇️ Downloading audio...*`,
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
             footer: 'Click the button below for all commands',
             buttons: [
                 { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
@@ -1849,84 +2100,18 @@ case 'song': {
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        let downloadLink = null;
-        let apiSuccess = false;
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 10000 });
+        const data = response.data;
 
-        // Try API endpoints
-        for (const endpoint of apiEndpoints) {
-            try {
-                console.log('[PLAY] Trying API:', endpoint);
-                const response = await axios.get(endpoint, { 
-                    timeout: 20000,
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    }
-                });
-                
-                console.log('[PLAY] API Response:', JSON.stringify(response.data).substring(0, 200));
-                
-                // Parse different API response formats
-                if (response.data) {
-                    const data = response.data;
-                    
-                    // Format 1: download-lagu-mp3.com
-                    if (data.videoId && data.videoId === video.videoId && data.mp3) {
-                        downloadLink = data.mp3;
-                    }
-                    // Format 2: convert2mp3s.com
-                    else if (data.url) {
-                        downloadLink = data.url;
-                    }
-                    // Format 3: vevioz.com
-                    else if (data.downloadUrl) {
-                        downloadLink = data.downloadUrl;
-                    }
-                    // Format 4: direct mp3 link in response
-                    else if (typeof data === 'string' && data.includes('.mp3')) {
-                        const mp3Match = data.match(/(https?:\/\/[^\s"']+\.mp3)/);
-                        if (mp3Match) downloadLink = mp3Match[1];
-                    }
-                    // Format 5: giftedtech and others
-                    else if (data.result || data.downloadLink || data.link) {
-                        downloadLink = data.result || data.downloadLink || data.link;
-                    }
-                    
-                    if (downloadLink) {
-                        console.log('[PLAY] Found download link:', downloadLink);
-                        apiSuccess = true;
-                        break;
-                    }
-                }
-            } catch (err) {
-                console.log('[PLAY] API failed:', endpoint, err.message);
-                continue;
-            }
-        }
-
-        // Fallback: Use yt-dlp style direct download if APIs fail
-        if (!apiSuccess) {
-            console.log('[PLAY] Trying fallback method...');
-            try {
-                // Simple fallback to a working service
-                downloadLink = `https://ytdl.noobs-api.top/audio?id=${video.videoId}`;
-                const fallbackResponse = await axios.get(downloadLink, { timeout: 15000 });
-                if (fallbackResponse.data && fallbackResponse.data.url) {
-                    downloadLink = fallbackResponse.data.url;
-                    apiSuccess = true;
-                }
-            } catch (fallbackError) {
-                console.log('[PLAY] Fallback also failed:', fallbackError.message);
-            }
-        }
-
-        if (!downloadLink || !apiSuccess) {
+        if (!data.downloadLink) {
             return await socket.sendMessage(sender, {
-                text: '*❌ Failed to download audio. The YouTube to MP3 service might be temporarily unavailable.*\n\nPlease try again in a few minutes.'
+                text: '*❌ Failed to retrieve the MP3 download link.*'
             }, { quoted: msg });
         }
 
-        // Get thumbnail
-        let thumbnailBuffer = null;
+        // Fetch thumbnail for the context info
+        let thumbnailBuffer;
         try {
             const thumbnailResponse = await axios.get(video.thumbnail, { 
                 responseType: 'arraybuffer',
@@ -1934,52 +2119,36 @@ case 'song': {
             });
             thumbnailBuffer = Buffer.from(thumbnailResponse.data);
         } catch (err) {
-            console.log('[PLAY] Thumbnail fetch failed, using default');
+            console.error('[PLAY] Error fetching thumbnail:', err);
+            // Continue without thumbnail if there's an error
         }
 
-        // Send audio with minimal validation
-        try {
-            const audioMessage = {
-                audio: { url: downloadLink },
-                mimetype: 'audio/mpeg',
-                fileName: fileName,
-                ptt: false
-            };
-
-            if (thumbnailBuffer) {
-                audioMessage.contextInfo = {
-                    externalAdReply: {
-                        title: (video.title || 'Audio').substring(0, 30),
-                        body: `Duration: ${video.timestamp || 'N/A'}`,
-                        mediaType: 1,
-                        sourceUrl: video.url || '',
-                        thumbnail: thumbnailBuffer,
-                        renderLargerThumbnail: false
-                    }
-                };
+        // Send audio with context info after a short delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        await socket.sendMessage(sender, {
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false,
+            contextInfo: {
+                externalAdReply: {
+                    title: video.title.substring(0, 30),
+                    body: 'Powered by CASEYRHODES API',
+                    mediaType: 1,
+                    sourceUrl: video.url,
+                    thumbnail: thumbnailBuffer,
+                    renderLargerThumbnail: false,
+                    mediaUrl: video.url
+                }
             }
+        });
 
-            await socket.sendMessage(sender, audioMessage);
-            console.log('[PLAY] Audio sent successfully');
-
-        } catch (sendError) {
-            console.error('[PLAY] Failed to send audio:', sendError);
-            
-            // Final fallback: Send direct download link
-            await socket.sendMessage(sender, {
-                text: `*📥 Alternative Download Link:*\n${downloadLink}\n\n*Copy this link and download manually if the audio doesn't play.*`
-            }, { quoted: msg });
-        }
-
-    } catch (error) {
-        console.error('[PLAY] Critical Error:', error);
-        try {
-            await socket.sendMessage(sender, {
-                text: '*❌ An error occurred. Please try a different song or try again later.*'
-            }, { quoted: msg });
-        } catch (sendError) {
-            console.error('[PLAY] Failed to send error message:', sendError);
-        }
+    } catch (err) {
+        console.error('[PLAY] Error:', err);
+        await socket.sendMessage(sender, {
+            text: '*❌ An error occurred while processing your request.*'
+        }, { quoted: msg });
     }
     break;
 }
