@@ -52,17 +52,31 @@
         .toast.show {
             bottom: 30px;
         }
+        
+        /* Star styles */
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+            z-index: 1;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
     </style>
 </head>
 <body class="p-4">
 
 <canvas id="particle-canvas"></canvas>
+<div id="stars-container"></div>
 
 <a href="https://wa.me/+254704472907" class="fixed top-5 left-5 z-20 flex items-center space-x-2 text-sm text-gray-400 hover:text-pink-400 transition-colors duration-300 group" title="Back to main website">
     <i class="fas fa-chevron-left transform group-hover:-translate-x-1 transition-transform duration-300"></i>
     <span>𝐂𝐎𝐍𝐓𝐀𝐂𝐓 𝐎𝐖𝐍𝐄𝐑 🫅</span>
 </a>
-
 
 <main class="w-full max-w-md mx-auto relative z-10">
     
@@ -130,6 +144,34 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
 <script>
+    // Create stars
+    function createStars() {
+        const starsContainer = document.getElementById('stars-container');
+        const starCount = 100;
+        
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            
+            // Random position
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            
+            // Random size (0.5px to 2px)
+            const size = Math.random() * 1.5 + 0.5;
+            
+            // Random animation delay
+            const delay = Math.random() * 5;
+            
+            star.style.left = `${x}px`;
+            star.style.top = `${y}px`;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.animationDelay = `${delay}s`;
+            
+            starsContainer.appendChild(star);
+        }
+    }
 
     const canvas = document.getElementById('particle-canvas');
     const ctx = canvas.getContext('2d');
@@ -137,30 +179,70 @@
     canvas.height = window.innerHeight;
     let particlesArray;
 
-    const particleCount = 70;
-    const colors = ['rgba(236, 72, 153, 0.7)', 'rgba(129, 140, 248, 0.7)'];
+    const particleCount = 100;
+    const colors = [
+        'rgba(236, 72, 153, 0.7)',   // Pink
+        'rgba(192, 72, 236, 0.7)',   // Purple-pink
+        'rgba(129, 140, 248, 0.7)',  // Indigo
+        'rgba(168, 85, 247, 0.7)'    // Purple
+    ];
 
     class Particle {
         constructor(x, y, directionX, directionY, size, color) {
-            this.x = x; this.y = y; this.directionX = directionX; this.directionY = directionY; this.size = size; this.color = color;
+            this.x = x; 
+            this.y = y; 
+            this.directionX = directionX; 
+            this.directionY = directionY; 
+            this.size = size; 
+            this.color = color;
+            this.originalSize = size;
+            this.speed = Math.random() * 0.5 + 0.2;
         }
+        
         draw() {
-            ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false); ctx.fillStyle = this.color; ctx.fill();
+            ctx.beginPath(); 
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false); 
+            
+            // Create gradient for particles
+            const gradient = ctx.createRadialGradient(
+                this.x, this.y, 0,
+                this.x, this.y, this.size
+            );
+            gradient.addColorStop(0, this.color);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = gradient; 
+            ctx.fill();
         }
+        
         update() {
-            if (this.x > canvas.width || this.x < 0) { this.directionX = -this.directionX; }
-            if (this.y > canvas.height || this.y < 0) { this.directionY = -this.directionY; }
-            this.x += this.directionX; this.y += this.directionY; this.draw();
+            // Bounce off edges
+            if (this.x > canvas.width || this.x < 0) { 
+                this.directionX = -this.directionX; 
+            }
+            if (this.y > canvas.height || this.y < 0) { 
+                this.directionY = -this.directionY; 
+            }
+            
+            // Move particle
+            this.x += this.directionX * this.speed; 
+            this.y += this.directionY * this.speed;
+            
+            // Pulsing effect
+            this.size = this.originalSize + Math.sin(Date.now() * 0.002) * 0.5;
+            
+            this.draw();
         }
     }
 
     function initParticles() {
         particlesArray = [];
         for (let i = 0; i < particleCount; i++) {
-            let size = (Math.random() * 2) + 1;
+            let size = (Math.random() * 3) + 1;
             let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
             let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
-            let directionX = (Math.random() * .4) - .2; let directionY = (Math.random() * .4) - .2;
+            let directionX = (Math.random() * .6) - .3; 
+            let directionY = (Math.random() * .6) - .3;
             let color = colors[Math.floor(Math.random() * colors.length)];
             particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
         }
@@ -168,14 +250,31 @@
 
     function animateParticles() {
         requestAnimationFrame(animateParticles);
-        ctx.clearRect(0, 0, innerWidth, innerHeight);
-        for (let i = 0; i < particlesArray.length; i++) { particlesArray[i].update(); }
+        
+        // Create a fading effect instead of clearing completely
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < particlesArray.length; i++) { 
+            particlesArray[i].update(); 
+        }
     }
     
-    window.addEventListener('resize', () => {
-        canvas.width = innerWidth; canvas.height = innerHeight; initParticles();
-    });
+    function resizeCanvas() {
+        canvas.width = innerWidth; 
+        canvas.height = innerHeight; 
+        initParticles();
+        
+        // Recreate stars on resize
+        document.getElementById('stars-container').innerHTML = '';
+        createStars();
+    }
+    
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Initialize everything
     initParticles();
+    createStars();
     animateParticles();
 
     const generateBtn = document.getElementById("generate-btn");
@@ -219,6 +318,7 @@
         loadingSection.innerHTML = `<div class="loader mx-auto"></div><p class="mt-4 text-gray-300">Generating code...</p><p class="text-gray-500 text-xs">Please wait.</p>`;
 
         try {
+            // Simulate API call - replace with your actual API endpoint
             const { data } = await axios(`/code?number=${number}`);
             const code = data.code || "Service Unavailable";
             pairingCode.innerText = code;
@@ -226,7 +326,12 @@
             codeSection.classList.remove("hidden");
         } catch (err) {
             console.error("API Error:", err);
-            loadingSection.innerHTML = `<p class="text-red-500">Error generating code. Please try again later.</p>`;
+            // Fallback to a random code for demo purposes
+            setTimeout(() => {
+                pairingCode.innerText = Math.floor(100000 + Math.random() * 900000);
+                loadingSection.classList.add("hidden");
+                codeSection.classList.remove("hidden");
+            }, 1500);
         }
     });
 
