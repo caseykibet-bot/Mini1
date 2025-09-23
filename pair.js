@@ -1908,7 +1908,7 @@ case 'song': {
 
     const axios = require('axios');
     const yts = require('yt-search');
-    const BASE_URL = 'https://noobs-api.top';
+    const BASE_URL = 'https://iamtkm.vercel.app/downloaders/ytmp3';
 
     // Extract query from message
     const q = msg.message?.conversation || 
@@ -1938,7 +1938,7 @@ case 'song': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
+        const apiURL = `${BASE_URL}?url=${encodeURIComponent(video.url)}`;
 
         // Send song info first
         const buttonMessage = {
@@ -1962,7 +1962,7 @@ case 'song': {
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
         // Get download link
-        const response = await axios.get(apiURL, { timeout: 10000 });
+        const response = await axios.get(apiURL, { timeout: 15000 });
         const data = response.data;
 
         if (!data.downloadLink) {
@@ -2008,7 +2008,7 @@ case 'song': {
     } catch (err) {
         console.error('[PLAY] Error:', err);
         await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*'
+            text: `*❌ An error occurred while processing your request.*\nError: ${err.message}`
         }, { quoted: msg });
     }
     break;
@@ -2652,7 +2652,7 @@ case 'searchimg': {
             text: `> 🔍 *Searching images for:* "${query}"...`
         }, { quoted: msg });
 
-        const url = `https://apis.davidcyriltech.my.id/googleimage?query=${encodeURIComponent(query)}`;
+        const url = `https://iamtkm.vercel.app/downloaders/img?text=${encodeURIComponent(query)}`;
         const response = await axios.get(url, { timeout: 15000 });
 
         // Validate response
