@@ -772,6 +772,7 @@ case 'info': {
                     { title: "♻️ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },
                     { title: "🪀ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "set your bio on and off", id: `${config.PREFIX}autorecording` },    
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
+                    { title: "🎭Hack", description: "prank others", id: `${config.PREFIX}hack` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
                     { title: "🔰sᴇᴛᴘᴘ", description: "set your own profile", id: `${config.PREFIX}setpp` },
@@ -1158,52 +1159,178 @@ case 'bio': {
     }
     break;
 }
+//hack case
+case 'hack': {
+    try {
+        const hackingSteps = [
+            '```🖥️  INITIATING HACKING PROTOCOL...```',
+            '`CASEYRHODES TECH HACKING SUITE v3.0`',
+            '══════════════════════════════',
+            '',
+            '🔐 *Bypassing Firewall...*',
+            '```[▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒] 25%```',
+            '*Encryption modules loaded* ✅',
+            '',
+            '🌐 *Establishing TOR Connection...*',
+            '```[████████████████████] 50%```',
+            '*Secure tunnel established* ✅',
+            '',
+            '🛠️ *Deploying Zero-Day Exploits...*',
+            '```[████████████████████] 75%```',
+            '*Root access obtained* ✅',
+            '',
+            '📡 *Extracting Data...*',
+            '```[████████████████████] 100%```',
+            '*Data transmission complete* ✅',
+            '══════════════════════════════',
+            '',
+            '🚀 *SYSTEM BREACH SUCCESSFUL!*',
+            '',
+            '📊 **STATISTICS:**',
+            '├─ Data Captured: *4.7GB*',
+            '├─ Systems Compromised: *12*',
+            '├─ Firewalls Bypassed: *8*',
+            '└─ Time Elapsed: *47.3s*',
+            '',
+            '🛡️ **SECURITY OVERRIDE:**',
+            '├─ Admin Privileges: *ACQUIRED* 🟢',
+            '├─ Encryption Keys: *DECRYPTED* 🟢',
+            '├─ Logs Cleared: *COMPLETE* 🟢',
+            '└─ Backdoor Installed: *ACTIVE* 🟢',
+            '',
+            '⚠️ **DISCLAIMER:**',
+            '└─ *This is a simulated hacking demonstration*',
+            '└─ *For educational and entertainment purposes only*',
+            '',
+            '💫 **CASEYRHODES TECH - ETHICAL HACKING SIMULATION**',
+            '```Operation completed at: ${new Date().toLocaleString()}```'
+        ];
+
+        // Send initial message with cool formatting
+        await socket.sendMessage(sender, {
+            text: `*💻 HACKING SIMULATION INITIATED*\\n\\nTarget: *${sender.split('@')[0]}*\\nProtocol: *CASEYRHODES-XMD*\\nStatus: *ACTIVE*`,
+            contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: msg });
+
+        // Send hacking steps with progressive delays
+        for (let i = 0; i < hackingSteps.length; i++) {
+            const step = hackingSteps[i];
+            
+            // Vary delays for realism
+            let delay = 1000;
+            if (step.includes('▒') || step.includes('█')) delay = 800; // Progress bars faster
+            if (step.includes('✅') || step.includes('🟢')) delay = 600; // Success markers faster
+            if (step.includes('═') || step.includes('─')) delay = 400; // Separators faster
+            
+            await socket.sendMessage(sender, { text: step }, { quoted: msg });
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        // Final cool message with effects
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        await socket.sendMessage(sender, {
+            text: `*🎯 MISSION ACCOMPLISHED*\\n\\n🏆 *Hacking simulation completed successfully!*\\n\\n🔐 *Remember: With great power comes great responsibility.*\\n\\n*CASEYRHODES TECH © ${new Date().getFullYear()}*`,
+            contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Hack simulation error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ *HACKING SIMULATION FAILED*\\n\\nError: ${error.message}\\n\\n*System defenses were too strong!* 💂‍♂️`
+        }, { quoted: msg });
+    }
+    break;
+}
 //---------------------------------------------------------------------------
 //          𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟
 //---------------------------------------------------------------------------
 //  ⚠️ DO NOT MODIFY THIS FILE ⚠️  
 //---------------------------------------------------------------------------
 case 'autorecording':
-case 'autorecod': {
+case 'autorecoding': {
     if (!isCreator) {
-        return await socket.sendMessage(sender, {
-            text: '*📛 ᴏɴʟʏ ᴛʜᴇ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!*'
-        }, { quoted: msg });
+        return await socket.sendMessage(sender, { 
+            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
+            caption: "*📛 ᴏɴʟʏ ᴛʜᴇ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!*",
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: fakevCard });
     }
 
     const status = args[0]?.toLowerCase();
-    
-    // If no status provided, show interactive buttons
-    if (!status || !["on", "off"].includes(status)) {
-        const buttonMessage = {
-            text: `*🔊 Auto Recording Settings*\n\nCurrent status: ${config.AUTO_RECORDING === "true" ? "✅ ON" : "❌ OFF"}\n\nPlease select an option:`,
-            footer: "ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ",
-            headerType: 1,
-            buttons: [
-                { buttonId: `${prefix}autorecording on`, buttonText: { displayText: "✅ TURN ON" }, type: 1 },
-                { buttonId: `${prefix}autorecording off`, buttonText: { displayText: "❌ TURN OFF" }, type: 1 }
-            ]
-        };
-        
-        return await socket.sendMessage(sender, buttonMessage, { quoted: msg });
+    if (!["on", "off"].includes(status)) {
+        return await socket.sendMessage(sender, { 
+            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
+            caption: `*🫟 ᴇxᴀᴍᴘʟᴇ: ${prefix}autorecording on*`,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: fakevCard });
     }
 
-    // Update the configuration
     config.AUTO_RECORDING = status === "on" ? "true" : "false";
     
-    // Send presence update based on status
     if (status === "on") {
         await socket.sendPresenceUpdate("recording", sender);
-        await socket.sendMessage(sender, {
-            text: "✅ *Auto recording is now enabled.*\nBot is recording..."
-        }, { quoted: msg });
+        return await socket.sendMessage(sender, { 
+            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
+            caption: "✅ *Auto recording is now enabled.*\nBot is recording...",
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: fakevCard });
     } else {
         await socket.sendPresenceUpdate("available", sender);
-        await socket.sendMessage(sender, {
-            text: "❌ *Auto recording has been disabled.*"
-        }, { quoted: msg });
+        return await socket.sendMessage(sender, { 
+            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
+            caption: "❌ *Auto recording has been disabled.*",
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: fakevCard });
     }
-    
     break;
 }
 // Case: fc (follow channel)
