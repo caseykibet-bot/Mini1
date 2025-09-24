@@ -127,7 +127,121 @@ async function cleanDuplicateFiles(number) {
         console.error(`Failed to clean duplicate files for ${number}:`, error);
     }
 }
+// Add this function at the top of your file (with other global variables)
+function setupAntiLinkHandler(socket) {
+    // Initialize warnings and settings if not exists
+    global.warnings = global.warnings || {};
+    global.antiLinkSettings = global.antiLinkSettings || {};
 
+    // List of link patterns to detect
+    const linkPatterns = [
+        /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi,
+        /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,
+        /wa\.me\/\S+/gi,
+        /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,
+        /https?:\/\/(?:www\.)?\.com\/\S+/gi,
+        /https?:\/\/(?:www\.)?twitter\.com\/\S+/gi,
+        /https?:\/\/(?:www\.)?linkedin\.com\/\S+/gi,
+        /https?:\/\/(?:whatsapp\.com|channel\.me)\/\S+/gi,
+        /https?:\/\/(?:www\.)?reddit\.com\/\S+/gi,
+        /https?:\/\/(?:www\.)?discord\.com\/\S+/gi,
+        /https?:\/\/(?:www\.)?twitch\.tv\/\S+/gi,
+        /https?:\/\/(?:www\.)?vimeo\.com\/\S+/gi,
+        /https?:\/\/(?:www\.)?dailymotion\.com\/\S+/gi,
+        /https?:\/\/(?:www\.)?medium\.com\/\S+/gi
+    ];
+
+    // Anti-link message handler
+    socket.ev.on('messages.upsert', async ({ messages }) => {
+        try {
+            const m = messages[0];
+            if (!m.message || m.key.fromMe) return;
+
+            const from = m.key.remoteJid;
+            const body = m.message.conversation || m.message.extendedTextMessage?.text || '';
+            const sender = m.key.participant || m.key.remoteJid;
+
+            // Only act in groups
+            if (!from.endsWith('@g.us')) return;
+
+            // Check if anti-link is enabled for this group
+            if (!global.antiLinkSettings[from]) return;
+
+            // Get group metadata to check admin status
+            const groupMetadata = await socket.groupMetadata(from);
+            const participant = groupMetadata.participants.find(p => p.id === sender);
+            const isAdmins = participant?.admin === 'admin' || participant?.admin === 'superadmin';
+
+            // Skip if sender is admin or bot is not admin
+            const botParticipant = groupMetadata.participants.find(p => p.id === socket.user.id);
+            const isBotAdmins = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
+
+            if (isAdmins || !isBotAdmins) return;
+
+            // Check if message contains any forbidden links
+            const containsLink = linkPatterns.some(pattern => pattern.test(body));
+
+            if (containsLink) {
+                console.log(`Link detected from ${sender}: ${body}`);
+
+                // Try to delete the message
+                try {
+                    await socket.sendMessage(from, {
+                        delete: m.key
+                    });
+                    console.log(`Message deleted: ${m.key.id}`);
+                } catch (error) {
+                    console.error("Failed to delete message:", error);
+                }
+
+                // Update warning count for user
+                global.warnings[sender] = (global.warnings[sender] || 0) + 1;
+                const warningCount = global.warnings[sender];
+
+                // Handle warnings
+                if (warningCount < 4) {
+                    // Send warning message
+                    await socket.sendMessage(from, {
+                        text: `‎*⚠️ LINKS ARE NOT ALLOWED ⚠️*\n` +
+                              `*╭────⬡ WARNING ⬡────*\n` +
+                              `*├▢ USER :* @${sender.split('@')[0]}!\n` +
+                              `*├▢ COUNT : ${warningCount}*\n` +
+                              `*├▢ REASON : LINK SENDING*\n` +
+                              `*├▢ WARN LIMIT : 3*\n` +
+                              `*╰────────────────*`,
+                        mentions: [sender]
+                    });
+                } else {
+                    // Remove user if they exceed warning limit
+                    await socket.sendMessage(from, {
+                        text: `@${sender.split('@')[0]} *HAS BEEN REMOVED - WARN LIMIT EXCEEDED!*`,
+                        mentions: [sender]
+                    });
+                    await socket.groupParticipantsUpdate(from, [sender], "remove");
+                    delete global.warnings[sender];
+                }
+            }
+        } catch (error) {
+            console.error("Anti-link error:", error);
+        }
+    });
+}
+// Helper function to get file extension from mimetype
+function getFileExtension(mimetype) {
+    const extensions = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'video/mp4': 'mp4',
+        'video/3gpp': '3gp',
+        'audio/mpeg': 'mp3',
+        'audio/mp4': 'm4a',
+        'audio/ogg': 'ogg',
+        'application/pdf': 'pdf',
+        'application/zip': 'zip'
+    };
+    return extensions[mimetype] || 'bin';
+}
 // Count total commands in pair.js
 let totalcmds = async () => {
   try {
@@ -545,6 +659,189 @@ function setupCommandHandlers(socket, number) {
         };
         try {
             switch (command) {
+            //antilink case
+            //vv case 
+case 'vv':
+case 'viewonce':
+case 'retrive': {
+    try {
+        // React to the command first
+        await socket.sendMessage(sender, {
+            react: {
+                text: "🐳",
+                key: msg.key
+            }
+        });
+
+        // Check if user is owner (replace with your actual owner check)
+        const ownerNumbers = ['254781496274@s.whatsapp.net']; // Add your owner numbers here
+        const isOwner = ownerNumbers.includes(sender);
+        
+        if (!isOwner) {
+            return await socket.sendMessage(sender, {
+                text: '*📛 This is an owner-only command!*'
+            }, { quoted: msg });
+        }
+
+        // Check if message is a reply
+        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+            return await socket.sendMessage(sender, {
+                text: '*🍁 Please reply to a view once message!*\n\nExample: Reply to a view once image/video with .vv'
+            }, { quoted: msg });
+        }
+
+        const quotedContext = msg.message.extendedTextMessage.contextInfo;
+        const quotedMessage = quotedContext.quotedMessage;
+        
+        // Determine message type
+        let mtype = '';
+        if (quotedMessage.imageMessage) mtype = 'imageMessage';
+        else if (quotedMessage.videoMessage) mtype = 'videoMessage';
+        else if (quotedMessage.audioMessage) mtype = 'audioMessage';
+        else if (quotedMessage.documentMessage) mtype = 'documentMessage';
+        else {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Unsupported message type!*\nOnly images, videos, audio, and documents are supported.'
+            }, { quoted: msg });
+        }
+
+        // Check if it's actually a view once message
+        const mediaMessage = quotedMessage[mtype];
+        if (!mediaMessage?.viewOnce) {
+            return await socket.sendMessage(sender, {
+                text: '*⚠️ This is not a view once message!*'
+            }, { quoted: msg });
+        }
+
+        // Download the media
+        const mediaBuffer = await socket.downloadMediaMessage({
+            key: {
+                remoteJid: sender,
+                id: quotedContext.stanzaId,
+                fromMe: quotedContext.participant ? false : true
+            },
+            message: quotedMessage
+        });
+
+        if (!mediaBuffer || mediaBuffer.length === 0) {
+            throw new Error('Failed to download media');
+        }
+
+        let messageContent = {};
+        
+        switch (mtype) {
+            case "imageMessage":
+                messageContent = {
+                    image: mediaBuffer,
+                    caption: mediaMessage.caption || '',
+                    mimetype: mediaMessage.mimetype || "image/jpeg"
+                };
+                break;
+
+            case "videoMessage":
+                messageContent = {
+                    video: mediaBuffer,
+                    caption: mediaMessage.caption || '',
+                    mimetype: mediaMessage.mimetype || "video/mp4"
+                };
+                break;
+
+            case "audioMessage":
+                messageContent = {
+                    audio: mediaBuffer,
+                    mimetype: mediaMessage.mimetype || "audio/mp4",
+                    ptt: mediaMessage.ptt || false
+                };
+                break;
+
+            case "documentMessage":
+                messageContent = {
+                    document: mediaBuffer,
+                    mimetype: mediaMessage.mimetype || "application/octet-stream",
+                    fileName: mediaMessage.fileName || `viewonce_${Date.now()}.${getFileExtension(mediaMessage.mimetype)}`
+                };
+                break;
+        }
+
+        // Send the retrieved media
+        await socket.sendMessage(sender, messageContent, { quoted: msg });
+
+        // Send success message
+        await socket.sendMessage(sender, {
+            text: '*✅ View once message retrieved successfully!*'
+        });
+
+    } catch (error) {
+        console.error('ViewOnce Error:', error);
+        
+        let errorMessage = '*❌ Error retrieving view once message!*';
+        
+        if (error.message.includes('download')) {
+            errorMessage = '*❌ Failed to download the media!*';
+        } else if (error.message.includes('timeout')) {
+            errorMessage = '*❌ Operation timed out!*';
+        }
+
+        await socket.sendMessage(sender, {
+            text: `${errorMessage}\n\nError: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+//Antilink case
+case 'antilink':
+case 'antil':
+case 'setantilink': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🔗",
+            key: msg.key
+        }
+    });
+
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1);
+    const action = args[0]?.toLowerCase();
+
+    // Check if user is admin
+    const groupMetadata = await socket.groupMetadata(sender);
+    const isAdmin = groupMetadata.participants.find(p => p.id === sender)?.admin;
+
+    if (!isAdmin) {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Only admins can use this command!*'
+        }, { quoted: msg });
+    }
+
+    // Initialize anti-link settings if not exists
+    if (!global.antiLinkSettings) {
+        global.antiLinkSettings = {};
+    }
+
+    if (action === 'on') {
+        global.antiLinkSettings[sender] = true;
+        return await socket.sendMessage(sender, {
+            text: '*✅ Anti-link protection enabled for this group!*'
+        }, { quoted: msg });
+    } else if (action === 'off') {
+        global.antiLinkSettings[sender] = false;
+        return await socket.sendMessage(sender, {
+            text: '*❌ Anti-link protection disabled for this group!*'
+        }, { quoted: msg });
+    } else {
+        const status = global.antiLinkSettings[sender] ? 'ENABLED ✅' : 'DISABLED ❌';
+        return await socket.sendMessage(sender, {
+            text: `*🔗 Anti-link Status:* ${status}\n*Usage:* .antilink on/off`
+        }, { quoted: msg });
+    }
+    break;
+}
                 // Case: alive
                 case 'alive': {
                     try {
@@ -771,6 +1068,7 @@ case 'info': {
                     { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` }, 
                     { title: "♻️ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },
                     { title: "🪀ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "set your bio on and off", id: `${config.PREFIX}autorecording` },    
+                   { title: "🚨ᴀɴᴛɪʟɪɴᴋ ᴏɴ/ᴏғғ", description: "set antilink on /off", id: `${config.PREFIX}autorecording` },    
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "🎭Hack", description: "prank others", id: `${config.PREFIX}hack` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
@@ -943,6 +1241,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  💠 *${config.PREFIX}bible* - okoka
 *┃*  🌸 *${config.PREFIX}jid* - get your own jid
 *┃*  🎀 *${config.PREFIX}gitclone* - clone
+*┃*  🔥 *${config.PREFIX}chr* - channels react
 *┃*  🎥 *${config.PREFIX}video* - get video
 *┃*  🔮 *${config.PREFIX}github* - get other people profile
 *┃*  ♻️ *${config.PREFIX}lyrics* - get song lyrics 
@@ -1255,6 +1554,140 @@ case 'hack': {
         await socket.sendMessage(sender, {
             text: `❌ *HACKING SIMULATION FAILED*\\n\\nError: ${error.message}\\n\\n*System defenses were too strong!* 💂‍♂️`
         }, { quoted: msg });
+    }
+    break;
+}
+///channelreact case 
+case 'channelreact':
+case 'creact':
+case 'chr': {
+    const stylizedChars = {
+        a: '🅐', b: '🅑', c: '🅒', d: '🅓', e: '🅔', f: '🅕', g: '🅖',
+        h: '🅗', i: '🅘', j: '🅙', k: '🅚', l: '🅛', m: '🅜', n: '🅝',
+        o: '🅞', p: '🅟', q: '🅠', r: '🅡', s: '🅢', t: '🅣', u: '🅤',
+        v: '🅥', w: '🅦', x: '🅧', y: '🅨', z: '🅩',
+        '0': '⓿', '1': '➊', '2': '➋', '3': '➌', '4': '➍',
+        '5': '➎', '6': '➏', '7': '➐', '8': '➑', '9': '➒'
+    };
+
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "🔤",
+            key: msg.key
+        }
+    });
+
+    // Extract query from message
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || 
+              msg.message?.imageMessage?.caption || 
+              msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1);
+    const query = args.join(' ').trim();
+
+    // Check if user is owner (modify this check as needed)
+    const isOwner = sender.endsWith('@s.whatsapp.net'); // Add your owner number check logic
+
+    if (!isOwner) {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Owner-only command! 🚫*'
+        }, { quoted: msg });
+    }
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*❌ Usage:* .channelreact https://whatsapp.com/channel/<id>/<msg-id> <text>\n*Example:* .chr https://whatsapp.com/channel/1234/5678 hello`
+        }, { quoted: msg });
+    }
+
+    try {
+        // Show processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "⏳",
+                key: msg.key
+            }
+        });
+
+        const [link, ...textParts] = query.trim().split(' ');
+        const inputText = textParts.join(' ').toLowerCase();
+
+        if (!link.includes('whatsapp.com/channel/') || !inputText) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Invalid channel link or missing text! 😔*'
+            }, { quoted: msg });
+        }
+
+        const urlSegments = link.trim().split('/');
+        const channelInvite = urlSegments[4];
+        const messageId = urlSegments[5];
+
+        if (!channelInvite || !messageId) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Invalid channel or message ID! 🚫*'
+            }, { quoted: msg });
+        }
+
+        // Stylize input text
+        const emoji = inputText
+            .split('')
+            .map(char => (char === ' ' ? '―' : stylizedChars[char] || char))
+            .join('');
+
+        // Get newsletter metadata
+        const newsletterMetadata = await socket.newsletterMetadata('newsletter', channelInvite);
+        const channelJid = newsletterMetadata.id;
+        const channelName = newsletterMetadata.name;
+
+        // Send stylized reaction to channel
+        await socket.newsletterReactMessage(channelJid, messageId, emoji);
+
+        const caption = `
+╭───[ *ᴄʜᴀɴɴᴇʟ ʀᴇᴀᴄᴛ* ]───◆
+├ *ᴄʜᴀɴɴᴇʟ*: ${channelName} 
+├ *ʀᴇᴀᴄᴛɪᴏɴ*: ${emoji} 🔤
+╰───[ *ᴄᴀsᴇʏʀʜᴏᴅᴇs* ]───◆
+> *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs*`;
+
+        await socket.sendMessage(sender, {
+            text: caption,
+            contextInfo: { mentionedJid: [sender] }
+        }, { quoted: msg });
+
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Channelreact error:', error);
+        
+        let errorMsg;
+        if (error.message.includes('not-authorized')) {
+            errorMsg = '*❌ Bot not authorized for this channel! 😞*';
+        } else if (error.message.includes('not-found')) {
+            errorMsg = '*❌ Channel or message not found! 😔*';
+        } else if (error.message.includes('reaction limit')) {
+            errorMsg = '*❌ Reaction limit reached for this message! ⏰*';
+        } else {
+            errorMsg = '*❌ Error sending reaction! ⏰*';
+        }
+
+        await socket.sendMessage(sender, {
+            text: errorMsg
+        }, { quoted: msg });
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
     }
     break;
 }
@@ -3011,157 +3444,70 @@ case 'tts': {
 case 'fetch':
 case 'get':
 case 'api': {
+    await socket.sendMessage(sender, {
+        react: { text: "🌐", key: msg.key }
+    });
+
+    const q = msg.message?.conversation || 
+              msg.message?.extendedTextMessage?.text || '';
+    
+    const args = q.split(' ').slice(1);
+    const url = args.join(' ').trim();
+
+    if (!url) {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Please provide a URL!*\n*Examples:*\n.fetch https://jsonplaceholder.typicode.com/posts/1\n.get https://api.github.com/users/caseyrhodes'
+        }, { quoted: msg });
+    }
+
+    if (!/^https?:\/\//.test(url)) {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Invalid URL format! Must start with http:// or https://*'
+        }, { quoted: msg });
+    }
+
     try {
-        await socket.sendMessage(sender, { react: { text: '🌐', key: msg.key } });
+        const axios = require('axios');
+        const response = await axios.get(url, { timeout: 15000 });
+        const data = response.data;
         
-        const text = msg.message?.conversation ||
-                    msg.message?.extendedTextMessage?.text || '';
-        
-        // Extract URL from command
-        const url = text.replace(/^(fetch|get|api)\s+/i, '').trim();
-        
-        if (!url) {
-            return await socket.sendMessage(sender, { 
-                text: `❌ *Please provide a URL*\n\n*Example:* ${config.PREFIX}fetch https://api.example.com/data` 
-            }, { quoted: fakevCard });
-        }
+        let content = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
 
-        // Validate URL format
-        let parsedUrl;
-        try {
-            parsedUrl = new URL(url);
-        } catch (e) {
-            return await socket.sendMessage(sender, { 
-                text: '❌ *Invalid URL format*' 
-            }, { quoted: fakevCard });
-        }
-
-        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-            return await socket.sendMessage(sender, { 
-                text: '❌ *URL must use http:// or https:// protocol*' 
-            }, { quoted: fakevCard });
-        }
-
-        const cleanUrl = `${parsedUrl.origin}${parsedUrl.pathname}${parsedUrl.search}`;
-        
-        try {
-            // Add timeout to fetch request
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-            
-            const res = await fetch(cleanUrl, {
-                signal: controller.signal,
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            }).catch(err => {
-                if (err.name === 'AbortError') {
-                    throw new Error('Request timed out after 30 seconds');
-                }
-                throw err;
-            });
-            
-            clearTimeout(timeout);
-
-            // Check if response is successful
-            if (!res.ok) {
-                return await socket.sendMessage(sender, {
-                    text: `❌ *Request failed with status:* ${res.status} ${res.statusText}`
-                }, { quoted: fakevCard });
-            }
-
-            const contentLength = res.headers.get('content-length');
-            const maxSize = 10 * 1024 * 1024; // 10MB limit
-            
-            if (contentLength && parseInt(contentLength) > maxSize) {
-                return await socket.sendMessage(sender, {
-                    text: `❌ *Content too large:* ${(parseInt(contentLength) / 1024 / 1024).toFixed(2)}MB exceeds limit of ${maxSize / 1024 / 1024}MB`
-                }, { quoted: fakevCard });
-            }
-
-            const contentType = res.headers.get('content-type') || '';
-            
-            // Handle non-text content types by sending as media
-            if (contentType.includes('image/') || 
-                contentType.includes('video/') || 
-                contentType.includes('audio/') ||
-                contentType.includes('application/octet-stream')) {
-                
-                let messageType = 'document';
-                if (contentType.includes('image/')) messageType = 'image';
-                if (contentType.includes('video/')) messageType = 'video';
-                if (contentType.includes('audio/')) messageType = 'audio';
-                
-                const mediaMessage = {
-                    [messageType]: {
-                        url: cleanUrl
-                    },
-                    caption: `📥 *Fetched from URL:*\n${cleanUrl}`,
-                    mimetype: contentType
-                };
-                
-                return await socket.sendMessage(sender, mediaMessage, { quoted: fakevCard });
-            }
-
-            // Handle text-based responses
-            const buffer = await res.arrayBuffer();
-            let content = Buffer.from(buffer).toString('utf8');
-            
-            // Try to parse and format if it's JSON
-            if (contentType.includes('application/json') || 
-                (content.trim().startsWith('{') || content.trim().startsWith('['))) {
-                try {
-                    const parsedJson = JSON.parse(content);
-                    content = JSON.stringify(parsedJson, null, 2);
-                } catch (e) {
-                    // Not valid JSON, keep as is
-                    console.log('Content is not valid JSON, sending as text');
-                }
-            }
-            
-            // Split large content into multiple messages if needed
-            const maxLength = 4096; // WhatsApp message limit
-            if (content.length <= maxLength) {
-                return await socket.sendMessage(sender, {
-                    text: `✅ *Fetched Data:*\n\n\`\`\`${content}\`\`\`\n\n*URL:* ${cleanUrl}`
-                }, { quoted: fakevCard });
-            }
-            
-            // For large content, send as document
-            const documentBuffer = Buffer.from(content);
-            const documentMessage = {
-                document: documentBuffer,
-                fileName: `fetched_data_${Date.now()}.txt`,
-                mimetype: 'text/plain',
-                caption: `📥 *Fetched Data (${content.length} characters)*\n*URL:* ${cleanUrl}`
-            };
-            
-            await socket.sendMessage(sender, documentMessage, { quoted: fakevCard });
-            
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            
-            let errorMessage = '❌ Error fetching data';
-            if (error.message.includes('timed out')) {
-                errorMessage = '❌ Request timed out after 30 seconds';
-            } else if (error.code === 'ENOTFOUND') {
-                errorMessage = '❌ Could not resolve hostname';
-            } else if (error.code === 'ECONNREFUSED') {
-                errorMessage = '❌ Connection refused by server';
-            } else {
-                errorMessage = `❌ ${error.message}`;
-            }
+        // If content is too large, send as file
+        if (content.length > 2000) {
+            const filename = `fetched_data_${Date.now()}.json`;
             
             await socket.sendMessage(sender, {
-                text: errorMessage
-            }, { quoted: fakevCard });
+                document: Buffer.from(content),
+                fileName: filename,
+                mimetype: 'application/json',
+                caption: `🌐 *FETCHED DATA* 🌐\n\n` +
+                        `*URL:* ${url}\n` +
+                        `*Status:* ${response.status}\n` +
+                        `*Size:* ${content.length} characters\n` +
+                        `*Sent as file due to large size*\n\n` +
+                        `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs 🌟`
+            }, { quoted: msg });
+        } else {
+            await socket.sendMessage(sender, {
+                text: `🌐 *FETCHED DATA* 🌐\n\n` +
+                      `*URL:* ${url}\n` +
+                      `*Status:* ${response.status}\n` +
+                      `*Size:* ${content.length} characters\n\n` +
+                      `\`\`\`${content}\`\`\`\n\n` +
+                      `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs 🌟`
+            }, { quoted: msg });
         }
-        
+
     } catch (error) {
-        console.error('Error in fetch command:', error);
-        await socket.sendMessage(sender, { 
-            text: "❌ Error processing your request. Please try again later."
-        }, { quoted: fakevCard });
+        console.error('Fetch error:', error);
+        
+        await socket.sendMessage(sender, {
+            text: `❌ *FETCH FAILED* ❌\n\n` +
+                  `*URL:* ${url}\n` +
+                  `*Error:* ${error.message}\n\n` +
+                  `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs 🌟`
+        }, { quoted: msg });
     }
     break;
 }
