@@ -1901,198 +1901,115 @@ case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
-            text: "🎵", // Music note emoji
+            text: "🎸",
             key: msg.key
         }
     });
 
-    // Import dependencies
+    const axios = require('axios');
     const yts = require('yt-search');
-    const ddownr = require('denethdev-ytmp3');
-    const fs = require('fs').promises;
-    const path = require('path');
-    const { exec } = require('child_process');
-    const util = require('util');
-    const execPromise = util.promisify(exec);
-    const { existsSync, mkdirSync } = require('fs');
-
-    // Constants
-    const TEMP_DIR = './temp';
-    const MAX_FILE_SIZE_MB = 15; // Increased limit for WhatsApp
-    const TARGET_SIZE_MB = 14;
-
-    // Ensure temp directory exists
-    if (!existsSync(TEMP_DIR)) {
-        mkdirSync(TEMP_DIR, { recursive: true });
-    }
-
-    // Utility functions
-    function extractYouTubeId(url) {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-        const match = url.match(regex);
-        return match ? match[1] : null;
-    }
-
-    function convertYouTubeLink(input) {
-        const videoId = extractYouTubeId(input);
-        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
-    }
-
-    function formatDuration(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-
-    async function compressAudio(inputPath, outputPath, targetSizeMB = TARGET_SIZE_MB) {
-        try {
-            const { stdout: durationOutput } = await execPromise(
-                `ffprobe -i "${inputPath}" -show_entries format=duration -v quiet -of csv="p=0"`
-            );
-            const duration = parseFloat(durationOutput) || 180;
-            const targetBitrate = Math.floor((targetSizeMB * 8192) / duration);
-            const constrainedBitrate = Math.min(Math.max(targetBitrate, 64), 192); // Increased bitrate range
-            
-            await execPromise(
-                `ffmpeg -i "${inputPath}" -b:a ${constrainedBitrate}k -ac 2 -ar 44100 -vn -y "${outputPath}"`
-            );
-            return true;
-        } catch (error) {
-            console.error('Audio compression failed:', error);
-            return false;
-        }
-    }
-
-    async function cleanupFiles(...filePaths) {
-        for (const filePath of filePaths) {
-            if (filePath) {
-                try {
-                    await fs.unlink(filePath);
-                } catch (err) {
-                    // Silent cleanup
-                }
-            }
-        }
-    }
+    const BASE_URL = 'https://noobs-api.top';
 
     // Extract query from message
     const q = msg.message?.conversation || 
               msg.message?.extendedTextMessage?.text || 
               msg.message?.imageMessage?.caption || 
               msg.message?.videoMessage?.caption || '';
+    
+    const args = q.split(' ').slice(1);
+    const query = args.join(' ').trim();
 
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, 
-            { text: '*🎵 Give me a song title or YouTube link, love 😘*' }
-        );
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: '*🎵 Please provide a song name or YouTube link*'
+        }, { quoted: msg });
     }
 
-    const fixedQuery = convertYouTubeLink(q.trim());
-    let tempFilePath = '';
-    let compressedFilePath = '';
-
     try {
-        // Search for the video
-        const search = await yts(fixedQuery);
-        const videoInfo = search.videos[0];
-        
-        if (!videoInfo) {
-            return await socket.sendMessage(sender, 
-                { text: '*❌ No songs found, darling! Try another? 💔*' }
-            );
+        console.log('[PLAY] Searching YT for:', query);
+        const search = await yts(query);
+        const video = search.videos[0];
+
+        if (!video) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ No songs found! Try another search?*'
+            }, { quoted: msg });
         }
 
-        // Format duration
-        const formattedDuration = formatDuration(videoInfo.seconds);
-        
-        // Create description
-        const desc = `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
-╭───────────────┈  ⊷
-├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
-├👤 *ᴀʀᴛɪsᴛ:* ${videoInfo.author.name}
-├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
-├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
-├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
-├🎵 *Format:* High Quality MP3
-╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟
-`;
+        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
+        const fileName = `${safeTitle}.mp3`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Send video info immediately
-        await socket.sendMessage(sender, {
-            image: { url: videoInfo.thumbnail },
-            caption: desc
-        });
+        // Send song info first
+        const buttonMessage = {
+            image: { url: video.thumbnail },
+            caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎀*\n\n` +
+                     `╭────────────────◆\n` +
+                     `├🌟 *ᴛɪᴛʟᴇ:* ${video.title}\n` +
+                     `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
+                     `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
+                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
+                     `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
+                     `╰─────────────────◆\n\n` +
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
+            footer: 'Click the button below for all commands',
+            buttons: [
+                { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
+            ],
+            headerType: 4
+        };
 
-        // Download the audio
-        const result = await ddownr.download(videoInfo.url, 'mp3');
-        const downloadLink = result.downloadUrl;
+        await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        if (!downloadLink) {
-            throw new Error('No download link received');
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 10000 });
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Failed to retrieve the MP3 download link.*'
+            }, { quoted: msg });
         }
 
-        // Clean title for filename
-        const cleanTitle = videoInfo.title.replace(/[^\w\s.-]/gi, '').replace(/\.\./g, '').substring(0, 30);
-        tempFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_original.mp3`);
-        compressedFilePath = path.join(TEMP_DIR, `${cleanTitle}_${Date.now()}_compressed.mp3`);
-
-        // Download the file with timeout
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-        
+        // Fetch thumbnail for the context info
+        let thumbnailBuffer;
         try {
-            const response = await fetch(downloadLink, { signal: controller.signal });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const arrayBuffer = await response.arrayBuffer();
-            await fs.writeFile(tempFilePath, Buffer.from(arrayBuffer));
-        } finally {
-            clearTimeout(timeout);
+            const thumbnailResponse = await axios.get(video.thumbnail, { 
+                responseType: 'arraybuffer',
+                timeout: 5000
+            });
+            thumbnailBuffer = Buffer.from(thumbnailResponse.data);
+        } catch (err) {
+            console.error('[PLAY] Error fetching thumbnail:', err);
+            // Continue without thumbnail if there's an error
         }
 
-        // Check file size and compress if needed
-        const stats = await fs.stat(tempFilePath);
-        const fileSizeMB = stats.size / (1024 * 1024);
+        // Send audio with context info after a short delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        let finalFilePath = tempFilePath;
-        
-        if (fileSizeMB > MAX_FILE_SIZE_MB) {
-            const compressionSuccess = await compressAudio(tempFilePath, compressedFilePath);
-            if (compressionSuccess) {
-                await cleanupFiles(tempFilePath);
-                finalFilePath = compressedFilePath;
-                compressedFilePath = ''; // Prevent double cleanup
-            }
-        }
-
-        // Send the audio file using file path (more efficient)
         await socket.sendMessage(sender, {
-            audio: { url: finalFilePath },
-            mimetype: "audio/mpeg",
-            fileName: `${cleanTitle}.mp3`,
-            ptt: false
+            audio: { url: data.downloadLink },
+            mimetype: 'audio/mpeg',
+            fileName: fileName,
+            ptt: false,
+            contextInfo: {
+                externalAdReply: {
+                    title: video.title.substring(0, 30),
+                    body: '❯❯ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs🎊',
+                    mediaType: 1,
+                    sourceUrl: video.url,
+                    thumbnail: thumbnailBuffer,
+                    renderLargerThumbnail: false,
+                    mediaUrl: video.url
+                }
+            }
         });
 
-        // Cleanup
-        await cleanupFiles(finalFilePath);
-        
     } catch (err) {
-        console.error('Song command error:', err);
-        await cleanupFiles(tempFilePath, compressedFilePath);
-        
-        let errorMessage = "*❌ Oh no, the music stopped, love! 😢 Try again?*";
-        if (err.name === 'AbortError') {
-            errorMessage = "*⏰ Download took too long, darling! Try a shorter song?*";
-        } else if (err.message.includes('network') || err.message.includes('fetch')) {
-            errorMessage = "*🌐 Network issue, love! Check your connection?*";
-        } else if (err.message.includes('download') || err.message.includes('link')) {
-            errorMessage = "*🔗 Download service error! Try another song?*";
-        }
-        
-        await socket.sendMessage(sender, { text: errorMessage });
+        console.error('[PLAY] Error:', err);
+        await socket.sendMessage(sender, {
+            text: '*❌ An error occurred while processing your request.*'
+        }, { quoted: msg });
     }
     break;
 }
