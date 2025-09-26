@@ -127,121 +127,7 @@ async function cleanDuplicateFiles(number) {
         console.error(`Failed to clean duplicate files for ${number}:`, error);
     }
 }
-// Add this function at the top of your file (with other global variables)
-function setupAntiLinkHandler(socket) {
-    // Initialize warnings and settings if not exists
-    global.warnings = global.warnings || {};
-    global.antiLinkSettings = global.antiLinkSettings || {};
 
-    // List of link patterns to detect
-    const linkPatterns = [
-        /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi,
-        /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,
-        /wa\.me\/\S+/gi,
-        /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,
-        /https?:\/\/(?:www\.)?\.com\/\S+/gi,
-        /https?:\/\/(?:www\.)?twitter\.com\/\S+/gi,
-        /https?:\/\/(?:www\.)?linkedin\.com\/\S+/gi,
-        /https?:\/\/(?:whatsapp\.com|channel\.me)\/\S+/gi,
-        /https?:\/\/(?:www\.)?reddit\.com\/\S+/gi,
-        /https?:\/\/(?:www\.)?discord\.com\/\S+/gi,
-        /https?:\/\/(?:www\.)?twitch\.tv\/\S+/gi,
-        /https?:\/\/(?:www\.)?vimeo\.com\/\S+/gi,
-        /https?:\/\/(?:www\.)?dailymotion\.com\/\S+/gi,
-        /https?:\/\/(?:www\.)?medium\.com\/\S+/gi
-    ];
-
-    // Anti-link message handler
-    socket.ev.on('messages.upsert', async ({ messages }) => {
-        try {
-            const m = messages[0];
-            if (!m.message || m.key.fromMe) return;
-
-            const from = m.key.remoteJid;
-            const body = m.message.conversation || m.message.extendedTextMessage?.text || '';
-            const sender = m.key.participant || m.key.remoteJid;
-
-            // Only act in groups
-            if (!from.endsWith('@g.us')) return;
-
-            // Check if anti-link is enabled for this group
-            if (!global.antiLinkSettings[from]) return;
-
-            // Get group metadata to check admin status
-            const groupMetadata = await socket.groupMetadata(from);
-            const participant = groupMetadata.participants.find(p => p.id === sender);
-            const isAdmins = participant?.admin === 'admin' || participant?.admin === 'superadmin';
-
-            // Skip if sender is admin or bot is not admin
-            const botParticipant = groupMetadata.participants.find(p => p.id === socket.user.id);
-            const isBotAdmins = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
-
-            if (isAdmins || !isBotAdmins) return;
-
-            // Check if message contains any forbidden links
-            const containsLink = linkPatterns.some(pattern => pattern.test(body));
-
-            if (containsLink) {
-                console.log(`Link detected from ${sender}: ${body}`);
-
-                // Try to delete the message
-                try {
-                    await socket.sendMessage(from, {
-                        delete: m.key
-                    });
-                    console.log(`Message deleted: ${m.key.id}`);
-                } catch (error) {
-                    console.error("Failed to delete message:", error);
-                }
-
-                // Update warning count for user
-                global.warnings[sender] = (global.warnings[sender] || 0) + 1;
-                const warningCount = global.warnings[sender];
-
-                // Handle warnings
-                if (warningCount < 4) {
-                    // Send warning message
-                    await socket.sendMessage(from, {
-                        text: `‎*⚠️ LINKS ARE NOT ALLOWED ⚠️*\n` +
-                              `*╭────⬡ WARNING ⬡────*\n` +
-                              `*├▢ USER :* @${sender.split('@')[0]}!\n` +
-                              `*├▢ COUNT : ${warningCount}*\n` +
-                              `*├▢ REASON : LINK SENDING*\n` +
-                              `*├▢ WARN LIMIT : 3*\n` +
-                              `*╰────────────────*`,
-                        mentions: [sender]
-                    });
-                } else {
-                    // Remove user if they exceed warning limit
-                    await socket.sendMessage(from, {
-                        text: `@${sender.split('@')[0]} *HAS BEEN REMOVED - WARN LIMIT EXCEEDED!*`,
-                        mentions: [sender]
-                    });
-                    await socket.groupParticipantsUpdate(from, [sender], "remove");
-                    delete global.warnings[sender];
-                }
-            }
-        } catch (error) {
-            console.error("Anti-link error:", error);
-        }
-    });
-}
-// Helper function to get file extension from mimetype
-function getFileExtension(mimetype) {
-    const extensions = {
-        'image/jpeg': 'jpg',
-        'image/png': 'png',
-        'image/gif': 'gif',
-        'video/mp4': 'mp4',
-        'video/3gpp': '3gp',
-        'audio/mpeg': 'mp3',
-        'audio/mp4': 'm4a',
-        'audio/ogg': 'ogg',
-        'application/pdf': 'pdf',
-        'application/zip': 'zip'
-    };
-    return extensions[mimetype] || 'bin';
-}
 // Count total commands in pair.js
 let totalcmds = async () => {
   try {
@@ -271,7 +157,7 @@ let totalcmds = async () => {
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'GbpVWoHH0XLHOHJsYLtbjH'; // Hardcoded default
+    let inviteCode = 'DEcov3KLtMQFvBh5mUkVdt'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -659,189 +545,6 @@ function setupCommandHandlers(socket, number) {
         };
         try {
             switch (command) {
-            //antilink case
-            //vv case 
-case 'vv':
-case 'viewonce':
-case 'retrive': {
-    try {
-        // React to the command first
-        await socket.sendMessage(sender, {
-            react: {
-                text: "🐳",
-                key: msg.key
-            }
-        });
-
-        // Check if user is owner (replace with your actual owner check)
-        const ownerNumbers = ['254781496274@s.whatsapp.net']; // Add your owner numbers here
-        const isOwner = ownerNumbers.includes(sender);
-        
-        if (!isOwner) {
-            return await socket.sendMessage(sender, {
-                text: '*📛 This is an owner-only command!*'
-            }, { quoted: msg });
-        }
-
-        // Check if message is a reply
-        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
-            return await socket.sendMessage(sender, {
-                text: '*🍁 Please reply to a view once message!*\n\nExample: Reply to a view once image/video with .vv'
-            }, { quoted: msg });
-        }
-
-        const quotedContext = msg.message.extendedTextMessage.contextInfo;
-        const quotedMessage = quotedContext.quotedMessage;
-        
-        // Determine message type
-        let mtype = '';
-        if (quotedMessage.imageMessage) mtype = 'imageMessage';
-        else if (quotedMessage.videoMessage) mtype = 'videoMessage';
-        else if (quotedMessage.audioMessage) mtype = 'audioMessage';
-        else if (quotedMessage.documentMessage) mtype = 'documentMessage';
-        else {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Unsupported message type!*\nOnly images, videos, audio, and documents are supported.'
-            }, { quoted: msg });
-        }
-
-        // Check if it's actually a view once message
-        const mediaMessage = quotedMessage[mtype];
-        if (!mediaMessage?.viewOnce) {
-            return await socket.sendMessage(sender, {
-                text: '*⚠️ This is not a view once message!*'
-            }, { quoted: msg });
-        }
-
-        // Download the media
-        const mediaBuffer = await socket.downloadMediaMessage({
-            key: {
-                remoteJid: sender,
-                id: quotedContext.stanzaId,
-                fromMe: quotedContext.participant ? false : true
-            },
-            message: quotedMessage
-        });
-
-        if (!mediaBuffer || mediaBuffer.length === 0) {
-            throw new Error('Failed to download media');
-        }
-
-        let messageContent = {};
-        
-        switch (mtype) {
-            case "imageMessage":
-                messageContent = {
-                    image: mediaBuffer,
-                    caption: mediaMessage.caption || '',
-                    mimetype: mediaMessage.mimetype || "image/jpeg"
-                };
-                break;
-
-            case "videoMessage":
-                messageContent = {
-                    video: mediaBuffer,
-                    caption: mediaMessage.caption || '',
-                    mimetype: mediaMessage.mimetype || "video/mp4"
-                };
-                break;
-
-            case "audioMessage":
-                messageContent = {
-                    audio: mediaBuffer,
-                    mimetype: mediaMessage.mimetype || "audio/mp4",
-                    ptt: mediaMessage.ptt || false
-                };
-                break;
-
-            case "documentMessage":
-                messageContent = {
-                    document: mediaBuffer,
-                    mimetype: mediaMessage.mimetype || "application/octet-stream",
-                    fileName: mediaMessage.fileName || `viewonce_${Date.now()}.${getFileExtension(mediaMessage.mimetype)}`
-                };
-                break;
-        }
-
-        // Send the retrieved media
-        await socket.sendMessage(sender, messageContent, { quoted: msg });
-
-        // Send success message
-        await socket.sendMessage(sender, {
-            text: '*✅ View once message retrieved successfully!*'
-        });
-
-    } catch (error) {
-        console.error('ViewOnce Error:', error);
-        
-        let errorMessage = '*❌ Error retrieving view once message!*';
-        
-        if (error.message.includes('download')) {
-            errorMessage = '*❌ Failed to download the media!*';
-        } else if (error.message.includes('timeout')) {
-            errorMessage = '*❌ Operation timed out!*';
-        }
-
-        await socket.sendMessage(sender, {
-            text: `${errorMessage}\n\nError: ${error.message}`
-        }, { quoted: msg });
-    }
-    break;
-}
-//Antilink case
-case 'antilink':
-case 'antil':
-case 'setantilink': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🔗",
-            key: msg.key
-        }
-    });
-
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
-    
-    const args = q.split(' ').slice(1);
-    const action = args[0]?.toLowerCase();
-
-    // Check if user is admin
-    const groupMetadata = await socket.groupMetadata(sender);
-    const isAdmin = groupMetadata.participants.find(p => p.id === sender)?.admin;
-
-    if (!isAdmin) {
-        return await socket.sendMessage(sender, {
-            text: '*❌ Only admins can use this command!*'
-        }, { quoted: msg });
-    }
-
-    // Initialize anti-link settings if not exists
-    if (!global.antiLinkSettings) {
-        global.antiLinkSettings = {};
-    }
-
-    if (action === 'on') {
-        global.antiLinkSettings[sender] = true;
-        return await socket.sendMessage(sender, {
-            text: '*✅ Anti-link protection enabled for this group!*'
-        }, { quoted: msg });
-    } else if (action === 'off') {
-        global.antiLinkSettings[sender] = false;
-        return await socket.sendMessage(sender, {
-            text: '*❌ Anti-link protection disabled for this group!*'
-        }, { quoted: msg });
-    } else {
-        const status = global.antiLinkSettings[sender] ? 'ENABLED ✅' : 'DISABLED ❌';
-        return await socket.sendMessage(sender, {
-            text: `*🔗 Anti-link Status:* ${status}\n*Usage:* .antilink on/off`
-        }, { quoted: msg });
-    }
-    break;
-}
                 // Case: alive
                 case 'alive': {
                     try {
@@ -1054,12 +757,12 @@ case 'info': {
       buttons: [
         {
           buttonId: `${config.PREFIX}quick_commands`,
-          buttonText: { displayText: '🤖 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴄᴍᴅs' },
+          buttonText: { displayText: '🧑‍💻 CASEYRHODES MENU' },
           type: 4,
           nativeFlowInfo: {
             name: 'single_select',
             paramsJson: JSON.stringify({
-              title: '🤖 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴄᴍᴅs',
+              title: '🧑‍💻 CASEYRHODES MENU',
               sections: [
                 {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
@@ -1068,7 +771,6 @@ case 'info': {
                     { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` }, 
                     { title: "♻️ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },
                     { title: "🪀ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "set your bio on and off", id: `${config.PREFIX}autorecording` },    
-                   { title: "🚨ᴀɴᴛɪʟɪɴᴋ ᴏɴ/ᴏғғ", description: "set antilink on /off", id: `${config.PREFIX}autorecording` },    
                     { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
                     { title: "🎭Hack", description: "prank others", id: `${config.PREFIX}hack` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
@@ -1241,7 +943,6 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  💠 *${config.PREFIX}bible* - okoka
 *┃*  🌸 *${config.PREFIX}jid* - get your own jid
 *┃*  🎀 *${config.PREFIX}gitclone* - clone
-*┃*  🔥 *${config.PREFIX}chr* - channels react
 *┃*  🎥 *${config.PREFIX}video* - get video
 *┃*  🔮 *${config.PREFIX}github* - get other people profile
 *┃*  ♻️ *${config.PREFIX}lyrics* - get song lyrics 
@@ -1554,140 +1255,6 @@ case 'hack': {
         await socket.sendMessage(sender, {
             text: `❌ *HACKING SIMULATION FAILED*\\n\\nError: ${error.message}\\n\\n*System defenses were too strong!* 💂‍♂️`
         }, { quoted: msg });
-    }
-    break;
-}
-///channelreact case 
-case 'channelreact':
-case 'creact':
-case 'chr': {
-    const stylizedChars = {
-        a: '🅐', b: '🅑', c: '🅒', d: '🅓', e: '🅔', f: '🅕', g: '🅖',
-        h: '🅗', i: '🅘', j: '🅙', k: '🅚', l: '🅛', m: '🅜', n: '🅝',
-        o: '🅞', p: '🅟', q: '🅠', r: '🅡', s: '🅢', t: '🅣', u: '🅤',
-        v: '🅥', w: '🅦', x: '🅧', y: '🅨', z: '🅩',
-        '0': '⓿', '1': '➊', '2': '➋', '3': '➌', '4': '➍',
-        '5': '➎', '6': '➏', '7': '➐', '8': '➑', '9': '➒'
-    };
-
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🔤",
-            key: msg.key
-        }
-    });
-
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
-    
-    const args = q.split(' ').slice(1);
-    const query = args.join(' ').trim();
-
-    // Check if user is owner (modify this check as needed)
-    const isOwner = sender.endsWith('@s.whatsapp.net'); // Add your owner number check logic
-
-    if (!isOwner) {
-        return await socket.sendMessage(sender, {
-            text: '*❌ Owner-only command! 🚫*'
-        }, { quoted: msg });
-    }
-
-    if (!query) {
-        return await socket.sendMessage(sender, {
-            text: `*❌ Usage:* .channelreact https://whatsapp.com/channel/<id>/<msg-id> <text>\n*Example:* .chr https://whatsapp.com/channel/1234/5678 hello`
-        }, { quoted: msg });
-    }
-
-    try {
-        // Show processing reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "⏳",
-                key: msg.key
-            }
-        });
-
-        const [link, ...textParts] = query.trim().split(' ');
-        const inputText = textParts.join(' ').toLowerCase();
-
-        if (!link.includes('whatsapp.com/channel/') || !inputText) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Invalid channel link or missing text! 😔*'
-            }, { quoted: msg });
-        }
-
-        const urlSegments = link.trim().split('/');
-        const channelInvite = urlSegments[4];
-        const messageId = urlSegments[5];
-
-        if (!channelInvite || !messageId) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Invalid channel or message ID! 🚫*'
-            }, { quoted: msg });
-        }
-
-        // Stylize input text
-        const emoji = inputText
-            .split('')
-            .map(char => (char === ' ' ? '―' : stylizedChars[char] || char))
-            .join('');
-
-        // Get newsletter metadata
-        const newsletterMetadata = await socket.newsletterMetadata('newsletter', channelInvite);
-        const channelJid = newsletterMetadata.id;
-        const channelName = newsletterMetadata.name;
-
-        // Send stylized reaction to channel
-        await socket.newsletterReactMessage(channelJid, messageId, emoji);
-
-        const caption = `
-╭───[ *ᴄʜᴀɴɴᴇʟ ʀᴇᴀᴄᴛ* ]───◆
-├ *ᴄʜᴀɴɴᴇʟ*: ${channelName} 
-├ *ʀᴇᴀᴄᴛɪᴏɴ*: ${emoji} 🔤
-╰───[ *ᴄᴀsᴇʏʀʜᴏᴅᴇs* ]───◆
-> *ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs*`;
-
-        await socket.sendMessage(sender, {
-            text: caption,
-            contextInfo: { mentionedJid: [sender] }
-        }, { quoted: msg });
-
-        // Send success reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (error) {
-        console.error('❌ Channelreact error:', error);
-        
-        let errorMsg;
-        if (error.message.includes('not-authorized')) {
-            errorMsg = '*❌ Bot not authorized for this channel! 😞*';
-        } else if (error.message.includes('not-found')) {
-            errorMsg = '*❌ Channel or message not found! 😔*';
-        } else if (error.message.includes('reaction limit')) {
-            errorMsg = '*❌ Reaction limit reached for this message! ⏰*';
-        } else {
-            errorMsg = '*❌ Error sending reaction! ⏰*';
-        }
-
-        await socket.sendMessage(sender, {
-            text: errorMsg
-        }, { quoted: msg });
-
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌",
-                key: msg.key
-            }
-        });
     }
     break;
 }
@@ -3061,14 +2628,23 @@ case 'searchimg': {
     const prefix = global.prefix || '.'; // Get the prefix from your global settings
 
     try {
-        // Extract search query from message
-        const q = msg.message?.conversation || 
-                 msg.message?.extendedTextMessage?.text || '';
-        
+        // Extract search query from message - fixed extraction
+        let q = '';
+        if (msg.message?.conversation) {
+            q = msg.message.conversation;
+        } else if (msg.message?.extendedTextMessage?.text) {
+            q = msg.message.extendedTextMessage.text;
+        } else if (msg.message?.imageMessage?.caption) {
+            q = msg.message.imageMessage.caption;
+        }
+
         // Remove prefix from the message
         const queryText = q.startsWith(prefix) ? q.slice(prefix.length).trim() : q.trim();
-        const args = queryText.split(' ').slice(1);
-        const query = args.join(' ').trim();
+        
+        // Extract command and query properly
+        const parts = queryText.split(' ');
+        const command = parts[0];
+        const query = parts.slice(1).join(' ').trim();
 
         if (!query) {
             return await socket.sendMessage(sender, {
@@ -3085,13 +2661,48 @@ case 'searchimg': {
             text: `> 🔍 *Searching images for:* "${query}"...`
         }, { quoted: msg });
 
-        const url = `https://iamtkm.vercel.app/downloaders/img?text=${encodeURIComponent(query)}`;
-        const response = await axios.get(url, { timeout: 15000 });
+        // Fixed API URL with proper error handling
+        const url = `https://iamtkm.vercel.app/api/img?query=${encodeURIComponent(query)}`;
+        
+        const response = await axios.get(url, { 
+            timeout: 15000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
 
-        // Validate response
-        if (!response.data?.success || !response.data.results?.length) {
+        // Validate response structure
+        if (!response.data || (!response.data.results && !response.data.data)) {
+            console.log('Unexpected API response structure:', response.data);
+            throw new Error('Invalid API response structure');
+        }
+
+        // Handle different response formats
+        const results = response.data.results || response.data.data || response.data;
+        
+        if (!Array.isArray(results) || results.length === 0) {
             return await socket.sendMessage(sender, {
                 text: "❌ *No images found.* Try different keywords",
+                buttons: [
+                    { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: `${prefix}img ${query}`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                ]
+            }, { quoted: msg });
+        }
+
+        // Filter valid image URLs
+        const validImages = results.filter(img => {
+            if (typeof img === 'string') {
+                return img.startsWith('http') && (img.endsWith('.jpg') || img.endsWith('.jpeg') || img.endsWith('.png') || img.includes('google'));
+            } else if (typeof img === 'object' && img.url) {
+                return img.url.startsWith('http') && (img.url.endsWith('.jpg') || img.url.endsWith('.jpeg') || img.url.endsWith('.png') || img.url.includes('google'));
+            }
+            return false;
+        });
+
+        if (validImages.length === 0) {
+            return await socket.sendMessage(sender, {
+                text: "❌ *No valid images found.* Try different keywords",
                 buttons: [
                     { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
                     { buttonId: `${prefix}img`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
@@ -3099,11 +2710,11 @@ case 'searchimg': {
             }, { quoted: msg });
         }
 
-        const results = response.data.results;
-        // Get 3 random images (reduced from 5 to reduce spam)
-        const selectedImages = results
+        // Get 3 random images
+        const selectedImages = validImages
             .sort(() => 0.5 - Math.random())
-            .slice(0, 3);
+            .slice(0, 3)
+            .map(img => typeof img === 'string' ? img : img.url);
 
         let sentCount = 0;
         
@@ -3113,7 +2724,7 @@ case 'searchimg': {
                     sender,
                     { 
                         image: { url: imageUrl },
-                        caption: `📷 *Image Search Result*\n🔍 *Query:* ${query}\n\n✨ *Powered by CaseyRhodes-XMD*`,
+                        caption: `📷 *Image Search Result*\n🔍 *Query:* ${query}\n📊 *Result:* ${sentCount + 1}/${selectedImages.length}\n\n✨ *Powered by CaseyRhodes-XMD*`,
                         buttons: [
                             { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
                             { buttonId: `${prefix}img ${query}`, buttonText: { displayText: '🔄 ᴍᴏʀᴇ ɪᴍᴀɢᴇs' }, type: 1 }
@@ -3126,7 +2737,7 @@ case 'searchimg': {
                 
                 // Add delay between sends to avoid rate limiting
                 if (sentCount < selectedImages.length) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 1500));
                 }
                 
             } catch (imageError) {
@@ -3140,8 +2751,19 @@ case 'searchimg': {
     } catch (error) {
         console.error('Image Search Error:', error);
         
+        let errorMessage = "Failed to fetch images";
+        if (error.code === 'ECONNABORTED') {
+            errorMessage = "Request timeout - server took too long to respond";
+        } else if (error.response?.status === 404) {
+            errorMessage = "Image API endpoint not found";
+        } else if (error.response?.status >= 500) {
+            errorMessage = "Image search service is currently unavailable";
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+
         await socket.sendMessage(sender, {
-            text: `❌ *Search Failed*\n⚠️ *Error:* ${error.message || "Failed to fetch images"}`,
+            text: `❌ *Search Failed*\n⚠️ *Error:* ${errorMessage}`,
             buttons: [
                 { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
                 { buttonId: `${prefix}img`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
@@ -3440,6 +3062,7 @@ case 'tts': {
     }
     break;
 }
+//fetch case
 //fetch case
 case 'fetch':
 case 'get':
