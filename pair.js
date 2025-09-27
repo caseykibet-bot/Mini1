@@ -911,7 +911,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
   break;
 }
 //allmenu 
-  case 'allmenu': {
+ case 'allmenu': {
   try {
     await socket.sendMessage(sender, { react: { text: '📜', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -926,106 +926,106 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
     let allMenuText = `
 *🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*
 *╭───────────────⊷*
-*┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
-*┃*  📍 *Prefix*: ${config.PREFIX}
-*┃*  ⏰ *Uptime*: ${hours}h ${minutes}m ${seconds}s
-*┃*  💾 *Memory*: ${usedMemory}MB/${totalMemory}MB
-*┃*  🔮 *Commands*: ${count}
-*┃*  🇰🇪 *Owner*: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
+*┃*  🤖 *ʙᴏᴛ*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
+*┃*  📍 *ᴘʀᴇғɪx*: ${config.PREFIX}
+*┃*  ⏰ *ᴜᴘᴛɪᴍᴇ*: ${hours}h ${minutes}m ${seconds}s
+*┃*  💾 *ᴍᴇᴍᴏʀʏ*: ${usedMemory}MB/${totalMemory}MB
+*┃*  🔮 *ᴄᴏᴍᴍᴀɴᴅs*: ${count}
+*┃*  🇰🇪 *ᴏᴡɴᴇʀ*: ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs
 *╰────────────────⊷*
 
- ╭─『 🌐 *General Commands* 』─╮
-*┃*  🟢 *${config.PREFIX}alive* - Check bot status
-*┃*  🎀 *${config.PREFIX}image* - image generator
-*┃*  📊 *${config.PREFIX}bot_stats* - Bot statistics
-*┃*  ℹ️ *${config.PREFIX}bot_info* - Bot information
-*┃*  📋 *${config.PREFIX}menu* - Show interactive menu
-*┃*  💠 *${config.PREFIX}bible* - okoka
-*┃*  🌸 *${config.PREFIX}jid* - get your own jid
-*┃*  🎀 *${config.PREFIX}gitclone* - clone
-*┃*  🎥 *${config.PREFIX}video* - get video
-*┃*  🔮 *${config.PREFIX}github* - get other people profile
-*┃*  ♻️ *${config.PREFIX}lyrics* - get song lyrics 
-*┃*  🔰 *${config.PREFIX}setpp* - set your own profile 
-*┃*  🔥 *${config.PREFIX}online* - get online members 
-*┃*  🌟 *${config.PREFIX}support* - ask for support 
-*┃*  🚩 *${config.PREFIX}blocklist* - get all blocked contacts
-*┃*  📜 *${config.PREFIX}allmenu* - List all commands
-*┃*  🏓 *${config.PREFIX}ping* - Check response speed
-*┃*  🔗 *${config.PREFIX}pair* - Generate pairing code
-*┃*  🎌 *${config.PREFIX}tagadmins* - tag group admin 
-*┃*  🌟 *${config.PREFIX}ginfo* - get group info
-*┃*  🎌 *${config.PREFIX}autorecoding* - change to your own 
-*┃*  ✨ *${config.PREFIX}fancy* - Fancy text generator
-*┃*  ♻️ *${config.PREFIX}screenshot* - get screenshot 
-*┃*  🎉 *${config.PREFIX}gjid* - get group jid
-*┃*  🌟 *${config.PREFIX}pp* - set your profile pic
-*┃*  🎨 *${config.PREFIX}logo* - Create custom logos
-*┃*  📱 *${config.PREFIX}qr* - Generate QR codes
+ ╭─『 🌐 *ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs* 』─╮
+*┃*  🟢 *${config.PREFIX}alive*
+*┃*  🎀 *${config.PREFIX}image*
+*┃*  📊 *${config.PREFIX}bot_stats*
+*┃*  ℹ️ *${config.PREFIX}bot_info*
+*┃*  📋 *${config.PREFIX}menu*
+*┃*  💠 *${config.PREFIX}bible*
+*┃*  🌸 *${config.PREFIX}jid*
+*┃*  🎀 *${config.PREFIX}gitclone*
+*┃*  🎥 *${config.PREFIX}video*
+*┃*  🔮 *${config.PREFIX}github*
+*┃*  ♻️ *${config.PREFIX}lyrics*
+*┃*  🔰 *${config.PREFIX}setpp*
+*┃*  🔥 *${config.PREFIX}online*
+*┃*  🌟 *${config.PREFIX}support*
+*┃*  🚩 *${config.PREFIX}blocklist*
+*┃*  📜 *${config.PREFIX}allmenu*
+*┃*  🏓 *${config.PREFIX}ping*
+*┃*  🔗 *${config.PREFIX}pair*
+*┃*  🎌 *${config.PREFIX}tagadmins*
+*┃*  🌟 *${config.PREFIX}ginfo*
+*┃*  🎌 *${config.PREFIX}autorecoding*
+*┃*  ✨ *${config.PREFIX}fancy*
+*┃*  ♻️ *${config.PREFIX}screenshot*
+*┃*  🎉 *${config.PREFIX}gjid*
+*┃*  🌟 *${config.PREFIX}pp*
+*┃*  🎨 *${config.PREFIX}logo*
+*┃*  📱 *${config.PREFIX}qr*
 *╰──────────────⊷*
 
-*╭────〘 DOWNLOADS 〙───⊷*
-*┃*  🎵 *${config.PREFIX}song* - Download YouTube music
-*┃*  📱 *${config.PREFIX}tiktok* - Download TikTok videos
-*┃*  📘 *${config.PREFIX}fb* - Download Facebook content
-*┃*  📸 *${config.PREFIX}ig* - Download Instagram content
-*┃*  🖼️ *${config.PREFIX}aiimg* - Generate AI images
-*┃*  👀 *${config.PREFIX}viewonce* - View once media (also .rvo, .vv)
-*┃*  🗣️ *${config.PREFIX}tts* - Transcribe [Not implemented]
-*┃*  🎬 *${config.PREFIX}ts* - Terabox downloader [Not implemented]
-*┃*  🖼️ *${config.PREFIX}sticker* - Convert to sticker [Not implemented]
+*╭────〘 ᴅᴏᴡɴʟᴏᴀᴅs 〙───⊷*
+*┃*  🎵 *${config.PREFIX}song*
+*┃*  📱 *${config.PREFIX}tiktok*
+*┃*  📘 *${config.PREFIX}fb*
+*┃*  📸 *${config.PREFIX}ig*
+*┃*  🖼️ *${config.PREFIX}aiimg*
+*┃*  👀 *${config.PREFIX}viewonce*
+*┃*  🗣️ *${config.PREFIX}tts*
+*┃*  🎬 *${config.PREFIX}ts*
+*┃*  🖼️ *${config.PREFIX}sticker*
 *╰──────────────⊷*
 
-*╭────〘 GROUP 〙───⊷*
-*┃*  ➕ *${config.PREFIX}add* - Add member to group
-*┃*  🦶 *${config.PREFIX}kick* - Remove member from group
-*┃*  🔓 *${config.PREFIX}open* - Unlock group
-*┃*  🔒 *${config.PREFIX}close* - Lock group
-*┃*  👑 *${config.PREFIX}promote* - Promote to admin
-*┃*  😢 *${config.PREFIX}demote* - Demote from admin
-*┃*  👥 *${config.PREFIX}tagall* - Tag all members
-*┃*  👤 *${config.PREFIX}join* - Join group via link
+*╭────〘 ɢʀᴏᴜᴘ 〙───⊷*
+*┃*  ➕ *${config.PREFIX}add*
+*┃*  🦶 *${config.PREFIX}kick*
+*┃*  🔓 *${config.PREFIX}open*
+*┃*  🔒 *${config.PREFIX}close*
+*┃*  👑 *${config.PREFIX}promote*
+*┃*  😢 *${config.PREFIX}demote*
+*┃*  👥 *${config.PREFIX}tagall*
+*┃*  👤 *${config.PREFIX}join*
 *╰──────────────⊷*
 
-*╭────〘 *GAMES* 〙───⊷*
-*┃*  📰 *${config.PREFIX}news* - Latest news updates
-*┃*  🚀 *${config.PREFIX}nasa* - NASA space updates
-*┃*  💬 *${config.PREFIX}gossip* - Entertainment gossip
-*┃*  🏏 *${config.PREFIX}cricket* - Cricket scores & news
-*┃*  🎭 *${config.PREFIX}anonymous* - Fun interaction [Not implemented]
+*╭────〘 ɢᴀᴍᴇs 〙───⊷*
+*┃*  📰 *${config.PREFIX}news*
+*┃*  🚀 *${config.PREFIX}nasa*
+*┃*  💬 *${config.PREFIX}gossip*
+*┃*  🏏 *${config.PREFIX}cricket*
+*┃*  🎭 *${config.PREFIX}anonymous*
 *╰──────────────⊷*
 
-*╭────〘 FUN 〙───⊷*
-*┃*  😂 *${config.PREFIX}joke* - Lighthearted joke
+*╭────〘 ғᴜɴ 〙───⊷*
+*┃*  😂 *${config.PREFIX}joke*
 *┃*  💀 *${config.PREFIX}dare*
 *┃*  🌟 *${config.PREFIX}readmore*
 *┃*  🎌 *${config.PREFIX}flirt*
-*┃*  🌚 *${config.PREFIX}darkjoke* - Dark humor joke
-*┃*  🏏 *${config.PREFIX}waifu* - Random anime waifu
-*┃*  😂 *${config.PREFIX}meme* - Random meme
-*┃*  🐈 *${config.PREFIX}cat* - Cute cat picture
-*┃*  🐕 *${config.PREFIX}dog* - Cute dog picture
-*┃*  💡 *${config.PREFIX}fact* - Random fact
-*┃*  💘 *${config.PREFIX}pickupline* - Cheesy pickup line
-*┃*  🔥 *${config.PREFIX}roast* - Savage roast
-*┃*  ❤️ *${config.PREFIX}lovequote* - Romantic love quote
-*┃*  💭 *${config.PREFIX}quote* - Bold or witty quote
+*┃*  🌚 *${config.PREFIX}darkjoke*
+*┃*  🏏 *${config.PREFIX}waifu*
+*┃*  😂 *${config.PREFIX}meme*
+*┃*  🐈 *${config.PREFIX}cat*
+*┃*  🐕 *${config.PREFIX}dog*
+*┃*  💡 *${config.PREFIX}fact*
+*┃*  💘 *${config.PREFIX}pickupline*
+*┃*  🔥 *${config.PREFIX}roast*
+*┃*  ❤️ *${config.PREFIX}lovequote*
+*┃*  💭 *${config.PREFIX}quote*
 *╰──────────────⊷*
 
-*╭────〘 AI MENU 〙───⊷*
-*┃*  🤖 *${config.PREFIX}ai* - Chat with AI
-*┃*  📊 *${config.PREFIX}winfo* - WhatsApp user info
-*┃*  🔍 *${config.PREFIX}whois* - Domain WHOIS lookup
-*┃*  💣 *${config.PREFIX}bomb* - Send multiple messages
-*┃*  🖼️ *${config.PREFIX}getpp* - Fetch profile picture
-*┃*  💾 *${config.PREFIX}savestatus* - Save status
-*┃*  ✍️ *${config.PREFIX}setstatus* - Set status [Not implemented]
-*┃*  🗑️ *${config.PREFIX}deleteme* - Delete user data [Not implemented]
-*┃*  🌦️ *${config.PREFIX}weather* - Weather forecast
-*┃*  🔗 *${config.PREFIX}shorturl* - Shorten URL
-*┃*  📤 *${config.PREFIX}tourl2* - Upload media to link
-*┃*  📦 *${config.PREFIX}apk* - Download APK files
-*┃*  📲 *${config.PREFIX}fc* - Follow newsletter channel
+*╭────〘 ᴀɪ ᴍᴇɴᴜ 〙───⊷*
+*┃*  🤖 *${config.PREFIX}ai*
+*┃*  📊 *${config.PREFIX}winfo*
+*┃*  🔍 *${config.PREFIX}whois*
+*┃*  💣 *${config.PREFIX}bomb*
+*┃*  🖼️ *${config.PREFIX}getpp*
+*┃*  💾 *${config.PREFIX}savestatus*
+*┃*  ✍️ *${config.PREFIX}setstatus*
+*┃*  🗑️ *${config.PREFIX}deleteme*
+*┃*  🌦️ *${config.PREFIX}weather*
+*┃*  🔗 *${config.PREFIX}shorturl*
+*┃*  📤 *${config.PREFIX}tourl2*
+*┃*  📦 *${config.PREFIX}apk*
+*┃*  📲 *${config.PREFIX}fc*
 *╰──────────────⊷*
 
 > *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
@@ -1164,172 +1164,115 @@ case 'hack': {
     try {
         const hackingSteps = [
             '```🖥️  INITIATING HACKING PROTOCOL...```',
-            '`CASEYRHODES TECH HACKING SUITE v3.0`',
+            '`CASEYRHODES TECH HACKING SUITE v4.0`',
             '══════════════════════════════',
             '',
-            '🔐 *Bypassing Firewall...*',
-            '```[▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒] 25%```',
-            '*Encryption modules loaded* ✅',
+            '🔐 *Bypassing Firewall Security...*',
+            '```[██████████░░░░░░░░░░] 40%```',
+            '*Firewall neutralized* ✅',
             '',
-            '🌐 *Establishing TOR Connection...*',
-            '```[████████████████████] 50%```',
-            '*Secure tunnel established* ✅',
+            '🌐 *Establishing Dark Web Connection...*',
+            '```[████████████████░░░░] 70%```',
+            '*TOR network active* ✅',
             '',
-            '🛠️ *Deploying Zero-Day Exploits...*',
-            '```[████████████████████] 75%```',
-            '*Root access obtained* ✅',
-            '',
-            '📡 *Extracting Data...*',
+            '🛠️ *Injecting Zero-Day Exploits...*',
             '```[████████████████████] 100%```',
-            '*Data transmission complete* ✅',
+            '*System compromised* ✅',
+            '',
+            '📡 *Extracting Encrypted Data...*',
+            '```[████████████████████] 100%```',
+            '*Data extraction complete* ✅',
+            '',
+            '🚀 *CLEANING DIGITAL FOOTPRINTS...*',
+            '```[████████████████████] 100%```',
+            '*Logs erased* ✅',
+            '',
+            '🛡️ *INSTALLING BACKDOOR ACCESS...*',
+            '```[████████████████████] 100%```',
+            '*Permanent access established* ✅',
+            '',
+            '🎯 *MISSION ACCOMPLISHED*',
             '══════════════════════════════',
             '',
-            '🚀 *SYSTEM BREACH SUCCESSFUL!*',
+            '📊 **OPERATION STATS:**',
+            '├─ Data Exfiltrated: *9.3GB*',
+            '├─ Systems Breached: *18*',
+            '├─ Firewalls Bypassed: *12*',
+            '├─ Time Elapsed: *23.7s*',
+            '└─ Detection Risk: *0.02%*',
             '',
-            '📊 **STATISTICS:**',
-            '├─ Data Captured: *4.7GB*',
-            '├─ Systems Compromised: *12*',
-            '├─ Firewalls Bypassed: *8*',
-            '└─ Time Elapsed: *47.3s*',
-            '',
-            '🛡️ **SECURITY OVERRIDE:**',
-            '├─ Admin Privileges: *ACQUIRED* 🟢',
-            '├─ Encryption Keys: *DECRYPTED* 🟢',
-            '├─ Logs Cleared: *COMPLETE* 🟢',
-            '└─ Backdoor Installed: *ACTIVE* 🟢',
+            '🟢 **SECURITY STATUS:**',
+            '├─ Root Access: *ACQUIRED*',
+            '├─ Encryption: *BROKEN*',
+            '├─ Tracking: *EVADED*',
+            '└─ Control: *ESTABLISHED*',
             '',
             '⚠️ **DISCLAIMER:**',
-            '└─ *This is a simulated hacking demonstration*',
-            '└─ *For educational and entertainment purposes only*',
+            '└─ *Simulated ethical hacking demonstration*',
+            '└─ *Educational purposes only*',
             '',
-            '💫 **CASEYRHODES TECH - ETHICAL HACKING SIMULATION**',
-            '```Operation completed at: ${new Date().toLocaleString()}```'
+            '💫 **CASEYRHODES TECH - SECURITY SIMULATION**',
+            `\`\`\`Terminated: ${new Date().toLocaleString()}\`\`\``
         ];
 
-        // Send initial message with cool formatting
+        // Send initial cool hacking message
         await socket.sendMessage(sender, {
-            text: `*💻 HACKING SIMULATION INITIATED*\\n\\nTarget: *${sender.split('@')[0]}*\\nProtocol: *CASEYRHODES-XMD*\\nStatus: *ACTIVE*`,
+            text: `*💻 CYBER ATTACK SIMULATION INITIATED*\\n\\n🎯 Target: *${sender.split('@')[0]}*\\n🔧 Protocol: *CASEYRHODES-BLACKOPS*\\n⚡ Status: *STEALTH MODE ACTIVE*\\n\\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬`,
             contextInfo: {
                 forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363420261263259@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
-                    serverMessageId: -1
-                }
+                isForwarded: true
             }
         }, { quoted: msg });
 
-        // Send hacking steps with progressive delays
-        for (let i = 0; i < hackingSteps.length; i++) {
-            const step = hackingSteps[i];
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Send 7 main hacking steps with cool effects
+        const mainSteps = [
+            {text: '```🔓 DECRYPTING SECURITY LAYERS...```', delay: 1200},
+            {text: '🌐 *Accessing Mainframe...*\\n```[██████████░░░░░░░░░░] 33%```', delay: 1000},
+            {text: '🛠️ *Deploying Payload...*\\n```[████████████████░░░░] 66%```', delay: 900},
+            {text: '📡 *Data Extraction in Progress...*\\n```[████████████████████] 100%```', delay: 800},
+            {text: '🛡️ *Covering Tracks...*\\n```[████████████████████] 100%```', delay: 700},
+            {text: '🚀 *Finalizing Operation...*\\n```[████████████████████] 100%```', delay: 600},
+            {text: '🎯 *MISSION SUCCESSFUL*\\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬', delay: 500}
+        ];
+
+        for (let i = 0; i < mainSteps.length; i++) {
+            await socket.sendMessage(sender, { text: mainSteps[i].text }, { quoted: msg });
+            await new Promise(resolve => setTimeout(resolve, mainSteps[i].delay));
             
-            // Vary delays for realism
-            let delay = 1000;
-            if (step.includes('▒') || step.includes('█')) delay = 800; // Progress bars faster
-            if (step.includes('✅') || step.includes('🟢')) delay = 600; // Success markers faster
-            if (step.includes('═') || step.includes('─')) delay = 400; // Separators faster
-            
-            await socket.sendMessage(sender, { text: step }, { quoted: msg });
-            await new Promise(resolve => setTimeout(resolve, delay));
+            // Add success confirmation after each major step
+            if (i < mainSteps.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+                await socket.sendMessage(sender, { 
+                    text: `*Step ${i + 1} completed* ✅` 
+                }, { quoted: msg });
+                await new Promise(resolve => setTimeout(resolve, 400));
+            }
         }
 
-        // Final cool message with effects
+        // Final results with cool formatting
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         await socket.sendMessage(sender, {
-            text: `*🎯 MISSION ACCOMPLISHED*\\n\\n🏆 *Hacking simulation completed successfully!*\\n\\n🔐 *Remember: With great power comes great responsibility.*\\n\\n*CASEYRHODES TECH © ${new Date().getFullYear()}*`,
+            text: `*🏆 OPERATION COMPLETE*\\n\\n📊 **FINAL REPORT:**\\n├─ Systems Compromised: *24*\\n├─ Data Captured: *12.8GB*\\n├─ Detection Avoided: *100%*\\n├─ Time: *31.4 seconds*\\n└─ Success Rate: *99.9%*\\n\\n🔐 *Security Note: This was a simulation*\\n💫 *CASEYRHODES TECH © ${new Date().getFullYear()}*\\n\\n\`\`\`System secure - Operation logged\`\`\``,
             contextInfo: {
                 forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363420261263259@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
-                    serverMessageId: -1
-                }
+                isForwarded: true
             }
+        }, { quoted: msg });
+
+        // Add final cool effect
+        await new Promise(resolve => setTimeout(resolve, 800));
+        await socket.sendMessage(sender, {
+            text: '```🌌 DISCONNECTING FROM TARGET...```'
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Hack simulation error:', error);
         await socket.sendMessage(sender, {
-            text: `❌ *HACKING SIMULATION FAILED*\\n\\nError: ${error.message}\\n\\n*System defenses were too strong!* 💂‍♂️`
+            text: `❌ *HACKING SIMULATION TERMINATED*\\n\\n🔴 Error: ${error.message}\\n\\n*Target defenses detected intrusion!* 🛡️\\n\\n*System returning to safe mode...*`
         }, { quoted: msg });
-    }
-    break;
-}
-//---------------------------------------------------------------------------
-//          𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇 🌟
-//---------------------------------------------------------------------------
-//  ⚠️ DO NOT MODIFY THIS FILE ⚠️  
-//---------------------------------------------------------------------------
-case 'autorecording':
-case 'autorecoding': {
-    if (!isCreator) {
-        return await socket.sendMessage(sender, { 
-            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
-            caption: "*📛 ᴏɴʟʏ ᴛʜᴇ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!*",
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363420261263259@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
-                    serverMessageId: -1
-                }
-            }
-        }, { quoted: fakevCard });
-    }
-
-    const status = args[0]?.toLowerCase();
-    if (!["on", "off"].includes(status)) {
-        return await socket.sendMessage(sender, { 
-            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
-            caption: `*🫟 ᴇxᴀᴍᴘʟᴇ: ${prefix}autorecording on*`,
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363420261263259@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
-                    serverMessageId: -1
-                }
-            }
-        }, { quoted: fakevCard });
-    }
-
-    config.AUTO_RECORDING = status === "on" ? "true" : "false";
-    
-    if (status === "on") {
-        await socket.sendPresenceUpdate("recording", sender);
-        return await socket.sendMessage(sender, { 
-            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
-            caption: "✅ *Auto recording is now enabled.*\nBot is recording...",
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363420261263259@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
-                    serverMessageId: -1
-                }
-            }
-        }, { quoted: fakevCard });
-    } else {
-        await socket.sendPresenceUpdate("available", sender);
-        return await socket.sendMessage(sender, { 
-            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
-            caption: "❌ *Auto recording has been disabled.*",
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363420261263259@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ',
-                    serverMessageId: -1
-                }
-            }
-        }, { quoted: fakevCard });
     }
     break;
 }
@@ -2612,8 +2555,9 @@ case 'id': {
     break;
 }
 //view once test
+//view once test
 case 'viewonce':
-case 'vo':
+case 'vv':
 case 'reveal':
 case 'unviewonce': {
     // React to the command first
@@ -2645,7 +2589,11 @@ case 'unviewonce': {
                 { 
                     image: buffer, 
                     caption: quotedImage.caption || '📸 *View Once Image Revealed*',
-                    fileName: 'revealed-image.jpg'
+                    fileName: 'revealed-image.jpg',
+                    buttons: [
+                        { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 ᴏᴡɴᴇʀ' }, type: 1 },
+                        { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴍᴇɴᴜ' }, type: 1 }
+                    ]
                 }, 
                 { quoted: msg }
             );
@@ -2663,7 +2611,11 @@ case 'unviewonce': {
                 { 
                     video: buffer, 
                     caption: quotedVideo.caption || '🎥 *View Once Video Revealed*',
-                    fileName: 'revealed-video.mp4'
+                    fileName: 'revealed-video.mp4',
+                    buttons: [
+                        { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 ᴏᴡɴᴇʀ' }, type: 1 },
+                        { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴍᴇɴᴜ' }, type: 1 }
+                    ]
                 }, 
                 { quoted: msg }
             );
@@ -2675,7 +2627,8 @@ case 'unviewonce': {
                     text: '❌ *Please reply to a view-once image or video.*\n\n💡 *How to use:* Reply to a view-once message with `.viewonce`',
                     buttons: [
                         { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                        { buttonId: `${prefix}help viewonce`, buttonText: { displayText: 'ℹ️ ʜᴇʟᴘ' }, type: 1 }
+                        { buttonId: `${prefix}help viewonce`, buttonText: { displayText: 'ℹ️ ʜᴇʟᴘ' }, type: 1 },
+                        { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 ᴏᴡɴᴇʀ' }, type: 1 }
                     ]
                 }, 
                 { quoted: msg }
@@ -2691,7 +2644,8 @@ case 'unviewonce': {
                 text: `❌ *Failed to reveal view-once media*\n⚠️ *Error:* ${error.message || 'Unknown error'}`,
                 buttons: [
                     { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: `${prefix}viewonce`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                    { buttonId: `${prefix}viewonce`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 },
+                    { buttonId: `${prefix}owner`, buttonText: { displayText: '👑 ᴏᴡɴᴇʀ' }, type: 1 }
                 ]
             }, 
             { quoted: msg }
