@@ -36,7 +36,6 @@ const config = {
     PREFIX: '.',
     MAX_RETRIES: 3,
     GROUP_INVITE_LINK: '',
-    ANTI_LINK: 'true',
     ADMIN_LIST_PATH: './admin.json',
     RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
     NEWSLETTER_JID: '120363405292255480@newsletter',
@@ -356,50 +355,6 @@ async function setupStatusHandlers(socket) {
     });
 }
 
-// Add this where you handle incoming messages
-const handleLinkDetection = async (msg, body) => {
-    try {
-        const chatId = msg.key.remoteJid;
-        if (!chatId.endsWith('@g.us')) return; // Only groups
-        
-        const { getAntilink } = require('./lib/index');
-        const antilinkConfig = getAntilink(chatId);
-        
-        if (!antilinkConfig.enabled) return;
-
-        const linkPatterns = {
-            whatsapp: /chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/,
-            telegram: /t\.me\/[A-Za-z0-9_]+/,
-            allLinks: /https?:\/\/[^\s]+/,
-        };
-
-        const shouldDelete = Object.values(linkPatterns).some(pattern => pattern.test(body));
-
-        if (shouldDelete) {
-            // Delete the message
-            await socket.sendMessage(chatId, {
-                delete: {
-                    remoteJid: chatId,
-                    fromMe: false,
-                    id: msg.key.id,
-                    participant: msg.key.participant
-                }
-            });
-
-            // Send warning
-            const sender = msg.key.participant || msg.key.remoteJid;
-            await socket.sendMessage(chatId, {
-                text: `⚠️ *Link Detected!* @${sender.split('@')[0]}, links are not allowed here.`,
-                mentions: [sender]
-            });
-        }
-    } catch (error) {
-        console.error('Link detection error:', error);
-    }
-};
-
-// Call this function in your message handler
-// handleLinkDetection(msg, body);
 async function handleMessageRevocation(socket, number) {
     socket.ev.on('messages.delete', async ({ keys }) => {
         if (!keys || keys.length === 0) return;
@@ -678,103 +633,6 @@ function setupCommandHandlers(socket, number) {
                     }
                     break;
                 }
-                case 'antilink':
-case 'antilinks':
-case 'linkblock':
-case 'antilinkgroup': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🔗",
-            key: msg.key
-        }
-    });
-
-    try {
-        // Check if user is admin
-        const isAdmin = require('../lib/isAdmin'); // Adjust path as needed
-        const isSenderAdmin = await isAdmin(sender, msg);
-        
-        if (!isSenderAdmin) {
-            return await socket.sendMessage(sender, { 
-                text: '❌ *For Group Admins Only!*' 
-            }, { quoted: msg });
-        }
-
-        const prefix = global.prefix || '.';
-        const args = body.slice(prefix.length).trim().split(' ').slice(1);
-        const action = args[0]?.toLowerCase();
-
-        if (!action) {
-            const usage = `🔗 *ANTILINK SETUP*\n\n• *${prefix}antilink on* - Turn on antilink\n• *${prefix}antilink set delete|kick|warn* - Set action\n• *${prefix}antilink off* - Turn off antilink\n• *${prefix}antilink get* - Check status`;
-            return await socket.sendMessage(sender, { text: usage }, { quoted: msg });
-        }
-
-        const { setAntilink, getAntilink, removeAntilink } = require('../lib/index'); // Adjust path
-
-        switch (action) {
-            case 'on':
-                const existingConfig = await getAntilink(sender, 'on');
-                if (existingConfig?.enabled) {
-                    return await socket.sendMessage(sender, { 
-                        text: '✅ *Antilink is already ON*' 
-                    }, { quoted: msg });
-                }
-                const result = await setAntilink(sender, 'on', 'delete');
-                await socket.sendMessage(sender, { 
-                    text: result ? '✅ *Antilink has been turned ON*' : '❌ *Failed to turn on Antilink*' 
-                }, { quoted: msg });
-                break;
-
-            case 'off':
-                await removeAntilink(sender, 'on');
-                await socket.sendMessage(sender, { 
-                    text: '✅ *Antilink has been turned OFF*' 
-                }, { quoted: msg });
-                break;
-
-            case 'set':
-                if (args.length < 2) {
-                    return await socket.sendMessage(sender, { 
-                        text: `⚠️ *Please specify an action:*\n${prefix}antilink set delete | kick | warn` 
-                    }, { quoted: msg });
-                }
-                const setAction = args[1].toLowerCase();
-                if (!['delete', 'kick', 'warn'].includes(setAction)) {
-                    return await socket.sendMessage(sender, { 
-                        text: '❌ *Invalid action. Choose: delete, kick, or warn*' 
-                    }, { quoted: msg });
-                }
-                const setResult = await setAntilink(sender, 'on', setAction);
-                await socket.sendMessage(sender, { 
-                    text: setResult ? `✅ *Antilink action set to: ${setAction}*` : '❌ *Failed to set Antilink action*' 
-                }, { quoted: msg });
-                break;
-
-            case 'get':
-            case 'status':
-            case 'check':
-                const status = await getAntilink(sender, 'on');
-                const actionConfig = await getAntilink(sender, 'on');
-                await socket.sendMessage(sender, { 
-                    text: `🔗 *Antilink Configuration:*\n\n📊 Status: ${status ? '🟢 ON' : '🔴 OFF'}\n⚡ Action: ${actionConfig ? actionConfig.action : 'Not set'}\n👥 Group: ${msg.key.remoteJid}` 
-                }, { quoted: msg });
-                break;
-
-            default:
-                await socket.sendMessage(sender, { 
-                    text: `❌ *Invalid command. Use ${prefix}antilink for usage*` 
-                }, { quoted: msg });
-        }
-
-    } catch (error) {
-        console.error('Antilink Command Error:', error);
-        await socket.sendMessage(sender, { 
-            text: `❌ *Error processing antilink command*\n⚠️ ${error.message}` 
-        }, { quoted: msg });
-    }
-    break;
-}
 // Case: bot_stats
 case 'session': {
     try {
@@ -1511,94 +1369,6 @@ case 'fc': {
     });
   }
   break;
-}
-//view once test 
-case 'viewonce':
-case 'vo':
-case 'reveal':
-case 'unviewonce': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "👀",
-            key: msg.key
-        }
-    });
-
-    const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-
-    try {
-        // Extract quoted message from your structure
-        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-        const quotedImage = quoted?.imageMessage;
-        const quotedVideo = quoted?.videoMessage;
-
-        if (quotedImage && quotedImage.viewOnce) {
-            // Download and send the image
-            const stream = await downloadContentFromMessage(quotedImage, 'image');
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) {
-                buffer = Buffer.concat([buffer, chunk]);
-            }
-            
-            await socket.sendMessage(
-                sender, 
-                { 
-                    image: buffer, 
-                    caption: quotedImage.caption || '📸 *View Once Image Revealed*',
-                    fileName: 'revealed-image.jpg'
-                }, 
-                { quoted: msg }
-            );
-            
-        } else if (quotedVideo && quotedVideo.viewOnce) {
-            // Download and send the video
-            const stream = await downloadContentFromMessage(quotedVideo, 'video');
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) {
-                buffer = Buffer.concat([buffer, chunk]);
-            }
-            
-            await socket.sendMessage(
-                sender, 
-                { 
-                    video: buffer, 
-                    caption: quotedVideo.caption || '🎥 *View Once Video Revealed*',
-                    fileName: 'revealed-video.mp4'
-                }, 
-                { quoted: msg }
-            );
-            
-        } else {
-            await socket.sendMessage(
-                sender, 
-                { 
-                    text: '❌ *Please reply to a view-once image or video.*\n\n💡 *How to use:* Reply to a view-once message with `.viewonce`',
-                    buttons: [
-                        { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                        { buttonId: `${prefix}help viewonce`, buttonText: { displayText: 'ℹ️ ʜᴇʟᴘ' }, type: 1 }
-                    ]
-                }, 
-                { quoted: msg }
-            );
-        }
-
-    } catch (error) {
-        console.error('View Once Error:', error);
-        
-        await socket.sendMessage(
-            sender, 
-            { 
-                text: `❌ *Failed to reveal view-once media*\n⚠️ *Error:* ${error.message || 'Unknown error'}`,
-                buttons: [
-                    { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
-                    { buttonId: `${prefix}viewonce`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
-                ]
-            }, 
-            { quoted: msg }
-        );
-    }
-    break;
 }
             // Case: ping
 case 'ping': {
@@ -2838,6 +2608,94 @@ case 'id': {
         await socket.sendMessage(sender, {
             text: '⚠️ *An unexpected error occurred while fetching the channel info.*\nPlease try again with a valid channel link.'
         }, { quoted: msg });
+    }
+    break;
+}
+//view once test
+case 'viewonce':
+case 'vo':
+case 'reveal':
+case 'unviewonce': {
+    // React to the command first
+    await socket.sendMessage(sender, {
+        react: {
+            text: "👀",
+            key: msg.key
+        }
+    });
+
+    const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+
+    try {
+        // Extract quoted message from your structure
+        const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        const quotedImage = quoted?.imageMessage;
+        const quotedVideo = quoted?.videoMessage;
+
+        if (quotedImage && quotedImage.viewOnce) {
+            // Download and send the image
+            const stream = await downloadContentFromMessage(quotedImage, 'image');
+            let buffer = Buffer.from([]);
+            for await (const chunk of stream) {
+                buffer = Buffer.concat([buffer, chunk]);
+            }
+            
+            await socket.sendMessage(
+                sender, 
+                { 
+                    image: buffer, 
+                    caption: quotedImage.caption || '📸 *View Once Image Revealed*',
+                    fileName: 'revealed-image.jpg'
+                }, 
+                { quoted: msg }
+            );
+            
+        } else if (quotedVideo && quotedVideo.viewOnce) {
+            // Download and send the video
+            const stream = await downloadContentFromMessage(quotedVideo, 'video');
+            let buffer = Buffer.from([]);
+            for await (const chunk of stream) {
+                buffer = Buffer.concat([buffer, chunk]);
+            }
+            
+            await socket.sendMessage(
+                sender, 
+                { 
+                    video: buffer, 
+                    caption: quotedVideo.caption || '🎥 *View Once Video Revealed*',
+                    fileName: 'revealed-video.mp4'
+                }, 
+                { quoted: msg }
+            );
+            
+        } else {
+            await socket.sendMessage(
+                sender, 
+                { 
+                    text: '❌ *Please reply to a view-once image or video.*\n\n💡 *How to use:* Reply to a view-once message with `.viewonce`',
+                    buttons: [
+                        { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                        { buttonId: `${prefix}help viewonce`, buttonText: { displayText: 'ℹ️ ʜᴇʟᴘ' }, type: 1 }
+                    ]
+                }, 
+                { quoted: msg }
+            );
+        }
+
+    } catch (error) {
+        console.error('View Once Error:', error);
+        
+        await socket.sendMessage(
+            sender, 
+            { 
+                text: `❌ *Failed to reveal view-once media*\n⚠️ *Error:* ${error.message || 'Unknown error'}`,
+                buttons: [
+                    { buttonId: `${prefix}allmenu`, buttonText: { displayText: '📱 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
+                    { buttonId: `${prefix}viewonce`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
+                ]
+            }, 
+            { quoted: msg }
+        );
     }
     break;
 }
