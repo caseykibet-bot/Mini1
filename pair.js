@@ -546,16 +546,17 @@ function setupCommandHandlers(socket, number) {
         try {
             switch (command) {
                 // Case: alive
-                case 'alive': {
-                    try {
-                        await socket.sendMessage(sender, { react: { text: '🔮', key: msg.key } });
-                        const startTime = socketCreationTime.get(number) || Date.now();
-                        const uptime = Math.floor((Date.now() - startTime) / 1000);
-                        const hours = Math.floor(uptime / 3600);
-                        const minutes = Math.floor((uptime % 3600) / 60);
-                        const seconds = Math.floor(uptime % 60);
+ // Case: alive
+case 'alive': {
+    try {
+        await socket.sendMessage(sender, { react: { text: '🔮', key: msg.key } });
+        const startTime = socketCreationTime.get(number) || Date.now();
+        const uptime = Math.floor((Date.now() - startTime) / 1000);
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const seconds = Math.floor(uptime % 60);
 
-                        const captionText = `
+        const captionText = `
 *🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*
 *╭─────────────────⊷*
 *┃* ʙᴏᴛ ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s
@@ -569,70 +570,91 @@ function setupCommandHandlers(socket, number) {
 > sᴛᴀᴛᴜs: ONLINE ✅
 > ʀᴇsᴘᴏɴᴅ ᴛɪᴍᴇ: ${Date.now() - msg.messageTimestamp * 1000}ms`;
 
-                        const aliveMessage = {
-                            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-                            caption: `> ᴀᴍ ᴀʟɪᴠᴇ ɴ ᴋɪᴄᴋɪɴɢ 🥳\n\n${captionText}`,
-                            buttons: [
+        const aliveMessage = {
+            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+            caption: `> ᴀᴍ ᴀʟɪᴠᴇ ɴ ᴋɪᴄᴋɪɴɢ 🥳\n\n${captionText}`,
+            buttons: [
+                {
+                    buttonId: `${config.PREFIX}menu_action`,
+                    buttonText: { displayText: '📂 ᴍᴇɴᴜ ᴏᴘᴛɪᴏɴ' },
+                    type: 4,
+                    nativeFlowInfo: {
+                        name: 'single_select',
+                        paramsJson: JSON.stringify({
+                            title: 'ᴄʟɪᴄᴋ ʜᴇʀᴇ ❏',
+                            sections: [
                                 {
-                                    buttonId: `${config.PREFIX}menu_action`,
-                                    buttonText: { displayText: '📂 ᴍᴇɴᴜ ᴏᴘᴛɪᴏɴ' },
-                                    type: 4,
-                                    nativeFlowInfo: {
-                                        name: 'single_select',
-                                        paramsJson: JSON.stringify({
-                                            title: 'ᴄʟɪᴄᴋ ʜᴇʀᴇ ❏',
-                                            sections: [
-                                                {
-                                                    title: `ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ`,
-                                                    highlight_label: 'Quick Actions',
-                                                    rows: [
-                                                        { title: '📋 ғᴜʟʟ ᴍᴇɴᴜ', description: 'ᴠɪᴇᴡ ᴀʟʟ ᴀᴠᴀɪʟᴀʙʟᴇ ᴄᴍᴅs', id: `${config.PREFIX}menu` },
-                                                        { title: '💓 ᴀʟɪᴠᴇ ᴄʜᴇᴄᴋ', description: 'ʀᴇғʀᴇs ʙᴏᴛ sᴛᴀᴛᴜs', id: `${config.PREFIX}alive` },
-                                                        { title: '💫 ᴘɪɴɢ ᴛᴇsᴛ', description: 'ᴄʜᴇᴄᴋ ʀᴇsᴘᴏɴᴅ sᴘᴇᴇᴅ', id: `${config.PREFIX}ping` }
-                                                    ]
-                                                },
-                                                {
-                                                    title: "ϙᴜɪᴄᴋ ᴄᴍᴅs",
-                                                    highlight_label: 'Popular',
-                                                    rows: [
-                                                        { title: '🤖 ᴀɪ ᴄʜᴀᴛ', description: 'Start AI conversation', id: `${config.PREFIX}ai Hello!` },
-                                                        { title: '🎵 ᴍᴜsɪᴄ sᴇᴀʀᴄʜ', description: 'Download your favorite songs', id: `${config.PREFIX}song` },
-                                                        { title: '📰 ʟᴀᴛᴇsᴛ ɴᴇᴡs', description: 'Get current news updates', id: `${config.PREFIX}news` }
-                                                    ]
-                                                }
-                                            ]
-                                        })
-                                    }
+                                    title: `ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ`,
+                                    highlight_label: 'Quick Actions',
+                                    rows: [
+                                        { title: '📋 ғᴜʟʟ ᴍᴇɴᴜ', description: 'ᴠɪᴇᴡ ᴀʟʟ ᴀᴠᴀɪʟᴀʙʟᴇ ᴄᴍᴅs', id: `${config.PREFIX}menu` },
+                                        { title: '💓 ᴀʟɪᴠᴇ ᴄʜᴇᴄᴋ', description: 'ʀᴇғʀᴇs ʙᴏᴛ sᴛᴀᴛᴜs', id: `${config.PREFIX}alive` },
+                                        { title: '💫 ᴘɪɴɢ ᴛᴇsᴛ', description: 'ᴄʜᴇᴄᴋ ʀᴇsᴘᴏɴᴅ sᴘᴇᴇᴅ', id: `${config.PREFIX}ping` }
+                                    ]
                                 },
-                                { buttonId: `${config.PREFIX}session`, buttonText: { displayText: '🌟 ʙᴏᴛ ɪɴғᴏ' }, type: 1 },
-                                { buttonId: `${config.PREFIX}active`, buttonText: { displayText: '📈 ʙᴏᴛ sᴛᴀᴛs' }, type: 1 }
-                            ],
-                            headerType: 1,
-                            viewOnce: true
-                        };
-
-                        await socket.sendMessage(m.chat, aliveMessage, { quoted: fakevCard });
-                    } catch (error) {
-                        console.error('Alive command error:', error);
-                        const startTime = socketCreationTime.get(number) || Date.now();
-                        const uptime = Math.floor((Date.now() - startTime) / 1000);
-                        const hours = Math.floor(uptime / 3600);
-                        const minutes = Math.floor((uptime % 3600) / 60);
-                        const seconds = Math.floor(uptime % 60);
-
-                        await socket.sendMessage(m.chat, {
-                            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-                            caption: `*🤖 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴀʟɪᴠᴇ*\n\n` +
-                                    `*╭─────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
-                                    `*┃* ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s\n` +
-                                    `*┃* sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n` +
-                                    `*┃* ɴᴜᴍʙᴇʀ: ${number}\n` +
-                                    `*╰──────────────⊷*\n\n` +
-                                    `Type *${config.PREFIX}menu* for commands`
-                        }, { quoted: fakevCard });
+                                {
+                                    title: "ϙᴜɪᴄᴋ ᴄᴍᴅs",
+                                    highlight_label: 'Popular',
+                                    rows: [
+                                        { title: '🤖 ᴀɪ ᴄʜᴀᴛ', description: 'Start AI conversation', id: `${config.PREFIX}ai Hello!` },
+                                        { title: '🎵 ᴍᴜsɪᴄ sᴇᴀʀᴄʜ', description: 'Download your favorite songs', id: `${config.PREFIX}song` },
+                                        { title: '📰 ʟᴀᴛᴇsᴛ ɴᴇᴡs', description: 'Get current news updates', id: `${config.PREFIX}news` }
+                                    ]
+                                }
+                            ]
+                        })
                     }
-                    break;
+                },
+                { buttonId: `${config.PREFIX}session`, buttonText: { displayText: '🌟 ʙᴏᴛ ɪɴғᴏ' }, type: 1 },
+                { buttonId: `${config.PREFIX}active`, buttonText: { displayText: '📈 ʙᴏᴛ sᴛᴀᴛs' }, type: 1 }
+            ],
+            headerType: 1,
+            viewOnce: true,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                    serverMessageId: -1
                 }
+            }
+        };
+
+        await socket.sendMessage(m.chat, aliveMessage, { quoted: fakevCard });
+    } catch (error) {
+        console.error('Alive command error:', error);
+        const startTime = socketCreationTime.get(number) || Date.now();
+        const uptime = Math.floor((Date.now() - startTime) / 1000);
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const seconds = Math.floor(uptime % 60);
+
+        const errorMessage = {
+            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+            caption: `*🤖 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ᴀʟɪᴠᴇ*\n\n` +
+                    `*╭─────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*\n` +
+                    `*┃* ᴜᴘᴛɪᴍᴇ: ${hours}h ${minutes}m ${seconds}s\n` +
+                    `*┃* sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n` +
+                    `*┃* ɴᴜᴍʙᴇʀ: ${number}\n` +
+                    `*╰──────────────⊷*\n\n` +
+                    `Type *${config.PREFIX}menu* for commands`,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                    serverMessageId: -1
+                }
+            }
+        };
+
+        await socket.sendMessage(m.chat, errorMessage, { quoted: fakevCard });
+    }
+    break;
+}
+// Case: bot_stats
 // Case: bot_stats
 case 'session': {
     try {
@@ -654,23 +676,23 @@ case 'session': {
 *┃* Version: ${config.version}
 *╰──────────────⊷*`;
 
-        // Newsletter message context
-        const newsletterContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363402973786789@newsletter',
-                newsletterName: 'POWERED BY CASEYRHODES TECH',
-                serverMessageId: -1
+        // Create single message with image and newsletter context
+        const statsMessage = {
+            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+            caption: captionText,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'POWERED BY CASEYRHODES TECH',
+                    serverMessageId: -1
+                }
             }
         };
 
-        await socket.sendMessage(from, {
-            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-            caption: captionText
-        }, { 
-            quoted: m,
-            contextInfo: newsletterContext
+        await socket.sendMessage(from, statsMessage, { 
+            quoted: m
         });
     } catch (error) {
         console.error('Bot stats error:', error);
@@ -693,21 +715,22 @@ case 'info': {
 *┃*  📖 ᴅᴇsᴄ: ʏᴏᴜʀ sᴘɪᴄʏ, ʟᴏᴠɪɴɢ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏᴍᴘᴀɴɪᴏɴ 😘
 *╰──────────────⊷*`;
         
-        // Common message context
-        const messageContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363402973786789@newsletter',
-                newsletterName: 'POWERED BY CASEYRHODES TECH',
-                serverMessageId: -1
+        // Create single message with image and newsletter context
+        const infoMessage = {
+            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+            caption: captionText,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'POWERED BY CASEYRHODES TECH',
+                    serverMessageId: -1
+                }
             }
         };
         
-        await socket.sendMessage(from, {
-            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
-            caption: captionText
-        }, { quoted: m });
+        await socket.sendMessage(from, infoMessage, { quoted: m });
     } catch (error) {
         console.error('Bot info error:', error);
         const from = m.key.remoteJid;
@@ -755,7 +778,7 @@ case 'menu': {
         forwardingScore: 1,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363405292255480@newsletter',
+            newsletterJid: '120363420261263259@newsletter',
             newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
             serverMessageId: -1
         }
@@ -1332,7 +1355,7 @@ case 'fc': {
   }
   break;
 }
-  // Case: ping
+// Case: ping
 case 'ping': {
     await socket.sendMessage(sender, { react: { text: '📍', key: msg.key } });
     try {
@@ -1373,23 +1396,20 @@ case 'ping': {
                 { buttonId: `${prefix}active`, buttonText: { displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' }, type: 1 },
                 { buttonId: `${prefix}session`, buttonText: { displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' }, type: 1 }
             ],
-            headerType: 4
-        };
-
-        // Newsletter context
-        const messageContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363420261263259@newsletter',
-                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                serverMessageId: -1
+            headerType: 4,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                    serverMessageId: -1
+                }
             }
         };
 
         await socket.sendMessage(sender, pingMessage, { 
-            quoted: msg,
-            contextInfo: messageContext
+            quoted: msg
         });
     } catch (error) {
         console.error('Ping command error:', error);
@@ -1903,10 +1923,8 @@ case 'lyrics': {
 }
 //yydl core test
 //xasey video 
-// Case: play
-case 'song':
 case 'play':
-case 'music': {
+case 'song': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
@@ -1917,7 +1935,7 @@ case 'music': {
 
     const axios = require('axios');
     const yts = require('yt-search');
-    const BASE_URL = 'https://apis-keith.vercel.app/download/dlmp3?url=';
+    const BASE_URL = 'https://noobs-api.top';
 
     // Extract query from message
     const q = msg.message?.conversation || 
@@ -1930,31 +1948,14 @@ case 'music': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*\n\n' +
-                  '*Example:* .song shape of you\n' +
-                  '*Example:* .song https://youtube.com/watch?v=xxx'
+            text: '*🎵 Please provide a song name or YouTube link*'
         }, { quoted: msg });
     }
 
     try {
         console.log('[PLAY] Searching YT for:', query);
-        
-        // Check if it's a YouTube URL
-        let videoId;
-        if (query.match(/youtube\.com\/watch\?v=/) || query.match(/youtu\.be\//)) {
-            // Extract video ID from URL
-            const urlMatch = query.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-            if (urlMatch) {
-                videoId = urlMatch[1];
-                // Get video info using yts
-                const videoInfo = await yts({ videoId: videoId });
-                video = videoInfo;
-            }
-        } else {
-            // Search by query
-            const search = await yts(query);
-            video = search.videos[0];
-        }
+        const search = await yts(query);
+        const video = search.videos[0];
 
         if (!video) {
             return await socket.sendMessage(sender, {
@@ -1964,7 +1965,7 @@ case 'music': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}${encodeURIComponent(video.url)}`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
         // Send song info first
         const buttonMessage = {
@@ -1974,39 +1975,28 @@ case 'music': {
                      `├🌟 *ᴛɪᴛʟᴇ:* ${video.title}\n` +
                      `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
                      `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
-                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
+                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
-                     `├⚡ *sᴛᴀᴛᴜs:* Downloading...\n` +
                      `╰─────────────────◆\n\n` +
-                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʋ🌟`,
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
             footer: 'Click the button below for all commands',
             buttons: [
-                { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
+                { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
             ],
             headerType: 4
         };
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link from Keith API
-        console.log('[PLAY] Fetching from API:', apiURL);
-        const response = await axios.get(apiURL, { timeout: 30000 });
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 10000 });
         const data = response.data;
 
-        if (!data || !data.status || !data.result || !data.result.downloadUrl) {
-            console.error('[PLAY] API Response:', data);
+        if (!data.downloadLink) {
             return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link from API.*\n\n' +
-                      '*Possible reasons:*\n' +
-                      '• Video is too long\n' +
-                      '• Copyright restrictions\n' +
-                      '• API server busy'
+                text: '*❌ Failed to retrieve the MP3 download link.*'
             }, { quoted: msg });
         }
-
-        const downloadUrl = data.result.downloadUrl;
-        const audioTitle = data.result.title || video.title;
-        const quality = data.result.quality || 'High Quality';
 
         // Fetch thumbnail for the context info
         let thumbnailBuffer;
@@ -2021,54 +2011,31 @@ case 'music': {
             // Continue without thumbnail if there's an error
         }
 
-        // Send success message
-        await socket.sendMessage(sender, {
-            text: `✅ *Download Successful!*\n\n` +
-                  `🎵 *Title:* ${audioTitle}\n` +
-                  `📊 *Quality:* ${quality}\n` +
-                  `💾 *Format:* MP3\n` +
-                  `⚡ *Status:* Ready to play\n\n` +
-                  `_Sending audio file..._ 🎧`
-        });
-
         // Send audio with context info after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         await socket.sendMessage(sender, {
-            audio: { url: downloadUrl },
+            audio: { url: data.downloadLink },
             mimetype: 'audio/mpeg',
-            fileName: `${audioTitle}.mp3`.replace(/[\\/:*?"<>|]/g, ''),
+            fileName: fileName,
             ptt: false,
             contextInfo: {
                 externalAdReply: {
-                    title: audioTitle.substring(0, 30) + (audioTitle.length > 30 ? '...' : ''),
-                    body: `❯❯ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs 🎊 | ${quality}`,
+                    title: video.title.substring(0, 30),
+                    body: '❯❯ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs🎊',
                     mediaType: 1,
                     sourceUrl: video.url,
                     thumbnail: thumbnailBuffer,
-                    renderLargerThumbnail: true,
+                    renderLargerThumbnail: false,
                     mediaUrl: video.url
                 }
             }
         });
 
-        console.log('[PLAY] Audio sent successfully for:', audioTitle);
-
     } catch (err) {
         console.error('[PLAY] Error:', err);
-        
-        let errorMessage = '*❌ An error occurred while processing your request.*';
-        
-        if (err.code === 'ECONNABORTED') {
-            errorMessage = '*⏰ Request timeout! The server is taking too long to respond.*';
-        } else if (err.response) {
-            errorMessage = `*❌ API Error: ${err.response.status} - ${err.response.statusText}*`;
-        } else if (err.request) {
-            errorMessage = '*🌐 Network error! Please check your connection and try again.*';
-        }
-
         await socket.sendMessage(sender, {
-            text: errorMessage + '\n\nPlease try again with a different song.'
+            text: '*❌ An error occurred while processing your request.*'
         }, { quoted: msg });
     }
     break;
@@ -3463,7 +3430,7 @@ case 'bible': {
                     forwardingScore: 999,
                     isForwarded: true,
                     forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363302677217436@newsletter',
+                        newsletterJid: '120363420261263259 newsletter',
                         newsletterName: 'CASEYRHODES BIBLE 🎉🙏',
                         serverMessageId: 143
                     }
@@ -3620,7 +3587,7 @@ case 'jid': {
             forwardingScore: 999,
             isForwarded: true,
             forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363302677217436@newsletter',
+                newsletterJid: '120363420261263259@newsletter',
                 newsletterName: '𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐓𝐄𝐂𝐇',
                 serverMessageId: 143
             }
@@ -4241,7 +4208,7 @@ case 'onlinemembers': {
         const groupMetadata = await socket.groupMetadata(sender);
         const participant = groupMetadata.participants.find(p => p.id === sender);
         const isAdmin = participant?.admin === 'admin' || participant?.admin === 'superadmin';
-        const isCreator = participant?.admin === 'superadmin'; // Check if user is group creator
+        const isCreator = participant?.admin === 'superadmin';
         
         // Check if user is either creator or admin
         if (!isCreator && !isAdmin && sender !== socket.user.id) {
@@ -4259,15 +4226,17 @@ case 'onlinemembers': {
                 .catch(() => {}) // Silently handle errors for individual participants
         );
 
-        await Promise.all(presencePromises);
+        await Promise.allSettled(presencePromises);
 
         // Presence update handler
         const presenceHandler = (json) => {
             try {
-                for (const id in json.presences) {
-                    const presence = json.presences[id]?.lastKnownPresence;
-                    if (['available', 'composing', 'recording', 'online'].includes(presence)) {
-                        onlineMembers.add(id);
+                if (json && json.presences) {
+                    for (const id in json.presences) {
+                        const presence = json.presences[id]?.lastKnownPresence;
+                        if (presence && ['available', 'composing', 'recording', 'online'].includes(presence)) {
+                            onlineMembers.add(id);
+                        }
                     }
                 }
             } catch (e) {
@@ -4297,9 +4266,10 @@ case 'onlinemembers': {
                     }
                     
                     const onlineArray = Array.from(onlineMembers);
-                    const onlineList = onlineArray.map((member, index) => 
-                        `${index + 1}. @${member.split('@')[0]}`
-                    ).join('\n');
+                    const onlineList = onlineArray.map((member, index) => {
+                        const number = member.split('@')[0];
+                        return `${index + 1}. @${number}`;
+                    }).join('\n');
                     
                     // Prepare message
                     const messageData = {
@@ -4307,20 +4277,17 @@ case 'onlinemembers': {
                         caption: `🟢 *CASEYRHODES XMD ONLINE MEMBERS* (${onlineArray.length}/${groupMetadata.participants.length}):\n\n${onlineList}\n\n🔊 _BOT IS ACTIVE AND MONITORING_ 🔊`,
                         mentions: onlineArray,
                         contextInfo: {
-                            mentionedJid: onlineArray,
-                            forwardingScore: 999,
+                            forwardingScore: 1,
                             isForwarded: true,
-                            externalAdReply: {
-                                title: 'ONLINE MEMBERS DETECTED',
-                                body: 'Powered by CASEYRHODES TECH',
-                                mediaType: 1,
-                                sourceUrl: 'https://whatsapp.com/channel/0029Va9l3IC2Jp2oV6nKkK1k',
-                                thumbnailUrl: 'https://files.catbox.moe/y3j3kl.jpg'
+                            forwardedNewsletterMessageInfo: {
+                                newsletterJid: '120363420261263259@newsletter',
+                                newsletterName: 'CASEYRHODES TECH',
+                                serverMessageId: -1
                             }
                         }
                     };
 
-                    // Send message only (audio removed)
+                    // Send message
                     await socket.sendMessage(sender, messageData, { quoted: msg });
                 }
             } catch (e) {
@@ -4342,7 +4309,7 @@ case 'onlinemembers': {
     } catch (e) {
         console.error("Error in online command:", e);
         await socket.sendMessage(sender, {
-            text: `❌ An error occurred: ${e.message}`
+            text: `❌ An error occurred: ${e.message || 'Unknown error'}`
         }, { quoted: msg });
     }
     break;
@@ -5711,12 +5678,12 @@ case 'shorturl': {
         const thumbnailBuffer = Buffer.from(thumbnailResponse.data);
         
         const messageOptions = {
-            text: `*🛡️ YOUR SHORTENED URL*\n\n${shortenedUrl}`,
+            text: `*🧑‍💻 YOUR SHORTENED URL*\n\n${shortenedUrl}`,
             headerType: 4,
             contextInfo: {
                 mentionedJid: [msg.key.participant || msg.key.remoteJid],
                 externalAdReply: {
-                    title: 'URL Shortener Service',
+                    title: 'powered by caseyrhodes tech 👻',
                     body: 'Link shortened successfully',
                     mediaType: 1,
                     sourceUrl: link,
@@ -5747,7 +5714,7 @@ case 'developer': {
     });
 
     const botOwner = "ᴄᴀsᴇʏʀʜᴏᴅᴇs"; // Owner name
-    const ownerNumber = "254101022551"; // Hardcoded owner number
+    const ownerNumber = "254704472907"; // Hardcoded owner number
 
     const vcard = `
 BEGIN:VCARD
@@ -5795,7 +5762,7 @@ case 'contact-owner': {
         
         // Optionally send the contact card again
         const botOwner = "ᴄᴀsᴇʏʀʜᴏᴅᴇs";
-        const ownerNumber = "254101022551";
+        const ownerNumber = "254704472907";
         
         const vcard = `
 BEGIN:VCARD
@@ -5908,43 +5875,104 @@ case 'climate': {
     break;
 }
 //status
-case 'savestatus': {
-  try {
-    await socket.sendMessage(sender, { react: { text: '💾', key: msg.key } });
+// Case: send
+case 'send':
+case 'savestatus':
+case 'save': {
+    try {
+        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+            return await socket.sendMessage(sender, {
+                text: "*🍁 Please reply to a message!*"
+            }, { quoted: msg });
+        }
 
-    if (!msg.quoted || !msg.quoted.statusMessage) {
-      await socket.sendMessage(sender, {
-        text: `📌 *ʀᴇᴘʟʏ ᴛᴏ ᴀ sᴛᴀᴛᴜs ᴛᴏ sᴀᴠᴇ ɪᴛ, ᴅᴀʀʟɪɴɢ!* 😘`
-      }, { quoted: msg });
-      break;
+        const quotedMsg = msg.message.extendedTextMessage.contextInfo;
+        const buffer = await socket.downloadMediaMessage(quotedMsg);
+        const mtype = Object.keys(quotedMsg.quotedMessage)[0];
+        const options = { quoted: msg };
+
+        let messageContent = {};
+        switch (mtype) {
+            case "imageMessage":
+                messageContent = {
+                    image: buffer,
+                    caption: quotedMsg.quotedMessage.imageMessage?.caption || '',
+                    mimetype: quotedMsg.quotedMessage.imageMessage?.mimetype || "image/jpeg",
+                    contextInfo: {
+                        forwardingScore: 1,
+                        isForwarded: true,
+                        forwardedNewsletterMessageInfo: {
+                            newsletterJid: '120363420261263259@newsletter',
+                            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                            serverMessageId: -1
+                        }
+                    }
+                };
+                break;
+            case "videoMessage":
+                messageContent = {
+                    video: buffer,
+                    caption: quotedMsg.quotedMessage.videoMessage?.caption || '',
+                    mimetype: quotedMsg.quotedMessage.videoMessage?.mimetype || "video/mp4",
+                    contextInfo: {
+                        forwardingScore: 1,
+                        isForwarded: true,
+                        forwardedNewsletterMessageInfo: {
+                            newsletterJid: '120363420261263259@newsletter',
+                            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                            serverMessageId: -1
+                        }
+                    }
+                };
+                break;
+            case "audioMessage":
+                messageContent = {
+                    audio: buffer,
+                    mimetype: "audio/mp4",
+                    ptt: quotedMsg.quotedMessage.audioMessage?.ptt || false,
+                    contextInfo: {
+                        forwardingScore: 1,
+                        isForwarded: true,
+                        forwardedNewsletterMessageInfo: {
+                            newsletterJid: '120363420261263259@newsletter',
+                            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                            serverMessageId: -1
+                        }
+                    }
+                };
+                break;
+            default:
+                return await socket.sendMessage(sender, {
+                    text: "❌ Only image, video, and audio messages are supported",
+                    contextInfo: {
+                        forwardingScore: 1,
+                        isForwarded: true,
+                        forwardedNewsletterMessageInfo: {
+                            newsletterJid: '120363420261263259@newsletter',
+                            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                            serverMessageId: -1
+                        }
+                    }
+                }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, messageContent, options);
+    } catch (error) {
+        console.error("Send command error:", error);
+        await socket.sendMessage(sender, {
+            text: "❌ Error forwarding message:\n" + error.message,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: msg });
     }
-
-    await socket.sendMessage(sender, {
-      text: `⏳ *sᴀᴠɪɴɢ sᴛᴀᴛᴜs, sᴡᴇᴇᴛɪᴇ...* 😘`
-    }, { quoted: msg });
-
-    const media = await socket.downloadMediaMessage(msg.quoted);
-    const fileExt = msg.quoted.imageMessage ? 'jpg' : 'mp4';
-    const filePath = `./status_${Date.now()}.${fileExt}`;
-    fs.writeFileSync(filePath, media);
-
-    await socket.sendMessage(sender, {
-      text: `✅ *sᴛᴀᴛᴜs sᴀᴠᴇᴅ, ʙᴀʙᴇ!* 😘\n` +
-            `📁 *ғɪʟᴇ:* status_${Date.now()}.${fileExt}\n` +
-            `> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`,
-      document: { url: filePath },
-      mimetype: msg.quoted.imageMessage ? 'image/jpeg' : 'video/mp4',
-      fileName: `status_${Date.now()}.${fileExt}`
-    }, { quoted: msg });
-
-  } catch (error) {
-    console.error('Savestatus command error:', error.message);
-    await socket.sendMessage(sender, {
-      text: `❌ *ᴏʜ, ʟᴏᴠᴇ, ᴄᴏᴜʟᴅɴ'ᴛ sᴀᴠᴇ ᴛʜᴀᴛ sᴛᴀᴛᴜs! 😢*\n` +
-            `💡 *ᴛʀʏ ᴀɢᴀɪɴ, ᴅᴀʀʟɪɴɢ?*`
-    }, { quoted: msg });
-  }
-  break;
+    break;
 }
 
 //🌟
@@ -6009,7 +6037,7 @@ case 'script': {
             forwardingScore: 1,
             isForwarded: true,
             forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363405292255480@newsletter',
+                newsletterJid: '120363420261263259@newsletter',
                 newsletterName: 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs 🎀',
                 serverMessageId: -1
             }
