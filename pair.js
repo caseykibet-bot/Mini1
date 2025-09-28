@@ -38,11 +38,11 @@ const config = {
     GROUP_INVITE_LINK: '',
     ADMIN_LIST_PATH: './admin.json',
     RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
-    NEWSLETTER_JID: '120363405292255480@newsletter',
+    NEWSLETTER_JID: '120363420261263259@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    OWNER_NUMBER: '254101022551',
+    OWNER_NUMBER: '254704472907',
     OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs🎀',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R'
