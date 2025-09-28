@@ -38,11 +38,11 @@ const config = {
     GROUP_INVITE_LINK: '',
     ADMIN_LIST_PATH: './admin.json',
     RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
-    NEWSLETTER_JID: '120363420261263259@newsletter',
+    NEWSLETTER_JID: '120363405292255480@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    OWNER_NUMBER: '254704472907',
+    OWNER_NUMBER: '254101022551',
     OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs🎀',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R'
@@ -739,7 +739,8 @@ case 'info': {
     break;
 }
 // Case: menu
-case 'menu': {
+  // Case: menu
+         case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -749,16 +750,6 @@ case 'menu': {
     const seconds = Math.floor(uptime % 60);
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
-    
-    // Array of random images
-    const menuImages = [
-      "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg",
-      "https://h.uguu.se/jdAcdSYl.jpg",
-      "https://h.uguu.se/DQVHSqxP.jpg"
-    ];
-    
-    // Select random image
-    const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
     
     let menuText = `*╭─────────────────⊷*  
 *┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
@@ -785,17 +776,17 @@ case 'menu': {
     };
 
     const menuMessage = {
-      image: { url: randomImage },
+      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
       caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*\n${menuText}`,
       buttons: [
         {
           buttonId: `${config.PREFIX}quick_commands`,
-          buttonText: { displayText: '🧑‍💻 CASEYRHODES MENU' },
+          buttonText: { displayText: '🧑‍💻 SELECT CATEGORY' },
           type: 4,
           nativeFlowInfo: {
             name: 'single_select',
             paramsJson: JSON.stringify({
-              title: '🧑‍💻 CASEYRHODES MENU',
+              title: '🧑‍💻 SELECT CATEGORY',
               sections: [
                 {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
@@ -898,7 +889,7 @@ case 'menu': {
                     { title: "🌦️ ᴡᴇᴀᴛʜᴇʀ", description: "Get weather forecast", id: `${config.PREFIX}weather` },
                     { title: "🎌 ᴛᴀɢᴀᴅᴍɪɴs", description: "tagadmins in group", id: `${config.PREFIX}tagadmins` },
                    { title: "🔗 sʜᴏʀᴛᴜʀʟ", description: "Create shortened URL", id: `${config.PREFIX}shorturl` },
-                    { title: "📤 ᴜʀʟ", description: "Upload media to link", id: `${config.PREFIX}tourl2` },
+                    { title: "📤 ᴛᴏᴜʀʟ2", description: "Upload media to link", id: `${config.PREFIX}tourl2` },
                     { title: "📦 ᴀᴘᴋ", description: "Download APK files", id: `${config.PREFIX}apk` },   
                     { title: "🧾lyrics", description: "generate lyrics", id: `${config.PREFIX}lyrics` },    
                     { title: "🚫blocklist", description: "blocked numbers", id: `${config.PREFIX}blocklist` },
@@ -922,15 +913,6 @@ case 'menu': {
     console.error('Menu command error:', error);
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
-    
-    // Select random image for fallback too
-    const fallbackImages = [
-      "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg",
-      "https://h.uguu.se/jdAcdSYl.jpg",
-      "https://h.uguu.se/DQVHSqxP.jpg"
-    ];
-    const randomFallbackImage = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
-    
     let fallbackMenuText = `
 *╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
@@ -944,7 +926,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 `;
 
     await socket.sendMessage(from, {
-      image: { url: randomFallbackImage },
+      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
       caption: fallbackMenuText,
       contextInfo: messageContext
     }, { quoted: fakevCard });
@@ -1359,10 +1341,13 @@ case 'fc': {
 case 'ping': {
     await socket.sendMessage(sender, { react: { text: '📍', key: msg.key } });
     try {
-        const startTime = new Date().getTime();
+        const startTime = Date.now();
+        
+        // Simulate some processing time
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         // Calculate latency
-        const endTime = new Date().getTime();
+        const endTime = Date.now();
         const latency = endTime - startTime;
 
         // Determine quality based on latency
@@ -1382,23 +1367,38 @@ case 'ping': {
             emoji = '🔴';
         }
 
-        // Create single message with image, text, and buttons
+        // Create the ping message with image, buttons, and newsletter context
         const pingMessage = {
-            image: { url: 'https://h.uguu.se/jdAcdSYl.jpg' }, // Replace with your image URL
+            image: { 
+                url: 'https://files.catbox.moe/8s2st9.jpg' 
+            },
             caption: `🏓 *ᴘɪɴɢ!*\n\n` +
-                `⚡ *sᴘᴇᴇᴅ:* ${latency}ms\n` +
-                `${emoji} *ϙᴜᴀʟɪᴛʏ:* ${quality}\n` +
-                `🕒 *ᴛɪᴍᴇsᴛᴀᴍᴘ:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC', hour12: true })}\n\n` +
-                `*╭───────────────────⊷*\n` +
-                `*┃* 🎀 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🎀 \n` +
-                `*╰───────────────────⊷*`,
+                    `⚡ *sᴘᴇᴇᴅ:* ${latency}ms\n` +
+                    `${emoji} *ϙᴜᴀʟɪᴛʏ:* ${quality}\n` +
+                    `🕒 *ᴛɪᴍᴇsᴛᴀᴍᴘ:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC', hour12: true })}\n\n` +
+                    `*╭───────────────────⊷*\n` +
+                    `*┃* 🎀 ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🎀 \n` +
+                    `*╰───────────────────⊷*`,
+            footer: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
             buttons: [
-                { buttonId: `${prefix}active`, buttonText: { displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' }, type: 1 },
-                { buttonId: `${prefix}session`, buttonText: { displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' }, type: 1 }
+                {
+                    buttonId: `${prefix}active`,
+                    buttonText: { 
+                        displayText: '🔮 ʙᴏᴛ ɪɴғᴏ 🔮' 
+                    },
+                    type: 1
+                },
+                {
+                    buttonId: `${prefix}session`, 
+                    buttonText: { 
+                        displayText: '📊 ʙᴏᴛ sᴛᴀᴛs 📊' 
+                    },
+                    type: 1
+                }
             ],
             headerType: 4,
             contextInfo: {
-                forwardingScore: 1,
+                forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                     newsletterJid: '120363420261263259@newsletter',
@@ -1411,17 +1411,18 @@ case 'ping': {
         await socket.sendMessage(sender, pingMessage, { 
             quoted: msg
         });
+
     } catch (error) {
         console.error('Ping command error:', error);
-        const startTime = new Date().getTime();
-        const endTime = new Date().getTime();
+        const startTime = Date.now();
+        const endTime = Date.now();
         await socket.sendMessage(sender, { 
-            text: `📌 *Pong!*\n⚡ Latency: ${endTime - startTime}ms` 
+            text: `🏓 *ᴘɪɴɢ!*\n\n⚡ *sᴘᴇᴇᴅ:* ${endTime - startTime}ms\n\n*ᴇʀʀᴏʀ ᴏᴄᴄᴜʀʀᴇᴅ, ʙᴜᴛ ʙᴏᴛ ɪs sᴛɪʟʟ ᴀʟɪᴠᴇ!*` 
         }, { quoted: msg });
     }
     break;
 }
-  // Case: pair
+// Case: pair
                // Case: pair
 // Case: pair
 case 'pair': {
@@ -1592,7 +1593,7 @@ case 'block': {
         
         // Send success message immediately
         await socket.sendMessage(sender, { 
-            image: { url: `https://files.catbox.moe/y3j3kl.jpg` },  
+            image: { url: `https://files.catbox.moe/8s2st9.jpg` },  
             caption: "*ʙʟᴏᴄᴋᴇᴅ sᴜᴄᴄᴇsғᴜʟʟʏ✅*\n\nblocked",
             buttons: [
                 { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
@@ -4204,19 +4205,9 @@ case 'onlinemembers': {
             }, { quoted: msg });
         }
 
-        // Get group metadata to check admin status
+        // Get group metadata
         const groupMetadata = await socket.groupMetadata(sender);
-        const participant = groupMetadata.participants.find(p => p.id === sender);
-        const isAdmin = participant?.admin === 'admin' || participant?.admin === 'superadmin';
-        const isCreator = participant?.admin === 'superadmin';
         
-        // Check if user is either creator or admin
-        if (!isCreator && !isAdmin && sender !== socket.user.id) {
-            return await socket.sendMessage(sender, {
-                text: '❌ Only bot owner and group admins can use this command!'
-            }, { quoted: msg });
-        }
-
         const onlineMembers = new Set();
         
         // Request presence updates for all participants
@@ -4623,99 +4614,161 @@ case 'fb': {
                     break;
                 }
 
-                case 'winfo': {
-                
-                        await socket.sendMessage(sender, { react: { text: '😢', key: msg.key } });
-                    console.log('winfo command triggered for:', number);
-                    if (!args[0]) {
-                        await socket.sendMessage(sender, {
-                            image: { url: config.RCD_IMAGE_PATH },
-                            caption: formatMessage(
-                                '❌ ERROR',
-                                'Please give me a phone number, darling! Usage: .winfo 2637xxxxxxxx',
-                                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-                            )
-                        });
-                        break;
-                    }
+case 'winfo': {
+    await socket.sendMessage(sender, { react: { text: '😢', key: msg.key } });
+    console.log('winfo command triggered for:', number);
+    
+    if (!args[0]) {
+        await socket.sendMessage(sender, {
+            image: { url: config.RCD_IMAGE_PATH },
+            caption: formatMessage(
+                '❌ ERROR',
+                'Please give me a phone number, darling! Usage: .winfo 2637xxxxxxxx',
+                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+            )
+        });
+        break;
+    }
 
-                    let inputNumber = args[0].replace(/[^0-9]/g, '');
-                    if (inputNumber.length < 10) {
-                        await socket.sendMessage(sender, {
-                            image: { url: config.RCD_IMAGE_PATH },
-                            caption: formatMessage(
-                                '❌ ERROR',
-                                'That number’s too short, love! Try: .winfo +263714575857',
-                                '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-                            )
-                        });
-                        break;
-                    }
+    let inputNumber = args[0].replace(/[^0-9]/g, '');
+    if (inputNumber.length < 10) {
+        await socket.sendMessage(sender, {
+            image: { url: config.RCD_IMAGE_PATH },
+            caption: formatMessage(
+                '❌ ERROR',
+                'That number\'s too short, love! Try: .winfo +263714575857',
+                '> ᴄᴀsᴇʏʀʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+            )
+        });
+        break;
+    }
 
-                    let winfoJid = `${inputNumber}@s.whatsapp.net`;
-                    const [winfoUser] = await socket.onWhatsApp(winfoJid).catch(() => []);
-                    if (!winfoUser?.exists) {
-                        await socket.sendMessage(sender, {
-                            image: { url: config.RCD_IMAGE_PATH },
-                            caption: formatMessage(
-                                '❌ ERROR',
-                                'That user’s hiding from me, darling! Not on WhatsApp 😢',
-                                '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-                            )
-                        });
-                        break;
-                    }
+    let winfoJid = `${inputNumber}@s.whatsapp.net`;
+    
+    try {
+        // Check if user exists on WhatsApp using latest API
+        const [winfoUser] = await socket.onWhatsApp(winfoJid);
+        if (!winfoUser?.exists) {
+            await socket.sendMessage(sender, {
+                image: { url: config.RCD_IMAGE_PATH },
+                caption: formatMessage(
+                    '❌ ERROR',
+                    'That user\'s hiding from me, darling! Not on WhatsApp 😢',
+                    '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+                )
+            });
+            break;
+        }
 
-                    let winfoPpUrl;
-                    try {
-                        winfoPpUrl = await socket.profilePictureUrl(winfoJid, 'image');
-                    } catch {
-                        winfoPpUrl = 'https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png';
-                    }
+        let winfoPpUrl;
+        try {
+            // Get profile picture with latest method
+            winfoPpUrl = await socket.profilePictureUrl(winfoJid, 'image');
+        } catch {
+            winfoPpUrl = 'https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png';
+        }
 
-                    let winfoName = winfoJid.split('@')[0];
-                    try {
-                        const presence = await socket.presenceSubscribe(winfoJid).catch(() => null);
-                        if (presence?.pushName) winfoName = presence.pushName;
-                    } catch (e) {
-                        console.log('Name fetch error:', e);
-                    }
+        let winfoName = winfoJid.split('@')[0];
+        let winfoBio = 'No bio available';
+        let winfoLastSeen = '❌ 𝐍𝙾𝚃 𝐅𝙾𝚄𝙽𝙳';
+        let winfoBusiness = winfoUser?.isBusiness ? '💼 Business' : '👤 Personal';
 
-                    let winfoBio = 'No bio available';
-                    try {
-                        const statusData = await socket.fetchStatus(winfoJid).catch(() => null);
-                        if (statusData?.status) {
-                            winfoBio = `${statusData.status}\n└─ 📌 Updated: ${statusData.setAt ? new Date(statusData.setAt).toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }) : 'Unknown'}`;
-                        }
-                    } catch (e) {
-                        console.log('Bio fetch error:', e);
-                    }
+        try {
+            // Get user details including name and business info
+            const contact = await socket.getContact(winfoJid);
+            if (contact?.name || contact?.notify) {
+                winfoName = contact.name || contact.notify || winfoName;
+            }
+        } catch (e) {
+            console.log('Contact fetch error:', e);
+        }
 
-                    let winfoLastSeen = '❌ 𝐍𝙾𝚃 𝐅𝙾𝚄𝙽𝙳';
-                    try {
-                        const lastSeenData = await socket.fetchPresence(winfoJid).catch(() => null);
-                        if (lastSeenData?.lastSeen) {
-                            winfoLastSeen = `🕒 ${new Date(lastSeenData.lastSeen).toLocaleString('en-US', { timeZone: 'Africa/Nairobi' })}`;
-                        }
-                    } catch (e) {
-                        console.log('Last seen fetch error:', e);
-                    }
+        try {
+            // Get status using latest API
+            const statusData = await socket.fetchStatus(winfoJid);
+            if (statusData?.status) {
+                const statusTime = statusData.setAt ? 
+                    new Date(statusData.setAt * 1000).toLocaleString('en-US', { 
+                        timeZone: 'Africa/Nairobi',
+                        dateStyle: 'short',
+                        timeStyle: 'short'
+                    }) : 'Unknown';
+                winfoBio = `${statusData.status}\n└─ 📌 Updated: ${statusTime}`;
+            }
+        } catch (e) {
+            console.log('Bio fetch error:', e);
+        }
 
-                    const userInfoWinfo = formatMessage(
-                        '🔍 PROFILE INFO',
-                        `> *Number:* ${winfoJid.replace(/@.+/, '')}\n\n> *Account Type:* ${winfoUser.isBusiness ? '💼 Business' : '👤 Personal'}\n\n*📝 About:*\n${winfoBio}\n\n*🕒 Last Seen:* ${winfoLastSeen}`,
-                        '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-                    );
+        try {
+            // Get presence and last seen using latest API
+            await socket.presenceSubscribe(winfoJid);
+            
+            // Wait a moment for presence data
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const presenceData = await socket.getPresence(winfoJid);
+            if (presenceData?.lastSeen) {
+                const lastSeenTime = new Date(presenceData.lastSeen * 1000).toLocaleString('en-US', { 
+                    timeZone: 'Africa/Nairobi',
+                    dateStyle: 'short',
+                    timeStyle: 'short'
+                });
+                winfoLastSeen = `🕒 ${lastSeenTime}`;
+            }
+            
+            // Additional presence info
+            if (presenceData?.lastKnownPresence) {
+                const statusMap = {
+                    'available': '🟢 Online',
+                    'composing': '✍️ Typing...',
+                    'recording': '🎤 Recording...',
+                    'paused': '⏸️ Paused',
+                    'unavailable': '⚫ Offline'
+                };
+                const currentStatus = statusMap[presenceData.lastKnownPresence] || '❓ Unknown';
+                winfoLastSeen += `\n└─ 📱 Status: ${currentStatus}`;
+            }
+        } catch (e) {
+            console.log('Presence fetch error:', e);
+        }
 
-                    await socket.sendMessage(sender, {
-                        image: { url: winfoPpUrl },
-                        caption: userInfoWinfo,
-                        mentions: [winfoJid]
-                    }, { quoted: fakevCard });
+        // Format the user info message
+        const userInfoWinfo = formatMessage(
+            '🔍 PROFILE INFO',
+            `> *Number:* ${winfoJid.replace(/@.+/, '')}\n\n` +
+            `> *Name:* ${winfoName}\n\n` +
+            `> *Account Type:* ${winfoBusiness}\n\n` +
+            `*📝 About:*\n${winfoBio}\n\n` +
+            `*👀 Last Seen:*\n${winfoLastSeen}`,
+            '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+        );
 
-                    console.log('User profile sent successfully for .winfo');
-                    break;
-                }
+        // Send the profile info with enhanced formatting
+        await socket.sendMessage(sender, {
+            image: { url: winfoPpUrl },
+            caption: userInfoWinfo,
+            contextInfo: {
+                mentionedJid: [winfoJid],
+                forwardingScore: 1,
+                isForwarded: true
+            }
+        }, { quoted: msg });
+
+        console.log('User profile sent successfully for .winfo');
+        
+    } catch (error) {
+        console.error('Error in winfo command:', error);
+        await socket.sendMessage(sender, {
+            image: { url: config.RCD_IMAGE_PATH },
+            caption: formatMessage(
+                '❌ ERROR',
+                'Failed to fetch user info. The user might have privacy settings enabled or the number might be invalid.',
+                '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
+            )
+        });
+    }
+    break;
+}
 //===============================
                 case 'ig': {
                 await socket.sendMessage(sender, { react: { text: '✅️', key: msg.key } });
@@ -6481,7 +6534,7 @@ const groupStatus = groupResult.status === 'success'
     ? 'ᴊᴏɪɴᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ'
     : `ғᴀɪʟᴇᴅ ᴛᴏ ᴊᴏɪɴ ɢʀᴏᴜᴘ: ${groupResult.error}`;
 
-// Fixed template literal and formatting
+// Fixed template literal and formatting with newsletter
 await socket.sendMessage(userJid, {
     image: { url: config.RCD_IMAGE_PATH },
     caption: formatMessage(
@@ -6491,14 +6544,24 @@ await socket.sendMessage(userJid, {
         `🏠 ɢʀᴏᴜᴘ sᴛᴀᴛᴜs: ${groupStatus}\n` +
         `⏰ ᴄᴏɴɴᴇᴄᴛᴇᴅ: ${new Date().toLocaleString()}\n\n` +
         `📢 ғᴏʟʟᴏᴡ ᴍᴀɪɴ ᴄʜᴀɴɴᴇʟ 👇\n` +
-        `> https://chat.whatsapp.com/GbpVWoHH0XLHOHJsYLtbjH\n\n` +
+        `> https://whatsapp.com/channel/0029Vb6TqBXGk1Ftb9397f0r\n\n` +
         `🤖 ᴛʏᴘᴇ *${config.PREFIX}menu* ᴛᴏ ɢᴇᴛ sᴛᴀʀᴛᴇᴅ!`,
         '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🎀'
     ),
     buttons: [
         { buttonId: `${config.PREFIX}owner`, buttonText: { displayText: '👑 OWNER' }, type: 1 },
         { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '🎀 MENU' }, type: 1 }
-    ]
+    ],
+    headerType: 4,
+    contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363420261263259@newsletter',
+            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+            serverMessageId: -1
+        }
+    }
 });
 
 await sendAdminConnectMessage(socket, sanitizedNumber, groupResult);
