@@ -715,8 +715,8 @@ case 'info': {
     }
     break;
 }
-         // Case: menu
-         case 'menu': {
+// Case: menu
+case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -726,6 +726,16 @@ case 'info': {
     const seconds = Math.floor(uptime % 60);
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
+    
+    // Array of random images
+    const menuImages = [
+      "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg",
+      "https://h.uguu.se/jdAcdSYl.jpg",
+      "https://h.uguu.se/DQVHSqxP.jpg"
+    ];
+    
+    // Select random image
+    const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
     
     let menuText = `*╭─────────────────⊷*  
 *┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
@@ -752,7 +762,7 @@ case 'info': {
     };
 
     const menuMessage = {
-      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+      image: { url: randomImage },
       caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*\n${menuText}`,
       buttons: [
         {
@@ -865,7 +875,7 @@ case 'info': {
                     { title: "🌦️ ᴡᴇᴀᴛʜᴇʀ", description: "Get weather forecast", id: `${config.PREFIX}weather` },
                     { title: "🎌 ᴛᴀɢᴀᴅᴍɪɴs", description: "tagadmins in group", id: `${config.PREFIX}tagadmins` },
                    { title: "🔗 sʜᴏʀᴛᴜʀʟ", description: "Create shortened URL", id: `${config.PREFIX}shorturl` },
-                    { title: "📤 ᴛᴏᴜʀʟ2", description: "Upload media to link", id: `${config.PREFIX}tourl2` },
+                    { title: "📤 ᴜʀʟ", description: "Upload media to link", id: `${config.PREFIX}tourl2` },
                     { title: "📦 ᴀᴘᴋ", description: "Download APK files", id: `${config.PREFIX}apk` },   
                     { title: "🧾lyrics", description: "generate lyrics", id: `${config.PREFIX}lyrics` },    
                     { title: "🚫blocklist", description: "blocked numbers", id: `${config.PREFIX}blocklist` },
@@ -889,6 +899,15 @@ case 'info': {
     console.error('Menu command error:', error);
     const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
+    
+    // Select random image for fallback too
+    const fallbackImages = [
+      "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg",
+      "https://h.uguu.se/jdAcdSYl.jpg",
+      "https://h.uguu.se/DQVHSqxP.jpg"
+    ];
+    const randomFallbackImage = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+    
     let fallbackMenuText = `
 *╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs 〙───⊷*
 *┃*  🤖 *Bot*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 
@@ -902,7 +921,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 `;
 
     await socket.sendMessage(from, {
-      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+      image: { url: randomFallbackImage },
       caption: fallbackMenuText,
       contextInfo: messageContext
     }, { quoted: fakevCard });
@@ -1313,7 +1332,7 @@ case 'fc': {
   }
   break;
 }
-            // Case: ping
+  // Case: ping
 case 'ping': {
     await socket.sendMessage(sender, { react: { text: '📍', key: msg.key } });
     try {
@@ -1342,7 +1361,7 @@ case 'ping': {
 
         // Create single message with image, text, and buttons
         const pingMessage = {
-            image: { url: 'https://files.catbox.moe/6mfpu8.jpg' }, // Replace with your image URL
+            image: { url: 'https://h.uguu.se/jdAcdSYl.jpg' }, // Replace with your image URL
             caption: `🏓 *ᴘɪɴɢ!*\n\n` +
                 `⚡ *sᴘᴇᴇᴅ:* ${latency}ms\n` +
                 `${emoji} *ϙᴜᴀʟɪᴛʏ:* ${quality}\n` +
@@ -1357,7 +1376,21 @@ case 'ping': {
             headerType: 4
         };
 
-        await socket.sendMessage(sender, pingMessage, { quoted: msg });
+        // Newsletter context
+        const messageContext = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363420261263259@newsletter',
+                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                serverMessageId: -1
+            }
+        };
+
+        await socket.sendMessage(sender, pingMessage, { 
+            quoted: msg,
+            contextInfo: messageContext
+        });
     } catch (error) {
         console.error('Ping command error:', error);
         const startTime = new Date().getTime();
@@ -1367,8 +1400,8 @@ case 'ping': {
         }, { quoted: msg });
     }
     break;
-}            
-             // Case: pair
+}
+  // Case: pair
                // Case: pair
 // Case: pair
 case 'pair': {
@@ -1626,71 +1659,102 @@ case 'details': {
     }
     break;
 }
-//setpp case 
-case 'fullpp':
-case 'setpp':
-case 'setdp':
-case 'pp': {
-    try {
-        // Check if Jimp is available
-        let Jimp;
-        try {
-            Jimp = require('jimp');
-        } catch (e) {
-            return await socket.sendMessage(sender, {
-                text: "*❌ Jimp module is not installed!*\n\nPlease install it with: npm install jimp"
-            }, { quoted: msg });
-        }
-
-        // Check if message has quoted image
-        if (!msg.quoted || !msg.quoted.mtype?.includes("image")) {
-            return await socket.sendMessage(sender, {
-                text: "*⚠️ Please reply to an image to set as profile picture.*"
-            }, { quoted: msg });
-        }
-
-        // Send processing message
-        await socket.sendMessage(sender, {
-            text: "*🖼️ Processing image, please wait...*"
+// Case: setpp
+case 'setpp': {
+  try {
+    await socket.sendMessage(sender, { react: { text: '🖼️', key: msg.key } });
+    
+    // Check if user is owner
+    const isOwner = msg.key.fromMe;
+    if (!isOwner) {
+        await socket.sendMessage(from, { 
+            text: '❌ *Owner Only Command*\n\nThis command is only available for the bot owner!' 
         }, { quoted: msg });
-
-        // Download and process the image
-        const mediaBuffer = await msg.quoted.download();
-        const image = await Jimp.read(mediaBuffer);
-
-        // Resize and blur background
-        const blurred = image.clone().cover(640, 640).blur(8);
-        const centered = image.clone().contain(640, 640);
-        blurred.composite(centered, 0, 0);
-
-        const processedImage = await blurred.getBufferAsync(Jimp.MIME_JPEG);
-
-        // Get bot's JID
-        const botJid = socket.user.id.split(":")[0] + "@s.whatsapp.net";
-
-        // Upload profile picture
-        await socket.updateProfilePicture(botJid, processedImage);
-
-        // Success message
-        await socket.sendMessage(sender, {
-            text: "*✅ Profile picture updated successfully!*",
-            buttons: [
-                {
-                    buttonId: `${prefix}pp`,
-                    buttonText: { displayText: "🔄 Change Again" },
-                    type: 1
-                }
-            ]
-        }, { quoted: msg });
-
-    } catch (err) {
-        console.error("SetPP Error:", err);
-        await socket.sendMessage(sender, {
-            text: `*❌ Failed to update profile picture:*\n${err.message || "Unknown error"}`
-        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '🚫', key: msg.key } });
+        return;
     }
-    break;
+
+    // Check if message is a reply
+    const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    if (!quotedMessage) {
+        await socket.sendMessage(from, { 
+            text: '📸 *How to Use*\n\nPlease reply to an image with the `.setpp` command!\n\nExample: Reply to an image and type `.setpp`'
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: 'ℹ️', key: msg.key } });
+        return;
+    }
+
+    // Check if quoted message contains an image
+    const imageMessage = quotedMessage.imageMessage || quotedMessage.stickerMessage;
+    if (!imageMessage) {
+        await socket.sendMessage(from, { 
+            text: '❌ *Invalid Media*\n\nThe replied message must contain an image or sticker!\n\nSupported formats: JPG, PNG, WebP'
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+        return;
+    }
+
+    // Create tmp directory if it doesn't exist
+    const tmpDir = path.join(process.cwd(), 'tmp');
+    if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+    }
+
+    // Download the image
+    await socket.sendMessage(from, { 
+        text: '⏳ Downloading image...' 
+    }, { quoted: msg });
+
+    const stream = await downloadContentFromMessage(imageMessage, 'image');
+    let buffer = Buffer.from([]);
+    
+    for await (const chunk of stream) {
+        buffer = Buffer.concat([buffer, chunk]);
+    }
+
+    const imagePath = path.join(tmpDir, `profile_${Date.now()}.jpg`);
+    
+    // Save the image
+    fs.writeFileSync(imagePath, buffer);
+
+    await socket.sendMessage(from, { 
+        text: '🔄 Setting profile picture...' 
+    }, { quoted: msg });
+
+    // Set the profile picture
+    await socket.updateProfilePicture(socket.user.id, { url: imagePath });
+
+    // Clean up the temporary file
+    fs.unlinkSync(imagePath);
+
+    await socket.sendMessage(from, { 
+        text: '✅ *Profile Picture Updated!*\n\nBot profile picture has been successfully updated!' 
+    }, { quoted: msg });
+    
+    await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+
+  } catch (error) {
+    console.error('Error in setpp command:', error);
+    
+    let errorMessage = '❌ *Update Failed*\n\nFailed to update profile picture!';
+    
+    if (error.message.includes('rate')) {
+        errorMessage = '❌ *Rate Limited*\n\nPlease wait a few minutes before changing profile picture again.';
+    } else if (error.message.includes('size')) {
+        errorMessage = '❌ *File Too Large*\n\nPlease use a smaller image file.';
+    } else if (error.message.includes('format')) {
+        errorMessage = '❌ *Invalid Format*\n\nPlease use a valid image format (JPG, PNG).';
+    }
+    
+    await socket.sendMessage(from, { 
+        text: errorMessage 
+    }, { quoted: msg });
+    
+    await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+  }
+  break;
 }
+
 // Case: blocklist (Blocked Users)
 case 'blocklist':
 case 'blocked': {
@@ -1839,8 +1903,10 @@ case 'lyrics': {
 }
 //yydl core test
 //xasey video 
+// Case: play
+case 'song':
 case 'play':
-case 'song': {
+case 'music': {
     // React to the command first
     await socket.sendMessage(sender, {
         react: {
@@ -1851,7 +1917,7 @@ case 'song': {
 
     const axios = require('axios');
     const yts = require('yt-search');
-    const BASE_URL = 'https://noobs-api.top';
+    const BASE_URL = 'https://apis-keith.vercel.app/download/dlmp3?url=';
 
     // Extract query from message
     const q = msg.message?.conversation || 
@@ -1864,14 +1930,31 @@ case 'song': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*'
+            text: '*🎵 Please provide a song name or YouTube link*\n\n' +
+                  '*Example:* .song shape of you\n' +
+                  '*Example:* .song https://youtube.com/watch?v=xxx'
         }, { quoted: msg });
     }
 
     try {
         console.log('[PLAY] Searching YT for:', query);
-        const search = await yts(query);
-        const video = search.videos[0];
+        
+        // Check if it's a YouTube URL
+        let videoId;
+        if (query.match(/youtube\.com\/watch\?v=/) || query.match(/youtu\.be\//)) {
+            // Extract video ID from URL
+            const urlMatch = query.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+            if (urlMatch) {
+                videoId = urlMatch[1];
+                // Get video info using yts
+                const videoInfo = await yts({ videoId: videoId });
+                video = videoInfo;
+            }
+        } else {
+            // Search by query
+            const search = await yts(query);
+            video = search.videos[0];
+        }
 
         if (!video) {
             return await socket.sendMessage(sender, {
@@ -1881,7 +1964,7 @@ case 'song': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
+        const apiURL = `${BASE_URL}${encodeURIComponent(video.url)}`;
 
         // Send song info first
         const buttonMessage = {
@@ -1891,28 +1974,39 @@ case 'song': {
                      `├🌟 *ᴛɪᴛʟᴇ:* ${video.title}\n` +
                      `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
                      `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
-                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
+                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
+                     `├⚡ *sᴛᴀᴛᴜs:* Downloading...\n` +
                      `╰─────────────────◆\n\n` +
-                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
+                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʋ🌟`,
             footer: 'Click the button below for all commands',
             buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
+                { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
             ],
             headerType: 4
         };
 
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link
-        const response = await axios.get(apiURL, { timeout: 10000 });
+        // Get download link from Keith API
+        console.log('[PLAY] Fetching from API:', apiURL);
+        const response = await axios.get(apiURL, { timeout: 30000 });
         const data = response.data;
 
-        if (!data.downloadLink) {
+        if (!data || !data.status || !data.result || !data.result.downloadUrl) {
+            console.error('[PLAY] API Response:', data);
             return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
+                text: '*❌ Failed to retrieve the MP3 download link from API.*\n\n' +
+                      '*Possible reasons:*\n' +
+                      '• Video is too long\n' +
+                      '• Copyright restrictions\n' +
+                      '• API server busy'
             }, { quoted: msg });
         }
+
+        const downloadUrl = data.result.downloadUrl;
+        const audioTitle = data.result.title || video.title;
+        const quality = data.result.quality || 'High Quality';
 
         // Fetch thumbnail for the context info
         let thumbnailBuffer;
@@ -1927,31 +2021,54 @@ case 'song': {
             // Continue without thumbnail if there's an error
         }
 
+        // Send success message
+        await socket.sendMessage(sender, {
+            text: `✅ *Download Successful!*\n\n` +
+                  `🎵 *Title:* ${audioTitle}\n` +
+                  `📊 *Quality:* ${quality}\n` +
+                  `💾 *Format:* MP3\n` +
+                  `⚡ *Status:* Ready to play\n\n` +
+                  `_Sending audio file..._ 🎧`
+        });
+
         // Send audio with context info after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
         await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
+            audio: { url: downloadUrl },
             mimetype: 'audio/mpeg',
-            fileName: fileName,
+            fileName: `${audioTitle}.mp3`.replace(/[\\/:*?"<>|]/g, ''),
             ptt: false,
             contextInfo: {
                 externalAdReply: {
-                    title: video.title.substring(0, 30),
-                    body: '❯❯ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs🎊',
+                    title: audioTitle.substring(0, 30) + (audioTitle.length > 30 ? '...' : ''),
+                    body: `❯❯ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs 🎊 | ${quality}`,
                     mediaType: 1,
                     sourceUrl: video.url,
                     thumbnail: thumbnailBuffer,
-                    renderLargerThumbnail: false,
+                    renderLargerThumbnail: true,
                     mediaUrl: video.url
                 }
             }
         });
 
+        console.log('[PLAY] Audio sent successfully for:', audioTitle);
+
     } catch (err) {
         console.error('[PLAY] Error:', err);
+        
+        let errorMessage = '*❌ An error occurred while processing your request.*';
+        
+        if (err.code === 'ECONNABORTED') {
+            errorMessage = '*⏰ Request timeout! The server is taking too long to respond.*';
+        } else if (err.response) {
+            errorMessage = `*❌ API Error: ${err.response.status} - ${err.response.statusText}*`;
+        } else if (err.request) {
+            errorMessage = '*🌐 Network error! Please check your connection and try again.*';
+        }
+
         await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*'
+            text: errorMessage + '\n\nPlease try again with a different song.'
         }, { quoted: msg });
     }
     break;
