@@ -42,10 +42,11 @@ const config = {
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    OWNER_NUMBER: '254101022551',
+    OWNER_NUMBER: '254704472907',
     OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs🎀',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R',
+    IMAGE_PATH: 'https://i.ibb.co/RR5sPHC/caseyrhodes.jpg'
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -153,11 +154,11 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-  }
+}
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'IuzEnIJP8h73cwF667sPsw'; // Hardcoded default
+    let inviteCode = 'DEcov3KLtMQFvBh5mUkVdt'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -175,6 +176,33 @@ async function joinGroup(socket) {
             console.log('Group join response:', JSON.stringify(response, null, 2)); // Debug response
             if (response?.gid) {
                 console.log(`[ ✅ ] Successfully joined group with ID: ${response.gid}`);
+                
+                // FIXED: Send success message to owner when bot connects
+                try {
+                    const successMessage = {
+                        image: { url: "https://i.ibb.co/RR5sPHC/caseyrhodes.jpg" }, 
+                        caption: `*𝐂𝐎𝐍𝐍𝐄𝐂𝐓𝐄𝐃✅*\n\n📱 Bot is now online and ready!\n⏰ Connected at: ${new Date().toLocaleString()}\n\n${config.BOT_FOOTER}`,
+                        contextInfo: {
+                            forwardingScore: 1,
+                            isForwarded: true,
+                            forwardedNewsletterMessageInfo: {
+                                newsletterJid: '120363420261263259@newsletter',
+                                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                                serverMessageId: -1
+                            }
+                        }
+                    };
+                    
+                    // Send to owner number from config
+                    const ownerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
+                    await socket.sendMessage(ownerJid, successMessage);
+                    console.log(`✅ Connection success message sent to owner: ${config.OWNER_NUMBER}`);
+                    
+                } catch (error) {
+                    console.error('Failed to send connection success message:', error);
+                    // Don't throw error here to avoid breaking the group join process
+                }
+                
                 return { status: 'success', gid: response.gid };
             }
             throw new Error('No group ID in response');
@@ -192,8 +220,9 @@ async function joinGroup(socket) {
             if (retries === 0) {
                 console.error('[ ❌ ] Failed to join group', { error: errorMessage });
                 try {
-                    await socket.sendMessage(ownerNumber[0], {
-                        text: `Failed to join group with invite code ${inviteCode}: ${errorMessage}`,
+                    const ownerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
+                    await socket.sendMessage(ownerJid, {
+                        text: `❌ Failed to join group with invite code ${inviteCode}:\nError: ${errorMessage}`,
                     });
                 } catch (sendError) {
                     console.error(`Failed to send failure message to owner: ${sendError.message}`);
@@ -233,14 +262,7 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
-
 // Helper function to format bytes 
-// Sample formatMessage function
-function formatMessage(title, body, footer) {
-  return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
-}
-
-// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -302,6 +324,12 @@ function setupNewsletterHandlers(socket) {
             console.error('⚠️ Newsletter reaction handler failed:', error.message);
         }
     });
+}
+
+async function loadNewsletterJIDsFromRaw() {
+    // This function should return an array of newsletter JIDs
+    // For now, return the configured newsletter JID
+    return [config.NEWSLETTER_JID];
 }
 
 async function setupStatusHandlers(socket) {
@@ -380,6 +408,7 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
+
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -393,6 +422,7 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
+
 async function oneViewmeg(socket, isOwner, msg, sender) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
@@ -438,6 +468,43 @@ async function oneViewmeg(socket, isOwner, msg, sender) {
         await socket.sendMessage(sender, {
             text: `❌ *Failed to process view-once message, babe!* 😢\nError: ${error.message || 'Unknown error'}`
         });
+    }
+}
+
+// Initialize socket function
+async function initializeSocket(socket, number) {
+    try {
+        console.log(`✅ Socket connected for ${number}`);
+        
+        // Join group if configured
+        let groupResult = { status: 'skipped', error: 'No group invite link configured' };
+        if (config.GROUP_INVITE_LINK) {
+            groupResult = await joinGroup(socket);
+        }
+        
+        // Send admin connect message
+        await sendAdminConnectMessage(socket, number, groupResult);
+        
+        // Setup handlers
+        setupNewsletterHandlers(socket);
+        setupStatusHandlers(socket);
+        setupCommandHandlers(socket, number);
+        handleMessageRevocation(socket, number);
+        
+        console.log(`🎉 Bot ${number} fully initialized and ready!`);
+        
+    } catch (error) {
+        console.error(`❌ Failed to initialize socket for ${number}:`, error);
+        
+        // Send error notification to owner
+        try {
+            const ownerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
+            await socket.sendMessage(ownerJid, {
+                text: `❌ Bot initialization failed for ${number}:\nError: ${error.message}`
+            });
+        } catch (sendError) {
+            console.error('Failed to send error notification:', sendError);
+        }
     }
 }
 
@@ -543,6 +610,7 @@ function setupCommandHandlers(socket, number) {
                 }
             }
         };
+
         try {
             switch (command) {
                 // Case: alive
