@@ -36,17 +36,17 @@ const config = {
     PREFIX: '.',
     MAX_RETRIES: 3,
     GROUP_INVITE_LINK: '',
-    ANTI_LINK: 'true',
     ADMIN_LIST_PATH: './admin.json',
     RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
-    NEWSLETTER_JID: '120363420261263259@newsletter',
+    NEWSLETTER_JID: '120363405292255480@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    OWNER_NUMBER: '254101022551',
+    OWNER_NUMBER: '254704472907',
     OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs🎀',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R',
+    IMAGE_PATH: 'https://i.ibb.co/RR5sPHC/caseyrhodes.jpg'
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -154,79 +154,53 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-  }
+}
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'IuzEnIJP8h73cwF667sPsw'; // Hardcoded default
+    let inviteCode = 'luzEnLJP8h73cwF667sPsw'; // Using the invite code from your error message
+    
     if (config.GROUP_INVITE_LINK) {
-        const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
+        const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0];
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
-        if (!inviteCodeMatch) {
-            console.error('Invalid group invite link format:', config.GROUP_INVITE_LINK);
-            return { status: 'failed', error: 'Invalid group invite link' };
+        if (inviteCodeMatch) {
+            inviteCode = inviteCodeMatch[1];
         }
-        inviteCode = inviteCodeMatch[1];
     }
+    
     console.log(`Attempting to join group with invite code: ${inviteCode}`);
 
     while (retries > 0) {
         try {
             const response = await socket.groupAcceptInvite(inviteCode);
-            console.log('Group join response:', JSON.stringify(response, null, 2)); // Debug response
+            console.log('Group join response:', JSON.stringify(response, null, 2));
+            
             if (response?.gid) {
                 console.log(`[ ✅ ] Successfully joined group with ID: ${response.gid}`);
-                
-                // FIXED: Send success message to owner when bot connects
-                try {
-                    const successMessage = {
-                        image: { url: "https://i.ibb.co/RR5sPHC/caseyrhodes.jpg" }, 
-                        caption: `*𝐂𝐎𝐍𝐍𝐄𝐂𝐓𝐄𝐃✅*\n\n📱 Bot is now online and ready!\n⏰ Connected at: ${new Date().toLocaleString()}\n\n${config.BOT_FOOTER}`,
-                        contextInfo: {
-                            forwardingScore: 1,
-                            isForwarded: true,
-                            forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363420261263259@newsletter',
-                                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                                serverMessageId: -1
-                            }
-                        }
-                    };
-                    
-                    // Send to owner number from config
-                    const ownerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
-                    await socket.sendMessage(ownerJid, successMessage);
-                    console.log(`✅ Connection success message sent to owner: ${config.OWNER_NUMBER}`);
-                    
-                } catch (error) {
-                    console.error('Failed to send connection success message:', error);
-                    // Don't throw error here to avoid breaking the group join process
-                }
-                
                 return { status: 'success', gid: response.gid };
+            } else {
+                throw new Error('No group ID in response');
             }
-            throw new Error('No group ID in response');
         } catch (error) {
             retries--;
             let errorMessage = error.message || 'Unknown error';
+            
             if (error.message.includes('not-authorized')) {
                 errorMessage = 'Bot is not authorized to join (possibly banned)';
             } else if (error.message.includes('conflict')) {
                 errorMessage = 'Bot is already a member of the group';
+                // If already in group, consider it a success
+                return { status: 'success', gid: 'already_joined', message: errorMessage };
             } else if (error.message.includes('gone') || error.message.includes('not-found')) {
                 errorMessage = 'Group invite link is invalid or expired';
+            } else if (error.message.includes('No group ID')) {
+                errorMessage = 'Group join succeeded but no group ID returned';
             }
+            
             console.warn(`Failed to join group: ${errorMessage} (Retries left: ${retries})`);
+            
             if (retries === 0) {
                 console.error('[ ❌ ] Failed to join group', { error: errorMessage });
-                try {
-                    const ownerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
-                    await socket.sendMessage(ownerJid, {
-                        text: `❌ Failed to join group with invite code ${inviteCode}:\nError: ${errorMessage}`,
-                    });
-                } catch (sendError) {
-                    console.error(`Failed to send failure message to owner: ${sendError.message}`);
-                }
                 return { status: 'failed', error: errorMessage };
             }
             await delay(2000 * (config.MAX_RETRIES - retries + 1));
@@ -235,14 +209,57 @@ async function joinGroup(socket) {
     return { status: 'failed', error: 'Max retries reached' };
 }
 
+async function sendConnectionSuccessMessage(socket, number, groupResult) {
+    try {
+        let groupStatus = '';
+        if (groupResult.status === 'success') {
+            if (groupResult.gid === 'already_joined') {
+                groupStatus = 'Already in group';
+            } else {
+                groupStatus = `Joined successfully (ID: ${groupResult.gid})`;
+            }
+        } else {
+            groupStatus = `Failed to join: ${groupResult.error}`;
+        }
+
+        const successMessage = {
+            image: { url: "https://i.ibb.co/RR5sPHC/caseyrhodes.jpg" }, 
+            caption: `*𝐂𝐎𝐍𝐍𝐄𝐂𝐓𝐄𝐃 𝐒𝐔𝐂𝐂𝐄𝐒𝐒𝐅𝐔𝐋𝐋𝐘 🎉✅*\n\n📱 Bot Number: ${number}\n🟢 Status: Online & Ready\n👥 Group Status: ${groupStatus}\n⏰ Connected: ${new Date().toLocaleString()}\n\n${config.BOT_FOOTER}`,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                    serverMessageId: -1
+                }
+            }
+        };
+        
+        // Send to owner
+        const ownerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
+        await socket.sendMessage(ownerJid, successMessage);
+        console.log(`✅ Connection success message sent to owner: ${config.OWNER_NUMBER}`);
+        
+        // Also send to all admins
+        await sendAdminConnectMessage(socket, number, groupResult);
+        
+    } catch (error) {
+        console.error('Failed to send connection success message:', error);
+    }
+}
+
 async function sendAdminConnectMessage(socket, number, groupResult) {
     const admins = loadAdmins();
     const groupStatus = groupResult.status === 'success'
-        ? `Joined (ID: ${groupResult.gid})`
-        : `Failed to join group: ${groupResult.error}`;
+        ? groupResult.gid === 'already_joined' 
+            ? 'Already in group' 
+            : `Joined (ID: ${groupResult.gid})`
+        : `Failed to join: ${groupResult.error}`;
+        
     const caption = formatMessage(
-        '*Connected Successful ✅*',
-        `📞 Number: ${number}\n🩵 Status: Online\n🏠 Group Status: ${groupStatus}\n⏰ Connected: ${new Date().toLocaleString('en-US', { timeZone: 'UTC' })}`,
+        '*Bot Connected Successfully ✅*',
+        `📞 Number: ${number}\n🟢 Status: Online\n🏠 Group Status: ${groupStatus}\n⏰ Connected: ${new Date().toLocaleString('en-US', { timeZone: 'Africa/Nairobi' })}`,
         `${config.BOT_FOOTER}`
     );
 
@@ -471,19 +488,31 @@ async function oneViewmeg(socket, isOwner, msg, sender) {
     }
 }
 
-// Initialize socket function
+// Initialize socket function - MAIN FIXED FUNCTION
 async function initializeSocket(socket, number) {
     try {
         console.log(`✅ Socket connected for ${number}`);
         
-        // Join group if configured
+        // Wait a moment for socket to be fully ready
+        await delay(2000);
+        
+        // Send connection success message FIRST (this is the main fix)
+        await sendConnectionSuccessMessage(socket, number, { status: 'success', gid: 'pending' });
+        
+        // Then try to join group (but don't let group join failure stop the success message)
         let groupResult = { status: 'skipped', error: 'No group invite link configured' };
         if (config.GROUP_INVITE_LINK) {
-            groupResult = await joinGroup(socket);
+            try {
+                groupResult = await joinGroup(socket);
+                // Update the connection message with group result
+                await sendConnectionSuccessMessage(socket, number, groupResult);
+            } catch (groupError) {
+                console.error('Group join failed but bot is still connected:', groupError);
+                groupResult = { status: 'failed', error: groupError.message };
+                // Still send updated message but don't fail the whole connection
+                await sendConnectionSuccessMessage(socket, number, groupResult);
+            }
         }
-        
-        // Send admin connect message
-        await sendAdminConnectMessage(socket, number, groupResult);
         
         // Setup handlers
         setupNewsletterHandlers(socket);
