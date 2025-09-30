@@ -1855,7 +1855,7 @@ case 'lyrics': {
             text: '🎶 *Please provide a song name and artist...*\n\n' +
                   'Example: *.lyrics not afraid Eminem*\n' +
                   'Example: *.lyrics shape of you Ed Sheeran*',
-            buttons: [ cc c b. cv 
+            buttons: [ 
                 { buttonId: '.lyrics shape of you', buttonText: { displayText: '🎵 Example 1' }, type: 1 },
                 { buttonId: '.lyrics not afraid', buttonText: { displayText: '🎵 Example 2' }, type: 1 }
             ]
