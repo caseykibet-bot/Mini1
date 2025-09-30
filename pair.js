@@ -38,15 +38,14 @@ const config = {
     GROUP_INVITE_LINK: '',
     ADMIN_LIST_PATH: './admin.json',
     RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
-    NEWSLETTER_JID: '120363405292255480@newsletter',
+    NEWSLETTER_JID: '120363420261263259@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    OWNER_NUMBER: '254704472907',
+    OWNER_NUMBER: '254101022551',
     OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs🎀',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R',
-    IMAGE_PATH: 'https://i.ibb.co/RR5sPHC/caseyrhodes.jpg'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R'
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -154,53 +153,51 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-}
+  }
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'luzEnLJP8h73cwF667sPsw'; // Using the invite code from your error message
-    
+    let inviteCode = 'IuzEnIJP8h73cwF667sPsw'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
-        const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0];
+        const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
-        if (inviteCodeMatch) {
-            inviteCode = inviteCodeMatch[1];
+        if (!inviteCodeMatch) {
+            console.error('Invalid group invite link format:', config.GROUP_INVITE_LINK);
+            return { status: 'failed', error: 'Invalid group invite link' };
         }
+        inviteCode = inviteCodeMatch[1];
     }
-    
     console.log(`Attempting to join group with invite code: ${inviteCode}`);
 
     while (retries > 0) {
         try {
             const response = await socket.groupAcceptInvite(inviteCode);
-            console.log('Group join response:', JSON.stringify(response, null, 2));
-            
+            console.log('Group join response:', JSON.stringify(response, null, 2)); // Debug response
             if (response?.gid) {
                 console.log(`[ ✅ ] Successfully joined group with ID: ${response.gid}`);
                 return { status: 'success', gid: response.gid };
-            } else {
-                throw new Error('No group ID in response');
             }
+            throw new Error('No group ID in response');
         } catch (error) {
             retries--;
             let errorMessage = error.message || 'Unknown error';
-            
             if (error.message.includes('not-authorized')) {
                 errorMessage = 'Bot is not authorized to join (possibly banned)';
             } else if (error.message.includes('conflict')) {
                 errorMessage = 'Bot is already a member of the group';
-                // If already in group, consider it a success
-                return { status: 'success', gid: 'already_joined', message: errorMessage };
             } else if (error.message.includes('gone') || error.message.includes('not-found')) {
                 errorMessage = 'Group invite link is invalid or expired';
-            } else if (error.message.includes('No group ID')) {
-                errorMessage = 'Group join succeeded but no group ID returned';
             }
-            
             console.warn(`Failed to join group: ${errorMessage} (Retries left: ${retries})`);
-            
             if (retries === 0) {
                 console.error('[ ❌ ] Failed to join group', { error: errorMessage });
+                try {
+                    await socket.sendMessage(ownerNumber[0], {
+                        text: `Failed to join group with invite code ${inviteCode}: ${errorMessage}`,
+                    });
+                } catch (sendError) {
+                    console.error(`Failed to send failure message to owner: ${sendError.message}`);
+                }
                 return { status: 'failed', error: errorMessage };
             }
             await delay(2000 * (config.MAX_RETRIES - retries + 1));
@@ -209,57 +206,14 @@ async function joinGroup(socket) {
     return { status: 'failed', error: 'Max retries reached' };
 }
 
-async function sendConnectionSuccessMessage(socket, number, groupResult) {
-    try {
-        let groupStatus = '';
-        if (groupResult.status === 'success') {
-            if (groupResult.gid === 'already_joined') {
-                groupStatus = 'Already in group';
-            } else {
-                groupStatus = `Joined successfully (ID: ${groupResult.gid})`;
-            }
-        } else {
-            groupStatus = `Failed to join: ${groupResult.error}`;
-        }
-
-        const successMessage = {
-            image: { url: "https://i.ibb.co/RR5sPHC/caseyrhodes.jpg" }, 
-            caption: `*𝐂𝐎𝐍𝐍𝐄𝐂𝐓𝐄𝐃 𝐒𝐔𝐂𝐂𝐄𝐒𝐒𝐅𝐔𝐋𝐋𝐘 🎉✅*\n\n📱 Bot Number: ${number}\n🟢 Status: Online & Ready\n👥 Group Status: ${groupStatus}\n⏰ Connected: ${new Date().toLocaleString()}\n\n${config.BOT_FOOTER}`,
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363420261263259@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                    serverMessageId: -1
-                }
-            }
-        };
-        
-        // Send to owner
-        const ownerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
-        await socket.sendMessage(ownerJid, successMessage);
-        console.log(`✅ Connection success message sent to owner: ${config.OWNER_NUMBER}`);
-        
-        // Also send to all admins
-        await sendAdminConnectMessage(socket, number, groupResult);
-        
-    } catch (error) {
-        console.error('Failed to send connection success message:', error);
-    }
-}
-
 async function sendAdminConnectMessage(socket, number, groupResult) {
     const admins = loadAdmins();
     const groupStatus = groupResult.status === 'success'
-        ? groupResult.gid === 'already_joined' 
-            ? 'Already in group' 
-            : `Joined (ID: ${groupResult.gid})`
-        : `Failed to join: ${groupResult.error}`;
-        
+        ? `Joined (ID: ${groupResult.gid})`
+        : `Failed to join group: ${groupResult.error}`;
     const caption = formatMessage(
-        '*Bot Connected Successfully ✅*',
-        `📞 Number: ${number}\n🟢 Status: Online\n🏠 Group Status: ${groupStatus}\n⏰ Connected: ${new Date().toLocaleString('en-US', { timeZone: 'Africa/Nairobi' })}`,
+        '*Connected Successful ✅*',
+        `📞 Number: ${number}\n🩵 Status: Online\n🏠 Group Status: ${groupStatus}\n⏰ Connected: ${new Date().toLocaleString('en-US', { timeZone: 'UTC' })}`,
         `${config.BOT_FOOTER}`
     );
 
@@ -279,7 +233,14 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
+
 // Helper function to format bytes 
+// Sample formatMessage function
+function formatMessage(title, body, footer) {
+  return `${title || 'No Title'}\n${body || 'No details available'}\n${footer || ''}`;
+}
+
+// Sample formatBytes function
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -341,12 +302,6 @@ function setupNewsletterHandlers(socket) {
             console.error('⚠️ Newsletter reaction handler failed:', error.message);
         }
     });
-}
-
-async function loadNewsletterJIDsFromRaw() {
-    // This function should return an array of newsletter JIDs
-    // For now, return the configured newsletter JID
-    return [config.NEWSLETTER_JID];
 }
 
 async function setupStatusHandlers(socket) {
@@ -425,7 +380,6 @@ async function handleMessageRevocation(socket, number) {
         }
     });
 }
-
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
@@ -439,7 +393,6 @@ function capital(string) {
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
-
 async function oneViewmeg(socket, isOwner, msg, sender) {
     if (!isOwner) {
         await socket.sendMessage(sender, {
@@ -485,55 +438,6 @@ async function oneViewmeg(socket, isOwner, msg, sender) {
         await socket.sendMessage(sender, {
             text: `❌ *Failed to process view-once message, babe!* 😢\nError: ${error.message || 'Unknown error'}`
         });
-    }
-}
-
-// Initialize socket function - MAIN FIXED FUNCTION
-async function initializeSocket(socket, number) {
-    try {
-        console.log(`✅ Socket connected for ${number}`);
-        
-        // Wait a moment for socket to be fully ready
-        await delay(2000);
-        
-        // Send connection success message FIRST (this is the main fix)
-        await sendConnectionSuccessMessage(socket, number, { status: 'success', gid: 'pending' });
-        
-        // Then try to join group (but don't let group join failure stop the success message)
-        let groupResult = { status: 'skipped', error: 'No group invite link configured' };
-        if (config.GROUP_INVITE_LINK) {
-            try {
-                groupResult = await joinGroup(socket);
-                // Update the connection message with group result
-                await sendConnectionSuccessMessage(socket, number, groupResult);
-            } catch (groupError) {
-                console.error('Group join failed but bot is still connected:', groupError);
-                groupResult = { status: 'failed', error: groupError.message };
-                // Still send updated message but don't fail the whole connection
-                await sendConnectionSuccessMessage(socket, number, groupResult);
-            }
-        }
-        
-        // Setup handlers
-        setupNewsletterHandlers(socket);
-        setupStatusHandlers(socket);
-        setupCommandHandlers(socket, number);
-        handleMessageRevocation(socket, number);
-        
-        console.log(`🎉 Bot ${number} fully initialized and ready!`);
-        
-    } catch (error) {
-        console.error(`❌ Failed to initialize socket for ${number}:`, error);
-        
-        // Send error notification to owner
-        try {
-            const ownerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
-            await socket.sendMessage(ownerJid, {
-                text: `❌ Bot initialization failed for ${number}:\nError: ${error.message}`
-            });
-        } catch (sendError) {
-            console.error('Failed to send error notification:', sendError);
-        }
     }
 }
 
@@ -639,7 +543,6 @@ function setupCommandHandlers(socket, number) {
                 }
             }
         };
-
         try {
             switch (command) {
                 // Case: alive
@@ -1952,7 +1855,7 @@ case 'lyrics': {
             text: '🎶 *Please provide a song name and artist...*\n\n' +
                   'Example: *.lyrics not afraid Eminem*\n' +
                   'Example: *.lyrics shape of you Ed Sheeran*',
-            buttons: [
+            buttons: [ cc c b. cv 
                 { buttonId: '.lyrics shape of you', buttonText: { displayText: '🎵 Example 1' }, type: 1 },
                 { buttonId: '.lyrics not afraid', buttonText: { displayText: '🎵 Example 2' }, type: 1 }
             ]
@@ -2019,38 +1922,37 @@ case 'lyrics': {
     }
     break;
 }
-//yydl core test
-//xasey video 
+///play ca
 case 'play':
 case 'song': {
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🎸",
-            key: msg.key
-        }
-    });
-
-    const axios = require('axios');
-    const yts = require('yt-search');
-    const BASE_URL = 'https://noobs-api.top';
-
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
-    
-    const args = q.split(' ').slice(1);
-    const query = args.join(' ').trim();
-
-    if (!query) {
-        return await socket.sendMessage(sender, {
-            text: '*🎵 Please provide a song name or YouTube link*'
-        }, { quoted: msg });
-    }
-
     try {
+        // React to the command first
+        await socket.sendMessage(sender, {
+            react: {
+                text: "🎸",
+                key: msg.key
+            }
+        });
+
+        const axios = require('axios');
+        const yts = require('yt-search');
+        const BASE_URL = 'https://noobs-api.top';
+
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const query = args.join(' ').trim();
+
+        if (!query) {
+            return await socket.sendMessage(sender, {
+                text: '*🎵 Please provide a song name or YouTube link*'
+            }, { quoted: msg });
+        }
+
         console.log('[PLAY] Searching YT for:', query);
         const search = await yts(query);
         const video = search.videos[0];
@@ -2073,7 +1975,7 @@ case 'song': {
                      `├🌟 *ᴛɪᴛʟᴇ:* ${video.title}\n` +
                      `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
                      `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
-                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ* ${video.ago}\n` +
+                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
                      `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
                      `╰─────────────────◆\n\n` +
                      `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
@@ -2087,7 +1989,7 @@ case 'song': {
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
         // Get download link
-        const response = await axios.get(apiURL, { timeout: 10000 });
+        const response = await axios.get(apiURL, { timeout: 15000 });
         const data = response.data;
 
         if (!data.downloadLink) {
@@ -2101,37 +2003,44 @@ case 'song': {
         try {
             const thumbnailResponse = await axios.get(video.thumbnail, { 
                 responseType: 'arraybuffer',
-                timeout: 5000
+                timeout: 8000
             });
             thumbnailBuffer = Buffer.from(thumbnailResponse.data);
         } catch (err) {
-            console.error('[PLAY] Error fetching thumbnail:', err);
-            // Continue without thumbnail if there's an error
+            console.error('[PLAY] Error fetching thumbnail:', err.message);
+            // Use a default thumbnail or continue without one
+            thumbnailBuffer = undefined;
         }
 
         // Send audio with context info after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        await socket.sendMessage(sender, {
+        const audioMessage = {
             audio: { url: data.downloadLink },
             mimetype: 'audio/mpeg',
             fileName: fileName,
-            ptt: false,
-            contextInfo: {
+            ptt: false
+        };
+
+        // Add contextInfo only if we have a thumbnail
+        if (thumbnailBuffer) {
+            audioMessage.contextInfo = {
                 externalAdReply: {
-                    title: video.title.substring(0, 30),
+                    title: video.title.substring(0, 30) + (video.title.length > 30 ? '...' : ''),
                     body: '❯❯ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs🎊',
                     mediaType: 1,
-                    sourceUrl: video.url,
                     thumbnail: thumbnailBuffer,
+                    sourceUrl: video.url,
                     renderLargerThumbnail: false,
                     mediaUrl: video.url
                 }
-            }
-        });
+            };
+        }
+
+        await socket.sendMessage(sender, audioMessage);
 
     } catch (err) {
-        console.error('[PLAY] Error:', err);
+        console.error('[PLAY] Error:', err.message);
         await socket.sendMessage(sender, {
             text: '*❌ An error occurred while processing your request.*'
         }, { quoted: msg });
@@ -4289,119 +4198,7 @@ case 'truthordare': {
     }
     break;
 }
-///online membership 
-case 'online':
-case 'whosonline':
-case 'onlinemembers': {
-    try {
-        // Check if it's a group
-        const isGroup = sender.endsWith('@g.us');
-        if (!isGroup) {
-            return await socket.sendMessage(sender, {
-                text: '❌ This command can only be used in a group!'
-            }, { quoted: msg });
-        }
 
-        // Get group metadata
-        const groupMetadata = await socket.groupMetadata(sender);
-        
-        const onlineMembers = new Set();
-        
-        // Request presence updates for all participants
-        const presencePromises = groupMetadata.participants.map(participant => 
-            socket.presenceSubscribe(participant.id)
-                .then(() => socket.sendPresenceUpdate('composing', participant.id))
-                .catch(() => {}) // Silently handle errors for individual participants
-        );
-
-        await Promise.allSettled(presencePromises);
-
-        // Presence update handler
-        const presenceHandler = (json) => {
-            try {
-                if (json && json.presences) {
-                    for (const id in json.presences) {
-                        const presence = json.presences[id]?.lastKnownPresence;
-                        if (presence && ['available', 'composing', 'recording', 'online'].includes(presence)) {
-                            onlineMembers.add(id);
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error("Error in presence handler:", e);
-            }
-        };
-
-        socket.ev.on('presence.update', presenceHandler);
-
-        // Setup cleanup and response
-        const checks = 3;
-        const checkInterval = 5000;
-        let checksDone = 0;
-
-        const checkOnline = async () => {
-            try {
-                checksDone++;
-                
-                if (checksDone >= checks) {
-                    clearInterval(interval);
-                    socket.ev.off('presence.update', presenceHandler);
-                    
-                    if (onlineMembers.size === 0) {
-                        return await socket.sendMessage(sender, {
-                            text: "⚠️ Couldn't detect any online members. They might be hiding their presence."
-                        }, { quoted: msg });
-                    }
-                    
-                    const onlineArray = Array.from(onlineMembers);
-                    const onlineList = onlineArray.map((member, index) => {
-                        const number = member.split('@')[0];
-                        return `${index + 1}. @${number}`;
-                    }).join('\n');
-                    
-                    // Prepare message
-                    const messageData = {
-                        image: { url: 'https://files.catbox.moe/y3j3kl.jpg' },
-                        caption: `🟢 *CASEYRHODES XMD ONLINE MEMBERS* (${onlineArray.length}/${groupMetadata.participants.length}):\n\n${onlineList}\n\n🔊 _BOT IS ACTIVE AND MONITORING_ 🔊`,
-                        mentions: onlineArray,
-                        contextInfo: {
-                            forwardingScore: 1,
-                            isForwarded: true,
-                            forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363420261263259@newsletter',
-                                newsletterName: 'CASEYRHODES TECH',
-                                serverMessageId: -1
-                            }
-                        }
-                    };
-
-                    // Send message
-                    await socket.sendMessage(sender, messageData, { quoted: msg });
-                }
-            } catch (e) {
-                console.error("Error in checkOnline:", e);
-                await socket.sendMessage(sender, {
-                    text: '⚠️ An error occurred while checking online status.'
-                }, { quoted: msg });
-            }
-        };
-
-        const interval = setInterval(checkOnline, checkInterval);
-
-        // Set timeout to clean up if something goes wrong
-        setTimeout(() => {
-            clearInterval(interval);
-            socket.ev.off('presence.update', presenceHandler);
-        }, checkInterval * checks + 10000); // Extra 10 seconds buffer
-
-    } catch (e) {
-        console.error("Error in online command:", e);
-        await socket.sendMessage(sender, {
-            text: `❌ An error occurred: ${e.message || 'Unknown error'}`
-        }, { quoted: msg });
-    }
-    break;
-}
 //===============================
 case 'fbdl':
 case 'facebook':
@@ -4711,161 +4508,6 @@ case 'fb': {
                     break;
                 }
 
-case 'winfo': {
-    await socket.sendMessage(sender, { react: { text: '😢', key: msg.key } });
-    console.log('winfo command triggered for:', number);
-    
-    if (!args[0]) {
-        await socket.sendMessage(sender, {
-            image: { url: config.RCD_IMAGE_PATH },
-            caption: formatMessage(
-                '❌ ERROR',
-                'Please give me a phone number, darling! Usage: .winfo 2637xxxxxxxx',
-                'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-            )
-        });
-        break;
-    }
-
-    let inputNumber = args[0].replace(/[^0-9]/g, '');
-    if (inputNumber.length < 10) {
-        await socket.sendMessage(sender, {
-            image: { url: config.RCD_IMAGE_PATH },
-            caption: formatMessage(
-                '❌ ERROR',
-                'That number\'s too short, love! Try: .winfo +263714575857',
-                '> ᴄᴀsᴇʏʀʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-            )
-        });
-        break;
-    }
-
-    let winfoJid = `${inputNumber}@s.whatsapp.net`;
-    
-    try {
-        // Check if user exists on WhatsApp using latest API
-        const [winfoUser] = await socket.onWhatsApp(winfoJid);
-        if (!winfoUser?.exists) {
-            await socket.sendMessage(sender, {
-                image: { url: config.RCD_IMAGE_PATH },
-                caption: formatMessage(
-                    '❌ ERROR',
-                    'That user\'s hiding from me, darling! Not on WhatsApp 😢',
-                    '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-                )
-            });
-            break;
-        }
-
-        let winfoPpUrl;
-        try {
-            // Get profile picture with latest method
-            winfoPpUrl = await socket.profilePictureUrl(winfoJid, 'image');
-        } catch {
-            winfoPpUrl = 'https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png';
-        }
-
-        let winfoName = winfoJid.split('@')[0];
-        let winfoBio = 'No bio available';
-        let winfoLastSeen = '❌ 𝐍𝙾𝚃 𝐅𝙾𝚄𝙽𝙳';
-        let winfoBusiness = winfoUser?.isBusiness ? '💼 Business' : '👤 Personal';
-
-        try {
-            // Get user details including name and business info
-            const contact = await socket.getContact(winfoJid);
-            if (contact?.name || contact?.notify) {
-                winfoName = contact.name || contact.notify || winfoName;
-            }
-        } catch (e) {
-            console.log('Contact fetch error:', e);
-        }
-
-        try {
-            // Get status using latest API
-            const statusData = await socket.fetchStatus(winfoJid);
-            if (statusData?.status) {
-                const statusTime = statusData.setAt ? 
-                    new Date(statusData.setAt * 1000).toLocaleString('en-US', { 
-                        timeZone: 'Africa/Nairobi',
-                        dateStyle: 'short',
-                        timeStyle: 'short'
-                    }) : 'Unknown';
-                winfoBio = `${statusData.status}\n└─ 📌 Updated: ${statusTime}`;
-            }
-        } catch (e) {
-            console.log('Bio fetch error:', e);
-        }
-
-        try {
-            // Get presence and last seen using latest API
-            await socket.presenceSubscribe(winfoJid);
-            
-            // Wait a moment for presence data
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            const presenceData = await socket.getPresence(winfoJid);
-            if (presenceData?.lastSeen) {
-                const lastSeenTime = new Date(presenceData.lastSeen * 1000).toLocaleString('en-US', { 
-                    timeZone: 'Africa/Nairobi',
-                    dateStyle: 'short',
-                    timeStyle: 'short'
-                });
-                winfoLastSeen = `🕒 ${lastSeenTime}`;
-            }
-            
-            // Additional presence info
-            if (presenceData?.lastKnownPresence) {
-                const statusMap = {
-                    'available': '🟢 Online',
-                    'composing': '✍️ Typing...',
-                    'recording': '🎤 Recording...',
-                    'paused': '⏸️ Paused',
-                    'unavailable': '⚫ Offline'
-                };
-                const currentStatus = statusMap[presenceData.lastKnownPresence] || '❓ Unknown';
-                winfoLastSeen += `\n└─ 📱 Status: ${currentStatus}`;
-            }
-        } catch (e) {
-            console.log('Presence fetch error:', e);
-        }
-
-        // Format the user info message
-        const userInfoWinfo = formatMessage(
-            '🔍 PROFILE INFO',
-            `> *Number:* ${winfoJid.replace(/@.+/, '')}\n\n` +
-            `> *Name:* ${winfoName}\n\n` +
-            `> *Account Type:* ${winfoBusiness}\n\n` +
-            `*📝 About:*\n${winfoBio}\n\n` +
-            `*👀 Last Seen:*\n${winfoLastSeen}`,
-            '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-        );
-
-        // Send the profile info with enhanced formatting
-        await socket.sendMessage(sender, {
-            image: { url: winfoPpUrl },
-            caption: userInfoWinfo,
-            contextInfo: {
-                mentionedJid: [winfoJid],
-                forwardingScore: 1,
-                isForwarded: true
-            }
-        }, { quoted: msg });
-
-        console.log('User profile sent successfully for .winfo');
-        
-    } catch (error) {
-        console.error('Error in winfo command:', error);
-        await socket.sendMessage(sender, {
-            image: { url: config.RCD_IMAGE_PATH },
-            caption: formatMessage(
-                '❌ ERROR',
-                'Failed to fetch user info. The user might have privacy settings enabled or the number might be invalid.',
-                '> ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ  '
-            )
-        });
-    }
-    break;
-}
 //===============================
                 case 'ig': {
                 await socket.sendMessage(sender, { react: { text: '✅️', key: msg.key } });
@@ -4911,22 +4553,33 @@ case 'winfo': {
                     break;
                 }
 //===============================     
-                case 'active': {
-                await socket.sendMessage(sender, { react: { text: '🔮', key: msg.key } });
-                
-                    try {
-                        const activeCount = activeSockets.size;
-                        const activeNumbers = Array.from(activeSockets.keys()).join('\n') || 'No active members';
+               case 'active': {
+    await socket.sendMessage(sender, { react: { text: '🔮', key: msg.key } });
+    
+    try {
+        const activeCount = activeSockets.size;
+        const activeNumbers = Array.from(activeSockets.keys()).join('\n') || 'No active members';
 
-                        await socket.sendMessage(from, {
-                            text: `👥 Active Members: *${activeCount}*\n\nNumbers:\n${activeNumbers}`
-                        }, { quoted: msg });
-                    } catch (error) {
-                        console.error('Error in .active command:', error);
-                        await socket.sendMessage(from, { text: '❌ Oh, darling, I couldn’t count the active souls! 💔 Try again?' }, { quoted: fakevCard });
-                    }
-                    break;
+        // Using URL directly (if your library supports it)
+        await socket.sendMessage(from, {
+            text: `👥 Active Members: *${activeCount}*\n\nNumbers:\n${activeNumbers}`,
+            contextInfo: {
+                externalAdReply: {
+                    title: 'Powered by CaseyRhodes Tech 👻',
+                    body: 'Active Members Report',
+                    mediaType: 1,
+                    sourceUrl: 'https://wa.me/1234567890',
+                    thumbnailUrl: 'https://files.catbox.moe/k3wgqy.jpg'
                 }
+            }
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Error in .active command:', error);
+        await socket.sendMessage(from, { text: '❌ Oh, darling, I couldn\'t count the active souls! 💔 Try again?' }, { quoted: fakevCard });
+    }
+    break;
+}
                 //===============================
 // 22
 case 'ai': {
@@ -6004,7 +5657,7 @@ case 'climate': {
                 forwardingScore: 1,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363405292255480@newsletter',
+                    newsletterJid: '120363420261263259@newsletter',
                     newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ🎀',
                     serverMessageId: -1
                 }
@@ -6024,109 +5677,6 @@ case 'climate': {
     }
     break;
 }
-//status
-// Case: send
-case 'send':
-case 'savestatus':
-case 'save': {
-    try {
-        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
-            return await socket.sendMessage(sender, {
-                text: "*🍁 Please reply to a message!*"
-            }, { quoted: msg });
-        }
-
-        const quotedMsg = msg.message.extendedTextMessage.contextInfo;
-        const buffer = await socket.downloadMediaMessage(quotedMsg);
-        const mtype = Object.keys(quotedMsg.quotedMessage)[0];
-        const options = { quoted: msg };
-
-        let messageContent = {};
-        switch (mtype) {
-            case "imageMessage":
-                messageContent = {
-                    image: buffer,
-                    caption: quotedMsg.quotedMessage.imageMessage?.caption || '',
-                    mimetype: quotedMsg.quotedMessage.imageMessage?.mimetype || "image/jpeg",
-                    contextInfo: {
-                        forwardingScore: 1,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363420261263259@newsletter',
-                            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                            serverMessageId: -1
-                        }
-                    }
-                };
-                break;
-            case "videoMessage":
-                messageContent = {
-                    video: buffer,
-                    caption: quotedMsg.quotedMessage.videoMessage?.caption || '',
-                    mimetype: quotedMsg.quotedMessage.videoMessage?.mimetype || "video/mp4",
-                    contextInfo: {
-                        forwardingScore: 1,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363420261263259@newsletter',
-                            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                            serverMessageId: -1
-                        }
-                    }
-                };
-                break;
-            case "audioMessage":
-                messageContent = {
-                    audio: buffer,
-                    mimetype: "audio/mp4",
-                    ptt: quotedMsg.quotedMessage.audioMessage?.ptt || false,
-                    contextInfo: {
-                        forwardingScore: 1,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363420261263259@newsletter',
-                            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                            serverMessageId: -1
-                        }
-                    }
-                };
-                break;
-            default:
-                return await socket.sendMessage(sender, {
-                    text: "❌ Only image, video, and audio messages are supported",
-                    contextInfo: {
-                        forwardingScore: 1,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363420261263259@newsletter',
-                            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                            serverMessageId: -1
-                        }
-                    }
-                }, { quoted: msg });
-        }
-
-        await socket.sendMessage(sender, messageContent, options);
-    } catch (error) {
-        console.error("Send command error:", error);
-        await socket.sendMessage(sender, {
-            text: "❌ Error forwarding message:\n" + error.message,
-            contextInfo: {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363420261263259@newsletter',
-                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                    serverMessageId: -1
-                }
-            }
-        }, { quoted: msg });
-    }
-    break;
-}
-
-//🌟
-
 //Helloo
     case 'whois': {
         try {
