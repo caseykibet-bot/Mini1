@@ -36,17 +36,17 @@ const config = {
     PREFIX: '.',
     MAX_RETRIES: 3,
     GROUP_INVITE_LINK: '',
+    ANTI_LINK: 'true',
     ADMIN_LIST_PATH: './admin.json',
     RCD_IMAGE_PATH: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg',
-    NEWSLETTER_JID: '120363405292255480@newsletter',
+    NEWSLETTER_JID: '120363420261263259@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     version: '1.0.0',
-    OWNER_NUMBER: '254704472907',
+    OWNER_NUMBER: '254101022551',
     OWNER_NAME: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs🎀',
     BOT_FOOTER: '> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R',
-    IMAGE_PATH: 'https://i.ibb.co/RR5sPHC/caseyrhodes.jpg'
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBuCXcAO7RByB99ce3R'
 };
 
 const octokit = new Octokit({ auth: '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' });
@@ -154,11 +154,11 @@ let totalcmds = async () => {
     console.error("Error reading pair.js:", error.message);
     return 0; // Return 0 on error to avoid breaking the bot
   }
-}
+  }
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'DEcov3KLtMQFvBh5mUkVdt'; // Hardcoded default
+    let inviteCode = 'IuzEnIJP8h73cwF667sPsw'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -6602,7 +6602,7 @@ const groupStatus = groupResult.status === 'success'
     ? 'ᴊᴏɪɴᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ'
     : `ғᴀɪʟᴇᴅ ᴛᴏ ᴊᴏɪɴ ɢʀᴏᴜᴘ: ${groupResult.error}`;
 
-// Fixed template literal and formatting with newsletter
+// Single message with image, buttons, and newsletter context
 await socket.sendMessage(userJid, {
     image: { url: config.RCD_IMAGE_PATH },
     caption: formatMessage(
@@ -6622,7 +6622,7 @@ await socket.sendMessage(userJid, {
     ],
     headerType: 4,
     contextInfo: {
-        forwardingScore: 999,
+        forwardingScore: 1,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             newsletterJid: '120363420261263259@newsletter',
