@@ -5,6 +5,7 @@ const { exec } = require('child_process');
 const router = express.Router();
 const pino = require('pino');
 const cheerio = require('cheerio');
+const BASE_URL = 'https://noobs-api.top';
 const { Octokit } = require('@octokit/rest');
 const moment = require('moment-timezone');
 const Jimp = require('jimp');
@@ -1936,7 +1937,6 @@ case 'song': {
 
         const axios = require('axios');
         const yts = require('yt-search');
-        const BASE_URL = 'https://noobs-api.top';
 
         // Extract query from message
         const q = msg.message?.conversation || 
