@@ -19,6 +19,7 @@
     "form-data":"latest",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@dark-yasiya/yt-dl.js": "1.0.5",
+     "ytdl-core": "npm:@distube/ytdl-core", 
     "google-tts-api": "^2.0.2",
     "node-catbox": "^3.2.0",
     "ffmpeg": "^0.0.4",
