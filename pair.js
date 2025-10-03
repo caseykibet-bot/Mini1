@@ -2030,8 +2030,7 @@ case "video": {
         console.error('[VIDEO] Error:', err);
         m.reply('An error occurred while processing your request.');
     }
-}
-break;
+    break;
 }
 case 'gjid':
 case 'groupjid':
