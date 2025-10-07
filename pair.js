@@ -1967,8 +1967,7 @@ case 'play': {
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
         // Create fancy song description with emojis and formatting
-        const songInfo = `
-\`🎧 *NOW PLAYING* 🎧\`
+        const songInfo = `🎧 *NOW PLAYING* 🎧
 
 📀 *Title:* ${video.title}
 ⏱️ *Duration:* ${video.timestamp}
