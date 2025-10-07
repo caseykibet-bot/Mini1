@@ -1184,123 +1184,45 @@ case 'bio': {
     }
     break;
 }
-//hack case
-case 'hack': {
-    try {
-        const hackingSteps = [
-            '```🖥️  INITIATING HACKING PROTOCOL...```',
-            '`CASEYRHODES TECH HACKING SUITE v4.0`',
-            '══════════════════════════════',
-            '',
-            '🔐 *Bypassing Firewall Security...*',
-            '```[██████████░░░░░░░░░░] 40%```',
-            '*Firewall neutralized* ✅',
-            '',
-            '🌐 *Establishing Dark Web Connection...*',
-            '```[████████████████░░░░] 70%```',
-            '*TOR network active* ✅',
-            '',
-            '🛠️ *Injecting Zero-Day Exploits...*',
-            '```[████████████████████] 100%```',
-            '*System compromised* ✅',
-            '',
-            '📡 *Extracting Encrypted Data...*',
-            '```[████████████████████] 100%```',
-            '*Data extraction complete* ✅',
-            '',
-            '🚀 *CLEANING DIGITAL FOOTPRINTS...*',
-            '```[████████████████████] 100%```',
-            '*Logs erased* ✅',
-            '',
-            '🛡️ *INSTALLING BACKDOOR ACCESS...*',
-            '```[████████████████████] 100%```',
-            '*Permanent access established* ✅',
-            '',
-            '🎯 *MISSION ACCOMPLISHED*',
-            '══════════════════════════════',
-            '',
-            '📊 **OPERATION STATS:**',
-            '├─ Data Exfiltrated: *9.3GB*',
-            '├─ Systems Breached: *18*',
-            '├─ Firewalls Bypassed: *12*',
-            '├─ Time Elapsed: *23.7s*',
-            '└─ Detection Risk: *0.02%*',
-            '',
-            '🟢 **SECURITY STATUS:**',
-            '├─ Root Access: *ACQUIRED*',
-            '├─ Encryption: *BROKEN*',
-            '├─ Tracking: *EVADED*',
-            '└─ Control: *ESTABLISHED*',
-            '',
-            '⚠️ **DISCLAIMER:**',
-            '└─ *Simulated ethical hacking demonstration*',
-            '└─ *Educational purposes only*',
-            '',
-            '💫 **CASEYRHODES TECH - SECURITY SIMULATION**',
-            `\`\`\`Terminated: ${new Date().toLocaleString()}\`\`\``
-        ];
 
-        // Send initial cool hacking message
-        await socket.sendMessage(sender, {
-            text: `*💻 CYBER ATTACK SIMULATION INITIATED*\\n\\n🎯 Target: *${sender.split('@')[0]}*\\n🔧 Protocol: *CASEYRHODES-BLACKOPS*\\n⚡ Status: *STEALTH MODE ACTIVE*\\n\\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬`,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true
-            }
-        }, { quoted: msg });
+ case 'creact': {
+    const q = args.join(" ");
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Send 7 main hacking steps with cool effects
-        const mainSteps = [
-            {text: '```🔓 DECRYPTING SECURITY LAYERS...```', delay: 1200},
-            {text: '🌐 *Accessing Mainframe...*\\n```[██████████░░░░░░░░░░] 33%```', delay: 1000},
-            {text: '🛠️ *Deploying Payload...*\\n```[████████████████░░░░] 66%```', delay: 900},
-            {text: '📡 *Data Extraction in Progress...*\\n```[████████████████████] 100%```', delay: 800},
-            {text: '🛡️ *Covering Tracks...*\\n```[████████████████████] 100%```', delay: 700},
-            {text: '🚀 *Finalizing Operation...*\\n```[████████████████████] 100%```', delay: 600},
-            {text: '🎯 *MISSION SUCCESSFUL*\\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬', delay: 500}
-        ];
-
-        for (let i = 0; i < mainSteps.length; i++) {
-            await socket.sendMessage(sender, { text: mainSteps[i].text }, { quoted: msg });
-            await new Promise(resolve => setTimeout(resolve, mainSteps[i].delay));
-            
-            // Add success confirmation after each major step
-            if (i < mainSteps.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 300));
-                await socket.sendMessage(sender, { 
-                    text: `*Step ${i + 1} completed* ✅` 
-                }, { quoted: msg });
-                await new Promise(resolve => setTimeout(resolve, 400));
-            }
-        }
-
-        // Final results with cool formatting
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        await socket.sendMessage(sender, {
-            text: `*🏆 OPERATION COMPLETE*\\n\\n📊 **FINAL REPORT:**\\n├─ Systems Compromised: *24*\\n├─ Data Captured: *12.8GB*\\n├─ Detection Avoided: *100%*\\n├─ Time: *31.4 seconds*\\n└─ Success Rate: *99.9%*\\n\\n🔐 *Security Note: This was a simulation*\\n💫 *CASEYRHODES TECH © ${new Date().getFullYear()}*\\n\\n\`\`\`System secure - Operation logged\`\`\``,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true
-            }
-        }, { quoted: msg });
-
-        // Add final cool effect
-        await new Promise(resolve => setTimeout(resolve, 800));
-        await socket.sendMessage(sender, {
-            text: '```🌌 DISCONNECTING FROM TARGET...```'
-        }, { quoted: msg });
-
-    } catch (error) {
-        console.error('Hack simulation error:', error);
-        await socket.sendMessage(sender, {
-            text: `❌ *HACKING SIMULATION TERMINATED*\\n\\n🔴 Error: ${error.message}\\n\\n*Target defenses detected intrusion!* 🛡️\\n\\n*System returning to safe mode...*`
-        }, { quoted: msg });
+    if (!q.includes(",")) {
+        return await socket.sendMessage(sender, {
+            text: '😒 Please provide the link and emoji separated by a comma.\n\nExample:\n.cnr https://whatsapp.com/channel/120363396379901844/ABCDEF1234,🔥'
+        });
     }
-    break;
-}
+
+    try {
+        let [link, emoji] = q.split(",");
+        const parts = link.trim().split("/");
+        const channelJid = `${parts[4]}@newsletter`;
+        const msgId = parts[5];
+
+        await socket.sendMessage(channelJid, {
+            react: {
+                text: emoji.trim(),
+                key: {
+                    remoteJid: channelJid,
+                    id: msgId,
+                    fromMe: false
+                },
+            },
+        });
+
+        await socket.sendMessage(sender, {
+            text: `✅ Reacted to the channel message with ${emoji.trim()}`
+        });
+    } catch (e) {
+        console.error("❌ Error in .cnr:", e);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${e.message}`
+        });
+    }
+                     break;
+            }
+		
 // Case: fc (follow channel)
 case 'fc': {
   if (args.length === 0) {
@@ -1424,34 +1346,40 @@ case 'ping': {
     break;
 }
 // Case: pair
-               // Case: pair
-// Case: pair
 case 'pair': {
-    await socket.sendMessage(sender, { react: { text: '📲', key: msg.key } });
-    
+    // ✅ Fix for node-fetch v3.x (ESM-only module)
+    const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     const q = msg.message?.conversation ||
               msg.message?.extendedTextMessage?.text ||
               msg.message?.imageMessage?.caption ||
               msg.message?.videoMessage?.caption || '';
 
-    // Extract number from command
     const number = q.replace(/^[.\/!]pair\s*/i, '').trim();
 
     if (!number) {
         return await socket.sendMessage(sender, {
-            text: '*📌 Usage:* .pair +254101022551'
+            text: '*📌 Usage:* .pair 254103488793'
         }, { quoted: msg });
     }
 
     try {
-        const url = `http://206.189.94.231:8000/code?number=${encodeURIComponent(number)}`;
+        const url = `https://minipairs-374f30a8fa70.herokuapp.com/code?number=${encodeURIComponent(number)}`;
         const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        const bodyText = await response.text();
+
+        console.log("💗 API Response:", bodyText);
+
+        let result;
+        try {
+            result = JSON.parse(bodyText);
+        } catch (e) {
+            console.error("❌ JSON Parse Error:", e);
+            return await socket.sendMessage(sender, {
+                text: '❌ Invalid response from server. Please contact support.'
+            }, { quoted: msg });
         }
-        
-        const result = await response.json();
 
         if (!result || !result.code) {
             return await socket.sendMessage(sender, {
@@ -1459,17 +1387,24 @@ case 'pair': {
             }, { quoted: msg });
         }
 
-        // Send the pairing code as a single message
         await socket.sendMessage(sender, {
-            text: `> *ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ ᴘᴀɪʀ ᴄᴏᴍᴘʟᴇᴛᴇᴅ* ✅\n\n*🔑 Your pairing code is:* \`${result.code}\``
+            text: `> *CASEYRHODES MINI - PAIRING COMPLETED* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
+        }, { quoted: msg });
+
+        await sleep(2000);
+
+        await socket.sendMessage(sender, {
+            text: `${result.code}`
         }, { quoted: msg });
 
     } catch (err) {
         console.error("❌ Pair Command Error:", err);
         await socket.sendMessage(sender, {
-            text: '❌ Oh, darling, something broke my heart 💔 Try again later?'
+            text: '❌ An error occurred while processing your request. Please try again later.'
         }, { quoted: msg });
     }
+
+    
     break;
 }
 //case tagadmin
@@ -1980,7 +1915,7 @@ case 'play': {
 
 ⬇️ *Downloading your audio...* ⬇️
 
-💡 *Tip:* Use *.video to get the video version
+💡 *Tip:* Use *.video to get the video version*
             `.trim(),
             footer: 'CaseyRhodes Mini - Audio Player',
             buttons: [
