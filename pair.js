@@ -1929,7 +1929,7 @@ case 'play': {
         // React to the command first
         await socket.sendMessage(sender, {
             react: {
-                text: "🎸",
+                text: "🎵",
                 key: msg.key
             }
         });
@@ -1948,7 +1948,7 @@ case 'play': {
 
         if (!query) {
             return await socket.sendMessage(sender, {
-                text: '*🎵 Music Player*\nPlease provide a song name to play.*'
+                text: '*🎵 Audio Player*\nPlease provide a song name to play.*'
             }, { quoted: msg });
         }
 
@@ -1966,27 +1966,27 @@ case 'play': {
         const fileName = `${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Create fancy song description with emojis and formatting
-        const songInfo = `🎧 *NOW PLAYING* 🎧
+        // Create fancy audio description with emojis and formatting
+        const audioInfo = `
+🎧 *NOW PLAYING* 🎧
 
-📀 *Title:* ${video.title}
+🎶 *Title:* ${video.title}
 ⏱️ *Duration:* ${video.timestamp}
 👁️ *Views:* ${video.views}
 📅 *Uploaded:* ${video.ago}
 🔗 *YouTube ID:* ${video.videoId}
 
 ⬇️ *Downloading your audio...* ⬇️
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
         `.trim();
 
-        // Send song info with thumbnail first
+        // Send audio info with thumbnail first
         await socket.sendMessage(sender, {
             image: { url: video.thumbnail },
-            caption: songInfo
+            caption: audioInfo
         }, { quoted: msg });
 
         // Get download link
-        const response = await axios.get(apiURL, { timeout: 15000 });
+        const response = await axios.get(apiURL, { timeout: 30000 });
         const data = response.data;
 
         if (!data.downloadLink) {
@@ -2005,18 +2005,17 @@ case 'play': {
             thumbnailBuffer = Buffer.from(thumbnailResponse.data);
         } catch (err) {
             console.error('[PLAY] Error fetching thumbnail:', err.message);
-            // Use a default thumbnail or continue without one
             thumbnailBuffer = undefined;
         }
 
         // Send audio with context info after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         const audioMessage = {
             audio: { url: data.downloadLink },
             mimetype: 'audio/mpeg',
             fileName: fileName,
-            ptt: false // Ensure it's not push-to-talk
+            caption: `🎵 *${video.title}*\n⏱️ ${video.timestamp} | 👁️ ${video.views}\n\n🎶 Played by CaseyRhodes Mini`
         };
 
         // Add contextInfo only if we have a thumbnail
@@ -2024,11 +2023,11 @@ case 'play': {
             audioMessage.contextInfo = {
                 externalAdReply: {
                     title: video.title.substring(0, 40),
-                    body: `Duration: ${video.timestamp}`,
-                    mediaType: 1,
+                    body: `Duration: ${video.timestamp} | Views: ${video.views}`,
+                    mediaType: 2, // 2 for audio
                     thumbnail: thumbnailBuffer,
                     sourceUrl: `https://youtu.be/${video.videoId}`,
-                    renderLargerThumbnail: false // Explicitly disable large thumbnail
+                    renderLargerThumbnail: false
                 }
             };
         }
@@ -2038,7 +2037,7 @@ case 'play': {
     } catch (err) {
         console.error('[PLAY] Error:', err.message);
         await socket.sendMessage(sender, {
-            text: '*❌ Error Occurred*\nFailed to process your song request. Please try again later.*'
+            text: '*❌ Error Occurred*\nFailed to process your play request. Please try again later.*'
         }, { quoted: msg });
     }
     break;
