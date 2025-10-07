@@ -1968,7 +1968,7 @@ case 'play': {
 
         // Create fancy song description with emojis and formatting
         const songInfo = `
-🎧 *NOW PLAYING* 🎧
+\`🎧 *NOW PLAYING* 🎧\`
 
 📀 *Title:* ${video.title}
 ⏱️ *Duration:* ${video.timestamp}
@@ -1976,7 +1976,8 @@ case 'play': {
 📅 *Uploaded:* ${video.ago}
 🔗 *YouTube ID:* ${video.videoId}
 
-⬇️ *Downloading your audio... Please wait* ⬇️
+⬇️ *Downloading your audio...* ⬇️
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
         `.trim();
 
         // Send song info with thumbnail first
@@ -2044,155 +2045,122 @@ case 'play': {
     break;
 }
 //video case
-case 'mp4':
+//=====[VIDEO COMMAND]================//
 case 'video': {
-    // Import dependencies
-    const yts = require('yt-search');
-
-    // Constants
-    const API_BASE_URL = 'https://api.giftedtech.co.ke/api/download/ytmp4';
-    const API_KEY = 'gifted';
-
-    // Utility functions
-    function extractYouTubeId(url) {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-        const match = url.match(regex);
-        return match ? match[1] : null;
-    }
-
-    function convertYouTubeLink(input) {
-        const videoId = extractYouTubeId(input);
-        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : input;
-    }
-
-    function formatDuration(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-
-    // React to the command first
-    await socket.sendMessage(sender, {
-        react: {
-            text: "🎬", // Video camera emoji
-            key: msg.key
-        }
-    });
-
-    // Extract query from message
-    const q = msg.message?.conversation || 
-              msg.message?.extendedTextMessage?.text || 
-              msg.message?.imageMessage?.caption || 
-              msg.message?.videoMessage?.caption || '';
-
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, 
-            { text: '*🎬 Give me a video title or YouTube link, love 😘*' }
-        );
-    }
-
-    const fixedQuery = convertYouTubeLink(q.trim());
-
     try {
-        // Search for the video
-        const search = await yts(fixedQuery);
-        const videoInfo = search.videos[0];
-        
-        if (!videoInfo) {
-            return await socket.sendMessage(sender, 
-                { text: '*❌ No videos found, darling! Try another? 💔*' }
-            );
-        }
-
-        // Format duration
-        const formattedDuration = formatDuration(videoInfo.seconds);
-        
-        // Create description
-        const desc = `*🌸 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🌸*
-╭───────────────┈  ⊷
-├📝 *ᴛɪᴛʟᴇ:* ${videoInfo.title}
-├👤 *ᴄʜᴀɴɴᴇʟ:* ${videoInfo.author.name}
-├⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${formattedDuration}
-├📅 *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${videoInfo.ago}
-├👁️ *ᴠɪᴇᴡs:* ${videoInfo.views.toLocaleString()}
-├🎥 *Format:* MP4 Video
-╰───────────────┈ ⊷
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ 🌟
-`;
-
-        // Send video info immediately
+        // React to the command first
         await socket.sendMessage(sender, {
-            image: { url: videoInfo.thumbnail },
-            caption: desc
-        }, { quoted: msg });
-
-        // Build API URL
-        const apiUrl = `${API_BASE_URL}?apikey=${API_KEY}&url=${encodeURIComponent(videoInfo.url)}`;
-        
-        // Fetch video data from API
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-            throw new Error(`API responded with status: ${response.status}`);
-        }
-        
-        const apiData = await response.json();
-        
-        // Handle different possible API response structures
-        let downloadUrl;
-        
-        if (apiData.downloadUrl) {
-            downloadUrl = apiData.downloadUrl;
-        } else if (apiData.url) {
-            downloadUrl = apiData.url;
-        } else if (apiData.links && apiData.links.length > 0) {
-            downloadUrl = apiData.links[0].url || apiData.links[0].downloadUrl;
-        } else if (apiData.data && apiData.data.downloadUrl) {
-            downloadUrl = apiData.data.downloadUrl;
-        } else if (apiData.result && apiData.result.download_url) {
-            downloadUrl = apiData.result.download_url;
-        } else {
-            throw new Error('No download URL found in API response');
-        }
-
-        if (!downloadUrl) {
-            throw new Error('Download URL is empty or invalid');
-        }
-
-        // Clean title for filename
-        const cleanTitle = videoInfo.title.replace(/[^\w\s]/gi, '').substring(0, 30);
-
-        // Send the video with external ad reply
-        await socket.sendMessage(sender, {
-            video: { url: downloadUrl },
-            caption: `📥 ${videoInfo.title}`,
-            fileName: `${cleanTitle}.mp4`,
-            mimetype: 'video/mp4',
-            contextInfo: {
-                externalAdReply: {
-                    title: videoInfo.title.substring(0, 30),
-                    body: 'Powered by CASEYRHODES API',
-                    mediaType: 2, // 2 for video
-                    thumbnail: { url: videoInfo.thumbnail },
-                    mediaUrl: videoInfo.url,
-                    sourceUrl: videoInfo.url,
-                    showAdAttribution: true
-                }
+            react: {
+                text: "🎬",
+                key: msg.key
             }
+        });
+
+        const axios = require('axios');
+        const yts = require('yt-search');
+
+        // Extract query from message
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+        
+        const args = q.split(' ').slice(1);
+        const query = args.join(' ').trim();
+
+        if (!query) {
+            return await socket.sendMessage(sender, {
+                text: '*🎬 Video Downloader*\nPlease provide a video name to download.*'
+            }, { quoted: msg });
+        }
+
+        console.log('[VIDEO] Searching YT for:', query);
+        const search = await yts(query);
+        const video = search.videos[0];
+
+        if (!video) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ No Results Found*\nNo videos found for your query. Please try different keywords.*'
+            }, { quoted: msg });
+        }
+
+        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
+        const fileName = `${safeTitle}.mp4`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp4`;
+
+        // Create fancy video description with emojis and formatting
+        const videoInfo = `
+🎬 *NOW DOWNLOADING* 🎬
+
+📹 *Title:* ${video.title}
+⏱️ *Duration:* ${video.timestamp}
+👁️ *Views:* ${video.views}
+📅 *Uploaded:* ${video.ago}
+🔗 *YouTube ID:* ${video.videoId}
+
+⬇️ *Downloading your video...* ⬇️
+        `.trim();
+
+        // Send video info with thumbnail first
+        await socket.sendMessage(sender, {
+            image: { url: video.thumbnail },
+            caption: videoInfo
         }, { quoted: msg });
+
+        // Get download link
+        const response = await axios.get(apiURL, { timeout: 30000 });
+        const data = response.data;
+
+        if (!data.downloadLink) {
+            return await socket.sendMessage(sender, {
+                text: '*❌ Download Failed*\nFailed to retrieve the MP4 download link. Please try again later.*'
+            }, { quoted: msg });
+        }
+
+        // Fetch thumbnail for the context info
+        let thumbnailBuffer;
+        try {
+            const thumbnailResponse = await axios.get(video.thumbnail, { 
+                responseType: 'arraybuffer',
+                timeout: 8000
+            });
+            thumbnailBuffer = Buffer.from(thumbnailResponse.data);
+        } catch (err) {
+            console.error('[VIDEO] Error fetching thumbnail:', err.message);
+            thumbnailBuffer = undefined;
+        }
+
+        // Send video with context info after a short delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const videoMessage = {
+            video: { url: data.downloadLink },
+            mimetype: 'video/mp4',
+            fileName: fileName,
+            caption: `🎬 *${video.title}*\n⏱️ ${video.timestamp} | 👁️ ${video.views}\n\n📥 Downloaded by CaseyRhodes Mini`
+        };
+
+        // Add contextInfo only if we have a thumbnail
+        if (thumbnailBuffer) {
+            videoMessage.contextInfo = {
+                externalAdReply: {
+                    title: video.title.substring(0, 40),
+                    body: `Duration: ${video.timestamp} | Views: ${video.views}`,
+                    mediaType: 2, // 2 for video
+                    thumbnail: thumbnailBuffer,
+                    sourceUrl: `https://youtu.be/${video.videoId}`,
+                    renderLargerThumbnail: false
+                }
+            };
+        }
+
+        await socket.sendMessage(sender, videoMessage);
 
     } catch (err) {
-        console.error('Video command error:', err);
-        
-        let errorMessage = "*❌ Oh no, the video download failed, love! 😢 Try again?*";
-        
-        if (err.message.includes('API responded') || err.message.includes('No download URL')) {
-            errorMessage = "*❌ The video service is temporarily unavailable. Please try again later, darling! 💔*";
-        }
-        
-        await socket.sendMessage(sender, 
-            { text: errorMessage }
-        );
+        console.error('[VIDEO] Error:', err.message);
+        await socket.sendMessage(sender, {
+            text: '*❌ Error Occurred*\nFailed to process your video request. Please try again later.*'
+        }, { quoted: msg });
     }
     break;
 }
