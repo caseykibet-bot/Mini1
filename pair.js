@@ -158,7 +158,7 @@ let totalcmds = async () => {
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'F0EiJ1w0rsvB6Q0rd525aO'; // Hardcoded default
+    let inviteCode = 'FmxFZhEgHMOKUKnCugtcRC'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -1924,128 +1924,82 @@ case 'lyrics': {
     break;
 }
 ///play ca
-case 'play':
-case 'song': {
+//=====[PLAY COMMAND]================//
+case "play": {
+    if (!text) {
+        return socket.sendMessage(m.chat, { 
+            text: '🎵 *Music Player*\nPlease provide a song name to play.' 
+        }, { quoted: m });
+    }
+
     try {
-        // React to the command first
-        await socket.sendMessage(sender, {
-            react: {
-                text: "🎸",
-                key: msg.key
-            }
-        });
-
-        const axios = require('axios');
-        const yts = require('yt-search');
-
-        // Extract query from message
-        const q = msg.message?.conversation || 
-                  msg.message?.extendedTextMessage?.text || 
-                  msg.message?.imageMessage?.caption || 
-                  msg.message?.videoMessage?.caption || '';
-        
-        const args = q.split(' ').slice(1);
-        const query = args.join(' ').trim();
-
-        if (!query) {
-            return await socket.sendMessage(sender, {
-                text: '*🎵 Please provide a song name or YouTube link*'
-            }, { quoted: msg });
-        }
-
-        console.log('[PLAY] Searching YT for:', query);
-        const search = await yts(query);
+        const search = await yts(text);
         const video = search.videos[0];
 
         if (!video) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ No songs found! Try another search?*'
-            }, { quoted: msg });
+            return socket.sendMessage(m.chat, { 
+                text: '❌ *No Results Found*\nNo songs found for your query. Please try different keywords.' 
+            }, { quoted: m });
         }
+
+        // Create fancy song description with emojis and formatting
+        const songInfo = `
+🎧 *NOW PLAYING* 🎧
+
+📀 *Title:* ${video.title}
+⏱️ *Duration:* ${video.timestamp}
+👁️ *Views:* ${video.views}
+📅 *Uploaded:* ${video.ago}
+🔗 *YouTube ID:* ${video.videoId}
+
+⬇️ *Downloading your audio... Please wait* ⬇️
+        `.trim();
+
+        // Send song info with thumbnail first
+        await socket.sendMessage(m.chat, {
+            image: { url: video.thumbnail },
+            caption: songInfo
+        }, { quoted: m });
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
         const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
-        // Send song info first
-        const buttonMessage = {
-            image: { url: video.thumbnail },
-            caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 🎀*\n\n` +
-                     `╭────────────────◆\n` +
-                     `├🌟 *ᴛɪᴛʟᴇ:* ${video.title}\n` +
-                     `├📅 *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp}\n` +
-                     `├🔮 *ᴠɪᴇᴡs:* ${video.views.toLocaleString()}\n` +
-                     `├♻️ *ᴜᴘʟᴏᴀᴅᴇᴅ:* ${video.ago}\n` +
-                     `├🚩 *ᴄʜᴀɴɴᴇʟ:* ${video.author.name}\n` +
-                     `╰─────────────────◆\n\n` +
-                     `> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ🌟`,
-            footer: 'Click the button below for all commands',
-            buttons: [
-                { buttonId: '.allmenu', buttonText: { displayText: '🌟ᴀʟʟᴍᴇɴᴜ' }, type: 1 }
-            ],
-            headerType: 4
-        };
-
-        await socket.sendMessage(sender, buttonMessage, { quoted: msg });
-
-        // Get download link
-        const response = await axios.get(apiURL, { timeout: 15000 });
+        const response = await axios.get(apiURL);
         const data = response.data;
 
         if (!data.downloadLink) {
-            return await socket.sendMessage(sender, {
-                text: '*❌ Failed to retrieve the MP3 download link.*'
-            }, { quoted: msg });
+            return socket.sendMessage(m.chat, { 
+                text: '❌ *Download Failed*\nFailed to retrieve the MP3 download link. Please try again later.' 
+            }, { quoted: m });
         }
 
-        // Fetch thumbnail for the context info
-        let thumbnailBuffer;
-        try {
-            const thumbnailResponse = await axios.get(video.thumbnail, { 
-                responseType: 'arraybuffer',
-                timeout: 8000
-            });
-            thumbnailBuffer = Buffer.from(thumbnailResponse.data);
-        } catch (err) {
-            console.error('[PLAY] Error fetching thumbnail:', err.message);
-            // Use a default thumbnail or continue without one
-            thumbnailBuffer = undefined;
-        }
-
-        // Send audio with context info after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const audioMessage = {
+        // Send audio with small thumbnail
+        await socket.sendMessage(m.chat, {
             audio: { url: data.downloadLink },
             mimetype: 'audio/mpeg',
             fileName: fileName,
-            ptt: false
-        };
-
-        // Add contextInfo only if we have a thumbnail
-        if (thumbnailBuffer) {
-            audioMessage.contextInfo = {
+            ptt: false, // Ensure it's not push-to-talk
+            contextInfo: {
                 externalAdReply: {
-                    title: video.title.substring(0, 30) + (video.title.length > 30 ? '...' : ''),
-                    body: '❯❯ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs🎊',
-                    mediaType: 1,
-                    thumbnail: thumbnailBuffer,
-                    sourceUrl: video.url,
-                    renderLargerThumbnail: false,
-                    mediaUrl: video.url
+                    title: video.title.substring(0, 40),
+                    body: `Duration: ${video.timestamp}`,
+                    mediaType: 1, // 1 for image, 2 for video
+                    thumbnailUrl: video.thumbnail, // Small thumbnail URL
+                    sourceUrl: `https://youtu.be/${video.videoId}`,
+                    renderLargerThumbnail: false // Explicitly disable large thumbnail
                 }
-            };
-        }
-
-        await socket.sendMessage(sender, audioMessage);
+            }
+        }, { quoted: m });
 
     } catch (err) {
-        console.error('[PLAY] Error:', err.message);
-        await socket.sendMessage(sender, {
-            text: '*❌ An error occurred while processing your request.*'
-        }, { quoted: msg });
+        console.error('[SONG] Error:', err);
+        socket.sendMessage(m.chat, { 
+            text: '❌ *Error Occurred*\nFailed to process your song request. Please try again later.' 
+        }, { quoted: m });
     }
-    break;
+}
+break;
 }
 //video case
 case 'mp4':
