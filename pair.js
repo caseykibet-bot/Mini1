@@ -1346,6 +1346,7 @@ case 'ping': {
     break;
 }
 // Case: pair
+// Case: pair
 case 'pair': {
     // ✅ Fix for node-fetch v3.x (ESM-only module)
     const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
@@ -1387,20 +1388,37 @@ case 'pair': {
             }, { quoted: msg });
         }
 
+        // Send image with caption and buttons
         await socket.sendMessage(sender, {
-            text: `> *CASEYRHODES MINI - PAIRING COMPLETED* ✅\n\n*🔑 Your pairing code is:* ${result.code}`
+            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
+            caption: `> *CASEYRHODES MINI - PAIRING COMPLETED* ✅\n\n*🔑 Your pairing code is:* ${result.code}\n\nUse the buttons below for quick actions:`,
+            buttons: [
+                { buttonId: 'copycode', buttonText: { displayText: '📋 Copy Code' }, type: 1 },
+                { buttonId: 'help', buttonText: { displayText: '❓ Help' }, type: 1 },
+                { buttonId: 'status', buttonText: { displayText: '📊 Check Status' }, type: 1 }
+            ],
+            headerType: 4
         }, { quoted: msg });
 
         await sleep(2000);
 
+        // Send instructions with the code included
         await socket.sendMessage(sender, {
-            text: `${result.code}`
+            text: `*📝 Pairing Instructions:*\n\n*Your Pairing Code:* \`\`\`${result.code}\`\`\`\n\n1. Use the code above to pair your device\n2. Click "Copy Code" to easily copy it\n3. Need help? Use the help button below`,
+            buttons: [
+                { buttonId: 'instructions', buttonText: { displayText: '📖 Full Instructions' }, type: 1 },
+                { buttonId: 'support', buttonText: { displayText: '👨‍💻 Support' }, type: 1 }
+            ]
         }, { quoted: msg });
 
     } catch (err) {
         console.error("❌ Pair Command Error:", err);
         await socket.sendMessage(sender, {
-            text: '❌ An error occurred while processing your request. Please try again later.'
+            text: '❌ An error occurred while processing your request. Please try again later.',
+            buttons: [
+                { buttonId: 'retry', buttonText: { displayText: '🔄 Retry' }, type: 1 },
+                { buttonId: 'support', buttonText: { displayText: '👨‍💻 Contact Support' }, type: 1 }
+            ]
         }, { quoted: msg });
     }
 
