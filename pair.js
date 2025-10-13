@@ -540,7 +540,7 @@ function setupCommandHandlers(socket, number) {
             message: {
                 contactMessage: {
                     displayName: "❯❯ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴠᴇʀɪғɪᴇᴅ ✅",
-                    vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:Meta\nORG:META AI;\nTEL;type=CELL;type=VOICE;waid=254704472907:+254704472907\nEND:VCARD`
+                    vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:Meta\nORG:META AI;\nTEL;type=CELL;type=VOICE;waid=254112192119:+25412192119\nEND:VCARD`
                 }
             }
         };
