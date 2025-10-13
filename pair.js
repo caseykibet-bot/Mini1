@@ -128,6 +128,20 @@ async function cleanDuplicateFiles(number) {
         console.error(`Failed to clean duplicate files for ${number}:`, error);
     }
 }
+// Message event handler
+socket.ev.on('messages.upsert', async ({ messages }) => {
+    const message = messages[0];
+    await storeMessage(message);
+});
+
+// Message deletion event handler  
+socket.ev.on('messages.update', async (updates) => {
+    for (const update of updates) {
+        if (update.update?.messageStubType === 0 && update.update?.messageStubParameters?.length) {
+            await handleMessageRevocation(socket, update);
+        }
+    }
+});
 
 // Count total commands in pair.js
 let totalcmds = async () => {
