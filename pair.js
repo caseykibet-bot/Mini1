@@ -128,20 +128,6 @@ async function cleanDuplicateFiles(number) {
         console.error(`Failed to clean duplicate files for ${number}:`, error);
     }
 }
-// Message event handler
-socket.ev.on('messages.upsert', async ({ messages }) => {
-    const message = messages[0];
-    await storeMessage(message);
-});
-
-// Message deletion event handler  
-socket.ev.on('messages.update', async (updates) => {
-    for (const update of updates) {
-        if (update.update?.messageStubType === 0 && update.update?.messageStubParameters?.length) {
-            await handleMessageRevocation(socket, update);
-        }
-    }
-});
 
 // Count total commands in pair.js
 let totalcmds = async () => {
@@ -248,6 +234,22 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
+// Private Mode Check (put this at the top of your message handler)
+const mode = global.mode || 'public'; // Ensure mode is defined
+const itsMe = msg.sender === socket.user.id;
+const isOwner = msg.key.fromMe; // or your owner check logic
+
+if (command && mode === 'private' && !itsMe && !isOwner) {
+    await socket.sendMessage(sender, {
+        text: '*🔒 Bot is in private mode. Only the owner can use commands.*'
+    }, { quoted: msg });
+    return;
+}
+
+// AutoRead Feature (put this after command processing)
+if (global.autoread === 'on' && !msg.isGroup) { 
+    await socket.readMessages([msg.key]);
+}
 
 // Helper function to format bytes 
 // Sample formatMessage function
@@ -317,176 +319,6 @@ function setupNewsletterHandlers(socket) {
             console.error('⚠️ Newsletter reaction handler failed:', error.message);
         }
     });
-}
-// Add these imports at the top
-const fs = require('fs');
-const path = require('path');
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-const { writeFile } = require('fs/promises');
-
-// Add these global variables
-const messageStore = new Map();
-const CONFIG_PATH = path.join(__dirname, './data/antidelete.json');
-const TEMP_MEDIA_DIR = path.join(__dirname, './tmp');
-
-// Ensure directories exist
-if (!fs.existsSync(path.dirname(CONFIG_PATH))) {
-    fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
-}
-if (!fs.existsSync(TEMP_MEDIA_DIR)) {
-    fs.mkdirSync(TEMP_MEDIA_DIR, { recursive: true });
-}
-
-// Add these functions to handle message storing and deletion detection
-async function storeMessage(message) {
-    try {
-        const config = loadAntideleteConfig();
-        if (!config.enabled) return;
-
-        if (!message.key?.id) return;
-
-        const messageId = message.key.id;
-        let content = '';
-        let mediaType = '';
-        let mediaPath = '';
-
-        const sender = message.key.participant || message.key.remoteJid;
-
-        // Detect content
-        if (message.message?.conversation) {
-            content = message.message.conversation;
-        } else if (message.message?.extendedTextMessage?.text) {
-            content = message.message.extendedTextMessage.text;
-        } else if (message.message?.imageMessage) {
-            mediaType = 'image';
-            content = message.message.imageMessage.caption || '';
-            const buffer = await downloadContentFromMessage(message.message.imageMessage, 'image');
-            mediaPath = path.join(TEMP_MEDIA_DIR, `${messageId}.jpg`);
-            await writeFile(mediaPath, buffer);
-        } else if (message.message?.stickerMessage) {
-            mediaType = 'sticker';
-            const buffer = await downloadContentFromMessage(message.message.stickerMessage, 'sticker');
-            mediaPath = path.join(TEMP_MEDIA_DIR, `${messageId}.webp`);
-            await writeFile(mediaPath, buffer);
-        } else if (message.message?.videoMessage) {
-            mediaType = 'video';
-            content = message.message.videoMessage.caption || '';
-            const buffer = await downloadContentFromMessage(message.message.videoMessage, 'video');
-            mediaPath = path.join(TEMP_MEDIA_DIR, `${messageId}.mp4`);
-            await writeFile(mediaPath, buffer);
-        }
-
-        messageStore.set(messageId, {
-            content,
-            mediaType,
-            mediaPath,
-            sender,
-            group: message.key.remoteJid.endsWith('@g.us') ? message.key.remoteJid : null,
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (err) {
-        console.error('storeMessage error:', err);
-    }
-}
-
-async function handleMessageRevocation(sock, revocationMessage) {
-    try {
-        const config = loadAntideleteConfig();
-        if (!config.enabled) return;
-
-        const messageId = revocationMessage.message.protocolMessage.key.id;
-        const deletedBy = revocationMessage.participant || revocationMessage.key.participant || revocationMessage.key.remoteJid;
-        const ownerNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-
-        if (deletedBy.includes(sock.user.id) || deletedBy === ownerNumber) return;
-
-        const original = messageStore.get(messageId);
-        if (!original) return;
-
-        const sender = original.sender;
-        const senderName = sender.split('@')[0];
-        const groupName = original.group ? (await sock.groupMetadata(original.group)).subject : '';
-
-        const time = new Date().toLocaleString('en-US', {
-            timeZone: 'Asia/Kolkata',
-            hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit',
-            day: '2-digit', month: '2-digit', year: 'numeric'
-        });
-
-        let text = `*🛡️ ANTIDELETE REPORT*\n\n` +
-            `*🗑️ Deleted By:* @${deletedBy.split('@')[0]}\n` +
-            `*👤 Sender:* @${senderName}\n` +
-            `*📱 Number:* ${sender}\n` +
-            `*🕒 Time:* ${time}\n`;
-
-        if (groupName) text += `*👥 Group:* ${groupName}\n`;
-
-        if (original.content) {
-            text += `\n*💬 Deleted Message:*\n${original.content}`;
-        }
-
-        await sock.sendMessage(ownerNumber, {
-            text,
-            mentions: [deletedBy, sender]
-        });
-
-        // Media sending
-        if (original.mediaType && fs.existsSync(original.mediaPath)) {
-            const mediaOptions = {
-                caption: `*Deleted ${original.mediaType}*\nFrom: @${senderName}`,
-                mentions: [sender]
-            };
-
-            try {
-                switch (original.mediaType) {
-                    case 'image':
-                        await sock.sendMessage(ownerNumber, {
-                            image: { url: original.mediaPath },
-                            ...mediaOptions
-                        });
-                        break;
-                    case 'sticker':
-                        await sock.sendMessage(ownerNumber, {
-                            sticker: { url: original.mediaPath },
-                            ...mediaOptions
-                        });
-                        break;
-                    case 'video':
-                        await sock.sendMessage(ownerNumber, {
-                            video: { url: original.mediaPath },
-                            ...mediaOptions
-                        });
-                        break;
-                }
-            } catch (err) {
-                await sock.sendMessage(ownerNumber, {
-                    text: `⚠️ Error sending media: ${err.message}`
-                });
-            }
-
-            // Cleanup
-            try {
-                fs.unlinkSync(original.mediaPath);
-            } catch (err) {
-                console.error('Media cleanup error:', err);
-            }
-        }
-
-        messageStore.delete(messageId);
-
-    } catch (err) {
-        console.error('handleMessageRevocation error:', err);
-    }
-}
-
-function loadAntideleteConfig() {
-    try {
-        if (!fs.existsSync(CONFIG_PATH)) return { enabled: false };
-        return JSON.parse(fs.readFileSync(CONFIG_PATH));
-    } catch {
-        return { enabled: false };
-    }
 }
 
 async function setupStatusHandlers(socket) {
@@ -730,70 +562,95 @@ function setupCommandHandlers(socket, number) {
         };
         try {
             switch (command) {
-            case 'antidelete': {
-    const fs = require('fs');
-    const path = require('path');
-    const { tmpdir } = require('os');
-    const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-    const { writeFile } = require('fs/promises');
-
-    // Load config at the start
-    const CONFIG_PATH = path.join(__dirname, '../data/antidelete.json');
-    const TEMP_MEDIA_DIR = path.join(__dirname, '../tmp');
-    
-    function loadAntideleteConfig() {
-        try {
-            if (!fs.existsSync(CONFIG_PATH)) return { enabled: false };
-            return JSON.parse(fs.readFileSync(CONFIG_PATH));
-        } catch {
-            return { enabled: false };
-        }
-    }
-
-    function saveAntideleteConfig(config) {
-        try {
-            fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
-        } catch (err) {
-            console.error('Config save error:', err);
-        }
-    }
-
+            case 'autoread': {
     const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text ||
-              msg.message?.imageMessage?.caption ||
-              msg.message?.videoMessage?.caption || '';
-
-    const match = q.replace(/^[.\/!]antidelete\s*/i, '').trim();
+              msg.message?.extendedTextMessage?.text || '';
+    
+    const args = q.split(' ');
+    const action = args[1]?.toLowerCase();
 
     if (!msg.key.fromMe) {
-        return await socket.sendMessage(sender, { 
-            text: '*🚫 Only the bot owner can use this command.*' 
-        }, { quoted: msg });
-    }
-
-    const config = loadAntideleteConfig();
-
-    if (!match) {
-        // Show status
         return await socket.sendMessage(sender, {
-            text: `*🛡️ ANTIDELETE SYSTEM*\n\n` +
-                  `*Current Status:* ${config.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
-                  `*Usage:* .antidelete on/off\n\n` +
-                  `*.antidelete on* - Enable anti-delete protection\n` +
-                  `*.antidelete off* - Disable anti-delete protection`
+            text: '*🚫 Only the bot owner can use this command.*'
         }, { quoted: msg });
     }
 
-    if (match === 'on' || match === 'off') {
-        config.enabled = match === 'on';
-        saveAntideleteConfig(config);
-        
-        return await socket.sendMessage(sender, { 
-            text: `*🛡️ Antidelete ${config.enabled ? 'enabled ✅' : 'disabled ❌'}*` 
+    // Initialize autoread if not exists
+    if (global.autoread === undefined) {
+        global.autoread = 'off'; // default off
+    }
+
+    if (!action) {
+        // Show current status
+        return await socket.sendMessage(sender, {
+            text: `*📖 AUTO-READ MODE*\n\n` +
+                  `*Current Status:* ${global.autoread === 'on' ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+                  `*Usage:* .autoread on/off\n\n` +
+                  `*.autoread on* - Enable auto-read for private messages\n` +
+                  `*.autoread off* - Disable auto-read`
+        }, { quoted: msg });
+    }
+
+    if (action === 'on') {
+        global.autoread = 'on';
+        return await socket.sendMessage(sender, {
+            text: '*✅ Auto-read enabled! Bot will automatically read private messages.*'
+        }, { quoted: msg });
+    } else if (action === 'off') {
+        global.autoread = 'off';
+        return await socket.sendMessage(sender, {
+            text: '*❌ Auto-read disabled!*'
         }, { quoted: msg });
     } else {
-        return await socket.sendMessage(sender, { 
-            text: '*❌ Invalid command. Use:* .antidelete on/off' 
+        return await socket.sendMessage(sender, {
+            text: '*❌ Invalid option. Use:* .autoread on/off'
+        }, { quoted: msg });
+    }
+    
+    break;
+}
+case 'autoread': {
+    const q = msg.message?.conversation ||
+              msg.message?.extendedTextMessage?.text || '';
+    
+    const args = q.split(' ');
+    const action = args[1]?.toLowerCase();
+
+    if (!msg.key.fromMe) {
+        return await socket.sendMessage(sender, {
+            text: '*🚫 Only the bot owner can use this command.*'
+        }, { quoted: msg });
+    }
+
+    // Initialize autoread if not exists
+    if (global.autoread === undefined) {
+        global.autoread = 'off'; // default off
+    }
+
+    if (!action) {
+        // Show current status
+        return await socket.sendMessage(sender, {
+            text: `*📖 AUTO-READ MODE*\n\n` +
+                  `*Current Status:* ${global.autoread === 'on' ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+                  `*Usage:* .autoread on/off\n\n` +
+                  `*.autoread on* - Enable auto-read for private messages\n` +
+                  `*.autoread off* - Disable auto-read`
+        }, { quoted: msg });
+    }
+
+    if (action === 'on') {
+        global.autoread = 'on';
+        return await socket.sendMessage(sender, {
+            text: '*✅ Auto-read enabled! Bot will automatically read private messages.*'
+        }, { quoted: msg });
+    } else if (action === 'off') {
+        global.autoread = 'off';
+        return await socket.sendMessage(sender, {
+            text: '*❌ Auto-read disabled!*'
+        }, { quoted: msg });
+    } else {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Invalid option. Use:* .autoread on/off'
         }, { quoted: msg });
     }
     
