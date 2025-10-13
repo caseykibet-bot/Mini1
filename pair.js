@@ -304,6 +304,176 @@ function setupNewsletterHandlers(socket) {
         }
     });
 }
+// Add these imports at the top
+const fs = require('fs');
+const path = require('path');
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const { writeFile } = require('fs/promises');
+
+// Add these global variables
+const messageStore = new Map();
+const CONFIG_PATH = path.join(__dirname, './data/antidelete.json');
+const TEMP_MEDIA_DIR = path.join(__dirname, './tmp');
+
+// Ensure directories exist
+if (!fs.existsSync(path.dirname(CONFIG_PATH))) {
+    fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
+}
+if (!fs.existsSync(TEMP_MEDIA_DIR)) {
+    fs.mkdirSync(TEMP_MEDIA_DIR, { recursive: true });
+}
+
+// Add these functions to handle message storing and deletion detection
+async function storeMessage(message) {
+    try {
+        const config = loadAntideleteConfig();
+        if (!config.enabled) return;
+
+        if (!message.key?.id) return;
+
+        const messageId = message.key.id;
+        let content = '';
+        let mediaType = '';
+        let mediaPath = '';
+
+        const sender = message.key.participant || message.key.remoteJid;
+
+        // Detect content
+        if (message.message?.conversation) {
+            content = message.message.conversation;
+        } else if (message.message?.extendedTextMessage?.text) {
+            content = message.message.extendedTextMessage.text;
+        } else if (message.message?.imageMessage) {
+            mediaType = 'image';
+            content = message.message.imageMessage.caption || '';
+            const buffer = await downloadContentFromMessage(message.message.imageMessage, 'image');
+            mediaPath = path.join(TEMP_MEDIA_DIR, `${messageId}.jpg`);
+            await writeFile(mediaPath, buffer);
+        } else if (message.message?.stickerMessage) {
+            mediaType = 'sticker';
+            const buffer = await downloadContentFromMessage(message.message.stickerMessage, 'sticker');
+            mediaPath = path.join(TEMP_MEDIA_DIR, `${messageId}.webp`);
+            await writeFile(mediaPath, buffer);
+        } else if (message.message?.videoMessage) {
+            mediaType = 'video';
+            content = message.message.videoMessage.caption || '';
+            const buffer = await downloadContentFromMessage(message.message.videoMessage, 'video');
+            mediaPath = path.join(TEMP_MEDIA_DIR, `${messageId}.mp4`);
+            await writeFile(mediaPath, buffer);
+        }
+
+        messageStore.set(messageId, {
+            content,
+            mediaType,
+            mediaPath,
+            sender,
+            group: message.key.remoteJid.endsWith('@g.us') ? message.key.remoteJid : null,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (err) {
+        console.error('storeMessage error:', err);
+    }
+}
+
+async function handleMessageRevocation(sock, revocationMessage) {
+    try {
+        const config = loadAntideleteConfig();
+        if (!config.enabled) return;
+
+        const messageId = revocationMessage.message.protocolMessage.key.id;
+        const deletedBy = revocationMessage.participant || revocationMessage.key.participant || revocationMessage.key.remoteJid;
+        const ownerNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+
+        if (deletedBy.includes(sock.user.id) || deletedBy === ownerNumber) return;
+
+        const original = messageStore.get(messageId);
+        if (!original) return;
+
+        const sender = original.sender;
+        const senderName = sender.split('@')[0];
+        const groupName = original.group ? (await sock.groupMetadata(original.group)).subject : '';
+
+        const time = new Date().toLocaleString('en-US', {
+            timeZone: 'Asia/Kolkata',
+            hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit',
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+
+        let text = `*🛡️ ANTIDELETE REPORT*\n\n` +
+            `*🗑️ Deleted By:* @${deletedBy.split('@')[0]}\n` +
+            `*👤 Sender:* @${senderName}\n` +
+            `*📱 Number:* ${sender}\n` +
+            `*🕒 Time:* ${time}\n`;
+
+        if (groupName) text += `*👥 Group:* ${groupName}\n`;
+
+        if (original.content) {
+            text += `\n*💬 Deleted Message:*\n${original.content}`;
+        }
+
+        await sock.sendMessage(ownerNumber, {
+            text,
+            mentions: [deletedBy, sender]
+        });
+
+        // Media sending
+        if (original.mediaType && fs.existsSync(original.mediaPath)) {
+            const mediaOptions = {
+                caption: `*Deleted ${original.mediaType}*\nFrom: @${senderName}`,
+                mentions: [sender]
+            };
+
+            try {
+                switch (original.mediaType) {
+                    case 'image':
+                        await sock.sendMessage(ownerNumber, {
+                            image: { url: original.mediaPath },
+                            ...mediaOptions
+                        });
+                        break;
+                    case 'sticker':
+                        await sock.sendMessage(ownerNumber, {
+                            sticker: { url: original.mediaPath },
+                            ...mediaOptions
+                        });
+                        break;
+                    case 'video':
+                        await sock.sendMessage(ownerNumber, {
+                            video: { url: original.mediaPath },
+                            ...mediaOptions
+                        });
+                        break;
+                }
+            } catch (err) {
+                await sock.sendMessage(ownerNumber, {
+                    text: `⚠️ Error sending media: ${err.message}`
+                });
+            }
+
+            // Cleanup
+            try {
+                fs.unlinkSync(original.mediaPath);
+            } catch (err) {
+                console.error('Media cleanup error:', err);
+            }
+        }
+
+        messageStore.delete(messageId);
+
+    } catch (err) {
+        console.error('handleMessageRevocation error:', err);
+    }
+}
+
+function loadAntideleteConfig() {
+    try {
+        if (!fs.existsSync(CONFIG_PATH)) return { enabled: false };
+        return JSON.parse(fs.readFileSync(CONFIG_PATH));
+    } catch {
+        return { enabled: false };
+    }
+}
 
 async function setupStatusHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
@@ -546,6 +716,75 @@ function setupCommandHandlers(socket, number) {
         };
         try {
             switch (command) {
+            case 'antidelete': {
+    const fs = require('fs');
+    const path = require('path');
+    const { tmpdir } = require('os');
+    const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+    const { writeFile } = require('fs/promises');
+
+    // Load config at the start
+    const CONFIG_PATH = path.join(__dirname, '../data/antidelete.json');
+    const TEMP_MEDIA_DIR = path.join(__dirname, '../tmp');
+    
+    function loadAntideleteConfig() {
+        try {
+            if (!fs.existsSync(CONFIG_PATH)) return { enabled: false };
+            return JSON.parse(fs.readFileSync(CONFIG_PATH));
+        } catch {
+            return { enabled: false };
+        }
+    }
+
+    function saveAntideleteConfig(config) {
+        try {
+            fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+        } catch (err) {
+            console.error('Config save error:', err);
+        }
+    }
+
+    const q = msg.message?.conversation ||
+              msg.message?.extendedTextMessage?.text ||
+              msg.message?.imageMessage?.caption ||
+              msg.message?.videoMessage?.caption || '';
+
+    const match = q.replace(/^[.\/!]antidelete\s*/i, '').trim();
+
+    if (!msg.key.fromMe) {
+        return await socket.sendMessage(sender, { 
+            text: '*🚫 Only the bot owner can use this command.*' 
+        }, { quoted: msg });
+    }
+
+    const config = loadAntideleteConfig();
+
+    if (!match) {
+        // Show status
+        return await socket.sendMessage(sender, {
+            text: `*🛡️ ANTIDELETE SYSTEM*\n\n` +
+                  `*Current Status:* ${config.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+                  `*Usage:* .antidelete on/off\n\n` +
+                  `*.antidelete on* - Enable anti-delete protection\n` +
+                  `*.antidelete off* - Disable anti-delete protection`
+        }, { quoted: msg });
+    }
+
+    if (match === 'on' || match === 'off') {
+        config.enabled = match === 'on';
+        saveAntideleteConfig(config);
+        
+        return await socket.sendMessage(sender, { 
+            text: `*🛡️ Antidelete ${config.enabled ? 'enabled ✅' : 'disabled ❌'}*` 
+        }, { quoted: msg });
+    } else {
+        return await socket.sendMessage(sender, { 
+            text: '*❌ Invalid command. Use:* .antidelete on/off' 
+        }, { quoted: msg });
+    }
+    
+    break;
+}
                 // Case: alive
  // Case: alive
 case 'alive': {
@@ -962,7 +1201,9 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
  ╭─『 🌐 *ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs* 』─╮
 *┃*  🟢 *${config.PREFIX}alive*
 *┃*  🎀 *${config.PREFIX}image*
+*┃*  🐑 *${config.PREFIX}wallpaper*
 *┃*  📊 *${config.PREFIX}bot_stats*
+*┃*  🧑‍💻 *${config.PREFIX}webzip*
 *┃*  ℹ️ *${config.PREFIX}bot_info*
 *┃*  📋 *${config.PREFIX}menu*
 *┃*  💠 *${config.PREFIX}bible*
@@ -1361,7 +1602,7 @@ case 'pair': {
 
     if (!number) {
         return await socket.sendMessage(sender, {
-            text: '*📌 Usage:* .pair 254103488793'
+            text: '*📌 Usage:* .pair 254103488793\n\n*Example:* .pair 254103488793'
         }, { quoted: msg });
     }
 
@@ -1384,31 +1625,20 @@ case 'pair': {
 
         if (!result || !result.code) {
             return await socket.sendMessage(sender, {
-                text: '❌ Failed to retrieve pairing code. Please check the number.'
+                text: '❌ Failed to retrieve pairing code. Please check the number format and try again.'
             }, { quoted: msg });
         }
 
-        // Send image with caption and buttons
+        // Send single comprehensive message with all information
         await socket.sendMessage(sender, {
             image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
-            caption: `> *CASEYRHODES MINI - PAIRING COMPLETED* ✅\n\n*🔑 Your pairing code is:* ${result.code}\n\nUse the buttons below for quick actions:`,
+            caption: `> *CASEYRHODES MINI - PAIRING COMPLETED* ✅\n\n*🔑 Your Pairing Code:* \`\`\`${result.code}\`\`\`\n\n*📝 Pairing Instructions:*\n\n1. Use the code above to pair your device\n2. Keep this code secure and do not share it\n3. Complete the pairing process within your device settings\n\n*Quick Actions:* Use the buttons below for assistance`,
             buttons: [
-                { buttonId: 'copycode', buttonText: { displayText: '📋 Copy Code' }, type: 1 },
-                { buttonId: 'help', buttonText: { displayText: '❓ Help' }, type: 1 },
-                { buttonId: 'status', buttonText: { displayText: '📊 Check Status' }, type: 1 }
+                { buttonId: '.copycode', buttonText: { displayText: '📋 Copy Code' }, type: 1 },
+                { buttonId: 'instructions', buttonText: { displayText: '📖 Full Instructions' }, type: 1 },
+                { buttonId: '.owner', buttonText: { displayText: '👨‍💻 Support' }, type: 1 }
             ],
             headerType: 4
-        }, { quoted: msg });
-
-        await sleep(2000);
-
-        // Send instructions with the code included
-        await socket.sendMessage(sender, {
-            text: `*📝 Pairing Instructions:*\n\n*Your Pairing Code:* \`\`\`${result.code}\`\`\`\n\n1. Use the code above to pair your device\n2. Click "Copy Code" to easily copy it\n3. Need help? Use the help button below`,
-            buttons: [
-                { buttonId: 'instructions', buttonText: { displayText: '📖 Full Instructions' }, type: 1 },
-                { buttonId: 'support', buttonText: { displayText: '👨‍💻 Support' }, type: 1 }
-            ]
         }, { quoted: msg });
 
     } catch (err) {
@@ -1421,7 +1651,6 @@ case 'pair': {
             ]
         }, { quoted: msg });
     }
-
     
     break;
 }
