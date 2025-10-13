@@ -815,7 +815,6 @@ case 'info': {
                     { title: "📜 ᴀʟʟ ᴍᴇɴᴜ", description: "List all commands (text)", id: `${config.PREFIX}allmenu` },
                     { title: "🔮sᴄʀᴇᴇɴsʜᴏᴏᴛ", description: "get website screenshots", id: `${config.PREFIX}ss` },
                     { title: "💌ғᴇᴛᴄʜ", description: "get url comtent", id: `${config.PREFIX}get` },  
-                    { title: "🦬Insult", description: "insult oyher guy", id: `${config.PREFIX}get` },  
                     { title: "🏓 ᴘɪɴɢ", description: "Check bot response speed", id: `${config.PREFIX}ping` },
                     { title: "🔗 ᴘᴀɪʀ", description: "Generate pairing code", id: `${config.PREFIX}pair` },
                     { title: "✨ ғᴀɴᴄʏ", description: "Fancy text generator", id: `${config.PREFIX}fancy` },
@@ -979,7 +978,6 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 *┃*  ℹ️ *${config.PREFIX}bot_info*
 *┃*  📋 *${config.PREFIX}menu*
 *┃*  💠 *${config.PREFIX}bible*
-*┃*  🦬 *${config.PREFIX}insult*
 *┃*  🌸 *${config.PREFIX}jid*
 *┃*  🎀 *${config.PREFIX}gitclone*
 *┃*  🎥 *${config.PREFIX}video*
@@ -4459,118 +4457,6 @@ case 'truthquestion': {
                 '❌ *Request timed out* ⏰' : 
                 '❌ *Failed to fetch truth question* 😞'
         }, { quoted: msg });
-    }
-    break;
-}
-// ┏━━━━━━━━━━━━━━━❖
-// ┃ INSULT CASE
-// ┗━━━━━━━━━━━━━━━❖
-case 'insult': {
-    try {
-        const insults = [
-            "You're like a cloud. When you disappear, it's a beautiful day!",
-            "You bring everyone so much joy when you leave the room!",
-            "I'd agree with you, but then we'd both be wrong.",
-            "You're not stupid; you just have bad luck thinking.",
-            "Your secrets are always safe with me. I never even listen to them.",
-            "You're proof that even evolution takes a break sometimes.",
-            "You have something on your chin... no, the third one down.",
-            "You're like a software update. Whenever I see you, I think, 'Do I really need this right now?'",
-            "You bring everyone happiness... you know, when you leave.",
-            "You're like a penny—two-faced and not worth much.",
-            "You have something on your mind... oh wait, never mind.",
-            "You're the reason they put directions on shampoo bottles.",
-            "You're like a cloud. Always floating around with no real purpose.",
-            "Your jokes are like expired milk—sour and hard to digest.",
-            "You're like a candle in the wind... useless when things get tough.",
-            "You have something unique—your ability to annoy everyone equally.",
-            "You're like a Wi-Fi signal—always weak when needed most.",
-            "You're proof that not everyone needs a filter to be unappealing.",
-            "Your energy is like a black hole—it just sucks the life out of the room.",
-            "You have the perfect face for radio.",
-            "You're like a traffic jam—nobody wants you, but here you are.",
-            "You're like a broken pencil—pointless.",
-            "Your ideas are so original, I'm sure I've heard them all before.",
-            "You're living proof that even mistakes can be productive.",
-            "You're not lazy; you're just highly motivated to do nothing.",
-            "Your brain's running Windows 95—slow and outdated.",
-            "You're like a speed bump—nobody likes you, but everyone has to deal with you.",
-            "You're like a cloud of mosquitoes—just irritating.",
-            "You bring people together... to talk about how annoying you are."
-        ];
-
-        // React to the command first
-        await socket.sendMessage(sender, {
-            react: {
-                text: "💀",
-                key: msg.key
-            }
-        });
-
-        let userToInsult;
-        
-        // Check for mentioned users
-        if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
-            userToInsult = msg.message.extendedTextMessage.contextInfo.mentionedJid[0];
-        }
-        // Check for replied message
-        else if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
-            userToInsult = msg.message.extendedTextMessage.contextInfo.participant;
-        }
-        
-        if (!userToInsult) {
-            return await socket.sendMessage(sender, { 
-                text: '*💀 Insult Command*\nPlease mention someone or reply to their message to insult them!\n\nExample: .insult @user*'
-            }, { quoted: msg });
-        }
-
-        // Don't let users insult themselves
-        if (userToInsult === sender) {
-            return await socket.sendMessage(sender, { 
-                text: "*🤨 Self-Insult Blocked*\nYou can't insult yourself! That's just sad...*"
-            }, { quoted: msg });
-        }
-
-        // Don't let users insult the bot
-        if (userToInsult.includes('bot') || userToInsult.includes('Bot')) {
-            return await socket.sendMessage(sender, { 
-                text: "*🤖 Nice Try*\nYou can't insult me! I'm just a bunch of code.*"
-            }, { quoted: msg });
-        }
-
-        const insult = insults[Math.floor(Math.random() * insults.length)];
-        const username = userToInsult.split('@')[0];
-
-        console.log(`[INSULT] ${sender} insulting ${userToInsult}`);
-
-        // Add small delay for dramatic effect
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        await socket.sendMessage(sender, { 
-            text: `🎯 *Target:* @${username}\n💀 *Insult:* ${insult}\n\n*Disclaimer: This is all in good fun! 😄*`,
-            mentions: [userToInsult]
-        }, { quoted: msg });
-
-        // React with success
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (error) {
-        console.error('[INSULT] Error:', error.message);
-        
-        if (error.message.includes('429') || error.data === 429) {
-            await socket.sendMessage(sender, { 
-                text: '*⏰ Rate Limited*\nPlease try again in a few seconds.*'
-            }, { quoted: msg });
-        } else {
-            await socket.sendMessage(sender, { 
-                text: '*❌ Insult Failed*\nAn error occurred while sending the insult. Please try again later.*'
-            }, { quoted: msg });
-        }
     }
     break;
 }
