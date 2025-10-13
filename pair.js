@@ -234,22 +234,6 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     }
 }
 
-// Private Mode Check (put this at the top of your message handler)
-const mode = global.mode || 'public'; // Ensure mode is defined
-const itsMe = msg.sender === socket.user.id;
-const isOwner = msg.key.fromMe; // or your owner check logic
-
-if (command && mode === 'private' && !itsMe && !isOwner) {
-    await socket.sendMessage(sender, {
-        text: '*🔒 Bot is in private mode. Only the owner can use commands.*'
-    }, { quoted: msg });
-    return;
-}
-
-// AutoRead Feature (put this after command processing)
-if (global.autoread === 'on' && !msg.isGroup) { 
-    await socket.readMessages([msg.key]);
-}
 
 // Helper function to format bytes 
 // Sample formatMessage function
@@ -345,6 +329,52 @@ async function setupStatusHandlers(socket) {
                     }
                 }
             }
+            // WorkType Check (put this at the top of your message handler)
+const isOwner = msg.key.fromMe; // or your owner check logic
+const isGroup = msg.key.remoteJid.endsWith('@g.us');
+
+// Initialize config if not exists
+if (!global.config) global.config = {};
+if (!global.config.MODE) global.config.MODE = 'public';
+
+const workMode = global.config.MODE;
+
+// Mode restrictions
+if (!isOwner) {
+    switch (workMode) {
+        case "private":
+            // Only owner can use in private mode
+            await socket.sendMessage(sender, {
+                text: '*🔒 Bot is in private mode. Only owner can use commands.*'
+            }, { quoted: msg });
+            return;
+            
+        case "inbox":
+            if (isGroup) {
+                // No groups allowed in inbox mode
+                await socket.sendMessage(sender, {
+                    text: '*📨 Bot is in inbox mode. Commands only work in private chats.*'
+                }, { quoted: msg });
+                return;
+            }
+            break;
+            
+        case "groups":
+            if (!isGroup) {
+                // Only groups allowed in groups mode
+                await socket.sendMessage(sender, {
+                    text: '*👥 Bot is in groups mode. Commands only work in group chats.*'
+                }, { quoted: msg });
+                return;
+            }
+            break;
+            
+        case "public":
+        default:
+            // Public mode - everyone can use
+            break;
+    }
+}
 
             if (config.AUTO_LIKE_STATUS === 'true') {
                 const randomEmoji = config.AUTO_LIKE_EMOJI[Math.floor(Math.random() * config.AUTO_LIKE_EMOJI.length)];
@@ -562,101 +592,52 @@ function setupCommandHandlers(socket, number) {
         };
         try {
             switch (command) {
-            case 'autoread': {
-    const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text || '';
-    
-    const args = q.split(' ');
-    const action = args[1]?.toLowerCase();
-
-    if (!msg.key.fromMe) {
-        return await socket.sendMessage(sender, {
-            text: '*🚫 Only the bot owner can use this command.*'
-        }, { quoted: msg });
-    }
-
-    // Initialize autoread if not exists
-    if (global.autoread === undefined) {
-        global.autoread = 'off'; // default off
-    }
-
-    if (!action) {
-        // Show current status
-        return await socket.sendMessage(sender, {
-            text: `*📖 AUTO-READ MODE*\n\n` +
-                  `*Current Status:* ${global.autoread === 'on' ? '✅ Enabled' : '❌ Disabled'}\n\n` +
-                  `*Usage:* .autoread on/off\n\n` +
-                  `*.autoread on* - Enable auto-read for private messages\n` +
-                  `*.autoread off* - Disable auto-read`
-        }, { quoted: msg });
-    }
-
-    if (action === 'on') {
-        global.autoread = 'on';
-        return await socket.sendMessage(sender, {
-            text: '*✅ Auto-read enabled! Bot will automatically read private messages.*'
-        }, { quoted: msg });
-    } else if (action === 'off') {
-        global.autoread = 'off';
-        return await socket.sendMessage(sender, {
-            text: '*❌ Auto-read disabled!*'
-        }, { quoted: msg });
-    } else {
-        return await socket.sendMessage(sender, {
-            text: '*❌ Invalid option. Use:* .autoread on/off'
-        }, { quoted: msg });
-    }
-    
-    break;
-}
-case 'autoread': {
-    const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text || '';
-    
-    const args = q.split(' ');
-    const action = args[1]?.toLowerCase();
-
-    if (!msg.key.fromMe) {
-        return await socket.sendMessage(sender, {
-            text: '*🚫 Only the bot owner can use this command.*'
-        }, { quoted: msg });
-    }
-
-    // Initialize autoread if not exists
-    if (global.autoread === undefined) {
-        global.autoread = 'off'; // default off
-    }
-
-    if (!action) {
-        // Show current status
-        return await socket.sendMessage(sender, {
-            text: `*📖 AUTO-READ MODE*\n\n` +
-                  `*Current Status:* ${global.autoread === 'on' ? '✅ Enabled' : '❌ Disabled'}\n\n` +
-                  `*Usage:* .autoread on/off\n\n` +
-                  `*.autoread on* - Enable auto-read for private messages\n` +
-                  `*.autoread off* - Disable auto-read`
-        }, { quoted: msg });
-    }
-
-    if (action === 'on') {
-        global.autoread = 'on';
-        return await socket.sendMessage(sender, {
-            text: '*✅ Auto-read enabled! Bot will automatically read private messages.*'
-        }, { quoted: msg });
-    } else if (action === 'off') {
-        global.autoread = 'off';
-        return await socket.sendMessage(sender, {
-            text: '*❌ Auto-read disabled!*'
-        }, { quoted: msg });
-    } else {
-        return await socket.sendMessage(sender, {
-            text: '*❌ Invalid option. Use:* .autoread on/off'
-        }, { quoted: msg });
-    }
-    
-    break;
-}
                 // Case: alive
+                case 'mode': {
+    const q = msg.message?.conversation ||
+              msg.message?.extendedTextMessage?.text || '';
+    
+    const args = q.split(' ');
+    const action = args[1]?.toLowerCase();
+
+    if (!msg.key.fromMe) {
+        return await socket.sendMessage(sender, {
+            text: '*🚫 Only the bot owner can use this command.*'
+        }, { quoted: msg });
+    }
+
+    // Initialize config
+    if (!global.config) global.config = {};
+    if (!global.config.MODE) global.config.MODE = 'public';
+
+    if (!action) {
+        const status = global.config.MODE === 'private' ? '🔒 Private' : '🌐 Public';
+        return await socket.sendMessage(sender, {
+            text: `*🔧 BOT MODE*\n\n` +
+                  `*Current:* ${status}\n\n` +
+                  `*.mode private* - Only owner can use\n` +
+                  `*.mode public* - Everyone can use`
+        }, { quoted: msg });
+    }
+
+    if (action === 'private') {
+        global.config.MODE = 'private';
+        return await socket.sendMessage(sender, {
+            text: '*🔒 Private mode enabled! Only you can use the bot now.*'
+        }, { quoted: msg });
+    } else if (action === 'public') {
+        global.config.MODE = 'public';
+        return await socket.sendMessage(sender, {
+            text: '*🌐 Public mode enabled! Everyone can use the bot now.*'
+        }, { quoted: msg });
+    } else {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Invalid option. Use:* .mode private/public'
+        }, { quoted: msg });
+    }
+    
+    break;
+}
  // Case: alive
 case 'alive': {
     try {
