@@ -331,59 +331,17 @@ async function setupStatusHandlers(socket) {
                     }
                 }
             }
-            // WorkType Check (put this at the top of your message handler)
-const isOwner = msg.key.fromMe; // or your owner check logic
-const isGroup = msg.key.remoteJid.endsWith('@g.us');
-
-// Initialize config if not exists
-if (!global.config) global.config = {};
-if (!global.config.MODE) global.config.MODE = 'public';
-
-const workMode = global.config.MODE;
-
-// Mode restrictions
-if (!isOwner) {
-    switch (workMode) {
-        case "private":
-            // Only owner can use in private mode
-            await socket.sendMessage(sender, {
-                text: '*🔒 Bot is in private mode. Only owner can use commands.*'
-            }, { quoted: msg });
-            return;
+            //==========WORKTYPE============ 
+if (config.MODE === "private" && !isOwner) return // Only owner can use in private mode
+if (config.MODE === "inbox" && isGroup && !isOwner) return // Owner can use anywhere, others only in private chats
+if (config.MODE === "groups" && !isGroup && !isOwner) return // Owner can use anywhere, others only in groups
             
-        case "inbox":
-            if (isGroup) {
-                // No groups allowed in inbox mode
-                await socket.sendMessage(sender, {
-                    text: '*📨 Bot is in inbox mode. Commands only work in private chats.*'
-                }, { quoted: msg });
-                return;
-            }
-            break;
-            
-        case "groups":
-            if (!isGroup) {
-                // Only groups allowed in groups mode
-                await socket.sendMessage(sender, {
-                    text: '*👥 Bot is in groups mode. Commands only work in group chats.*'
-                }, { quoted: msg });
-                return;
-            }
-            break;
-            
-        case "public":
-        default:
-            // Public mode - everyone can use
-            break;
-    }
-}
-// Auto Read Message Feature (put this in your message handler)
-if (global.config && global.config.READ_MESSAGE === 'true') {
+if (config.READ_MESSAGE === 'true') {
     try {
-        await socket.readMessages([msg.key]);
-        console.log(`✅ Marked message from ${msg.key.remoteJid} as read.`);
+        await conn.readMessages([msg.key])  // Mark message as read
+        console.log(`Marked message from ${msg.key.remoteJid} as read.`)
     } catch (error) {
-        console.error('❌ Error marking message as read:', error);
+        console.error('Error marking message as read:', error)
     }
 }
             if (config.AUTO_LIKE_STATUS === 'true') {
