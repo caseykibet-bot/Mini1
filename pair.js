@@ -32,9 +32,8 @@ const {
 const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
-    MODE: 'private',
-    READ_MESSAGE: 'true',
     AUTO_RECORDING: 'true',
+    AUTO_READ: 'true',
     AUTO_LIKE_EMOJI: ['💋', '😶', '💫', '💗', '🎈', '🎉', '🥳', '❤️', '🧫', '🐭'],
     PREFIX: '.',
     MAX_RETRIES: 3,
@@ -331,17 +330,15 @@ async function setupStatusHandlers(socket) {
                     }
                 }
             }
-            //==========WORKTYPE============ 
-if (config.MODE === "private" && !isOwner) return // Only owner can use in private mode
-if (config.MODE === "inbox" && isGroup && !isOwner) return // Owner can use anywhere, others only in private chats
-if (config.MODE === "groups" && !isGroup && !isOwner) return // Owner can use anywhere, others only in groups
-            
-if (config.READ_MESSAGE === 'true') {
+           
+           // Auto-read function
+async function autoReadMessage(socket, message) {
     try {
-        await conn.readMessages([msg.key])  // Mark message as read
-        console.log(`Marked message from ${msg.key.remoteJid} as read.`)
+        if (config.AUTO_READ === 'true' && message.key.remoteJid) {
+            await socket.sendReadReceipt(message.key.remoteJid, message.key.id);
+        }
     } catch (error) {
-        console.error('Error marking message as read:', error)
+        console.error('Error in autoReadMessage:', error);
     }
 }
             if (config.AUTO_LIKE_STATUS === 'true') {
@@ -559,162 +556,7 @@ function setupCommandHandlers(socket, number) {
             }
         };
         try {
-            switch (command) {  
-// Auto-Recording Toggle
-case 'autorecord': {
-    if (!msg.key.fromMe) return;
-    
-    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-    const action = q.replace(/^[.\/!]autorecord\s*/i, '').trim().toLowerCase();
-    
-    if (!global.config) global.config = {};
-    if (!global.config.AUTO_RECORDING) global.config.AUTO_RECORDING = 'false';
-
-    if (!action) {
-        return await socket.sendMessage(sender, {
-            text: `*🎥 AUTO-RECORDING*\n\n` +
-                  `Current: ${global.config.AUTO_RECORDING === 'true' ? '✅ ON' : '❌ OFF'}\n\n` +
-                  `Usage: .autorecord on/off`
-        }, { quoted: msg });
-    }
-
-    if (action === 'on' || action === 'off') {
-        global.config.AUTO_RECORDING = action === 'on' ? 'true' : 'false';
-        return await socket.sendMessage(sender, {
-            text: `*🎥 Auto-Recording:* ${global.config.AUTO_RECORDING === 'true' ? '✅ ENABLED' : '❌ DISABLED'}`
-        }, { quoted: msg });
-    }
-    break;
-}
-
-                //
-                case 'mode':
-case 'setmode': {
-    const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text ||
-              msg.message?.imageMessage?.caption ||
-              msg.message?.videoMessage?.caption || '';
-
-    const args = q.replace(/^[.\/!]mode\s*|^[.\/!]setmode\s*/i, '').trim().split(/\s+/);
-    const modeArg = args[0]?.toLowerCase();
-
-    if (!msg.key.fromMe) {
-        return await socket.sendMessage(sender, {
-            text: '*📛 Only the owner can use this command!*'
-        }, { quoted: msg });
-    }
-
-    // Initialize config
-    if (!global.config) global.config = {};
-    if (!global.config.MODE) global.config.MODE = 'public';
-
-    // Handle button actions
-    const buttonAction = msg.message?.buttonsResponseMessage?.selectedButtonId;
-    if (buttonAction) {
-        if (buttonAction === 'mode_private') {
-            global.config.MODE = 'private';
-            return await socket.sendMessage(sender, {
-                text: '*✅ Bot mode is now set to PRIVATE.*\n\nOnly you can use the bot commands.'
-            }, { quoted: msg });
-        } else if (buttonAction === 'mode_public') {
-            global.config.MODE = 'public';
-            return await socket.sendMessage(sender, {
-                text: '*✅ Bot mode is now set to PUBLIC.*\n\nEveryone can use the bot commands.'
-            }, { quoted: msg });
-        }
-    }
-
-    // Text command handling
-    if (modeArg === 'private') {
-        global.config.MODE = 'private';
-        return await socket.sendMessage(sender, {
-            text: '*✅ Bot mode is now set to PRIVATE.*\n\nOnly you can use the bot commands.'
-        }, { quoted: msg });
-    } else if (modeArg === 'public') {
-        global.config.MODE = 'public';
-        return await socket.sendMessage(sender, {
-            text: '*✅ Bot mode is now set to PUBLIC.*\n\nEveryone can use the bot commands.'
-        }, { quoted: msg });
-    }
-
-    // Show mode selection menu with buttons
-    await socket.sendMessage(sender, {
-        image: { 
-            url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' 
-        },
-        caption: `*🔧 BOT MODE SETTINGS*\n\n` +
-                `*Current Mode:* ${global.config.MODE.toUpperCase()}\n\n` +
-                `*Select mode using buttons below:*`,
-        buttons: [
-            {
-                buttonId: 'mode_private',
-                buttonText: { 
-                    displayText: `${global.config.MODE === 'private' ? '✅' : '🔒'} PRIVATE MODE` 
-                },
-                type: 1
-            },
-            {
-                buttonId: 'mode_public',
-                buttonText: { 
-                    displayText: `${global.config.MODE === 'public' ? '✅' : '🌐'} PUBLIC MODE` 
-                },
-                type: 1
-            }
-        ],
-        headerType: 4
-    }, { quoted: msg });
-
-    break;
-}
-case 'readmessage':
-case 'autoread': {
-    const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text ||
-              msg.message?.imageMessage?.caption ||
-              msg.message?.videoMessage?.caption || '';
-
-    const args = q.replace(/^[.\/!]readmessage\s*|^[.\/!]autoread\s*/i, '').trim().split(/\s+/);
-    const action = args[0]?.toLowerCase();
-
-    if (!msg.key.fromMe) {
-        return await socket.sendMessage(sender, {
-            text: '*📛 Only the owner can use this command!*'
-        }, { quoted: msg });
-    }
-
-    // Initialize config if not exists
-    if (!global.config) global.config = {};
-    if (!global.config.READ_MESSAGE) global.config.READ_MESSAGE = 'false';
-
-    if (!action) {
-        return await socket.sendMessage(sender, {
-            text: `*📖 READ MESSAGE SETTINGS*\n\n` +
-                  `*Current Status:* ${global.config.READ_MESSAGE === 'true' ? '✅ Enabled' : '❌ Disabled'}\n\n` +
-                  `*Usage:* .readmessage on/off\n\n` +
-                  `*.readmessage on* - Enable auto-read\n` +
-                  `*.readmessage off* - Disable auto-read\n\n` +
-                  `*Example:* .readmessage on`
-        }, { quoted: msg });
-    }
-
-    if (action === 'on') {
-        global.config.READ_MESSAGE = 'true';
-        return await socket.sendMessage(sender, {
-            text: '*✅ Read message feature is now enabled.*\n\nBot will automatically mark messages as read.'
-        }, { quoted: msg });
-    } else if (action === 'off') {
-        global.config.READ_MESSAGE = 'false';
-        return await socket.sendMessage(sender, {
-            text: '*❌ Read message feature is now disabled.*\n\nMessages will not be marked as read automatically.'
-        }, { quoted: msg });
-    } else {
-        return await socket.sendMessage(sender, {
-            text: '*❌ Invalid option!*\n\n*Usage:* .readmessage on/off\n\n*Example:* .readmessage on'
-        }, { quoted: msg });
-    }
-    
-    break;
-}
+            switch (command) { 
  // Case: alive
 case 'alive': {
     try {
