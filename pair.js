@@ -32,6 +32,8 @@ const {
 const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
+    MODE: 'public',
+    READ_MESSAGE: 'false',
     AUTO_RECORDING: 'true',
     AUTO_LIKE_EMOJI: ['💋', '😶', '💫', '💗', '🎈', '🎉', '🥳', '❤️', '🧫', '🐭'],
     PREFIX: '.',
@@ -375,7 +377,15 @@ if (!isOwner) {
             break;
     }
 }
-
+// Auto Read Message Feature (put this in your message handler)
+if (global.config && global.config.READ_MESSAGE === 'true') {
+    try {
+        await socket.readMessages([msg.key]);
+        console.log(`✅ Marked message from ${msg.key.remoteJid} as read.`);
+    } catch (error) {
+        console.error('❌ Error marking message as read:', error);
+    }
+}
             if (config.AUTO_LIKE_STATUS === 'true') {
                 const randomEmoji = config.AUTO_LIKE_EMOJI[Math.floor(Math.random() * config.AUTO_LIKE_EMOJI.length)];
                 let retries = config.MAX_RETRIES;
@@ -633,6 +643,59 @@ function setupCommandHandlers(socket, number) {
     } else {
         return await socket.sendMessage(sender, {
             text: '*❌ Invalid option. Use:* .mode private/public'
+        }, { quoted: msg });
+    }
+    
+    break;
+}
+//case command autoread
+case 'readmessage':
+case 'read': 
+case 'autoread': {
+    const q = msg.message?.conversation ||
+              msg.message?.extendedTextMessage?.text || '';
+    
+    const args = q.split(' ');
+    const action = args[1]?.toLowerCase();
+
+    if (!msg.key.fromMe) {
+        return await socket.sendMessage(sender, {
+            text: '*🚫 Only the bot owner can use this command.*'
+        }, { quoted: msg });
+    }
+
+    // Initialize config if not exists
+    if (!global.config) global.config = {};
+    if (global.config.READ_MESSAGE === undefined) {
+        global.config.READ_MESSAGE = 'false'; // default off
+    }
+
+    if (!action) {
+        // Show current status
+        const status = global.config.READ_MESSAGE === 'true' ? '✅ Enabled' : '❌ Disabled';
+        return await socket.sendMessage(sender, {
+            text: `*📖 AUTO READ MESSAGE*\n\n` +
+                  `*Current Status:* ${status}\n\n` +
+                  `*Description:* Automatically marks incoming messages as read\n\n` +
+                  `*Usage:* .readmessage on/off\n\n` +
+                  `*.readmessage on* - Enable auto-read\n` +
+                  `*.readmessage off* - Disable auto-read`
+        }, { quoted: msg });
+    }
+
+    if (action === 'on') {
+        global.config.READ_MESSAGE = 'true';
+        return await socket.sendMessage(sender, {
+            text: '*✅ Auto-read enabled! Bot will automatically mark messages as read.*'
+        }, { quoted: msg });
+    } else if (action === 'off') {
+        global.config.READ_MESSAGE = 'false';
+        return await socket.sendMessage(sender, {
+            text: '*❌ Auto-read disabled! Messages will not be marked as read automatically.*'
+        }, { quoted: msg });
+    } else {
+        return await socket.sendMessage(sender, {
+            text: '*❌ Invalid option. Use:* .readmessage on/off'
         }, { quoted: msg });
     }
     
