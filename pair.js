@@ -1978,12 +1978,12 @@ case 'play': {
             }, { quoted: msg });
         }
 
-        // Send audio file
+        // Send audio file without caption/success message
         await socket.sendMessage(sender, {
             audio: { url: data.downloadLink },
             mimetype: 'audio/mpeg',
             fileName: fileName,
-            caption: `✅ *Download Complete!*\n🎵 ${video.title}`
+            ptt: false // Important: ensures it's treated as music, not voice message
         });
 
     } catch (err) {
@@ -1994,8 +1994,9 @@ case 'play': {
     }
     break;
 }
-
-					case 'song': {
+  //=====[Song COMMAND]================//
+//=====[Song COMMAND]================//
+case 'song': {
   const { ytsearch } = require('@dark-yasiya/yt-dl.js');
   const RPL = `💭😒 *Please provide a song name or YouTube link to search.*\n\n👨‍🔧 *Example:* \`.song Shape of You\``;
 
@@ -2019,14 +2020,14 @@ case 'play': {
     const url = song.url;
     const thumb = song.thumbnail;
 
-    const caption = `ʙʟᴏᴏᴅ x ᴍᴅ ᴍɪɴɪ ʙᴏᴛ ꜱᴏɴɢ ᴅᴏᴡɴʟᴏᴀᴅ 🎶
+    const caption = `ᴍɪɴɪ ʙᴏᴛ ꜱᴏɴɢ ᴅᴏᴡɴʟᴏᴀᴅ 🎶
 
 *📋 тιттℓє ➟* ${song.title}
 *🏮 ∂υяαтιση ➟* ${song.timestamp}
-*👤 ¢яєαтσя ➟* ${song.author.name}
+*👤 ¢яєαтσя ➟* ${song.author?.name || 'Unknown'}
 *📎 ѕσηg υяℓ ➟* ${url}
 
-> 𝘉𝘓𝘖𝘖𝘋-𝘟-𝘔𝘋-𝘔𝘐𝘕𝘐-𝘉𝘖𝘛- 💚🔥`;
+> Caseyrhodes Tech - 🔥`;
 
     const templateButtons = [
       {
@@ -2049,103 +2050,116 @@ case 'play': {
     await socket.sendMessage(from, {
       image: { url: thumb },
       caption: caption.trim(),
-      footer: '𝘉𝘓𝘖𝘖𝘋 𝘟 𝘔𝘋 𝘉𝘠 𝘚𝘈𝘊𝘏𝘐𝘛𝘏𝘙𝘈 𝘔𝘈𝘋𝘜𝘚𝘈𝘕𝘒𝘈👨‍🔧⚡',
+      footer: 'Caseyrhodes mini⚡',
       buttons: templateButtons,
       headerType: 1
     }, { quoted: msg });
 
   } catch (e) {
     console.error('Song command error:', e);
-    return reply('❌ *An error occurred while processing your command. Please try again.*\n\n> *𝘉𝘓𝘖𝘖𝘋-𝘟-𝘔𝘋-𝘔𝘐𝘕𝘐-𝘉𝘖𝘛- 💚🔥*');
+    return reply('❌ *An error occurred while processing your command. Please try again.*\n\n> *caseyrhodes mini 💚🔥*');
   }
 
   break;
 }
-   
+
 case 'mp3play': {
-	
-	const axios = require("axios");
-	
-    const url = msg.body?.split(" ")[1];
-    if (!url || !url.startsWith('http')) {
-        return await socket.sendMessage(sender, { text: "*`Invalid or missing URL`*" });
+  const axios = require("axios");
+  
+  // Fix: Get URL from message body properly
+  const url = msg.body?.split(" ")[1] || args[0];
+  if (!url || !url.startsWith('http')) {
+    return await socket.sendMessage(from, { text: "*❌ Invalid or missing YouTube URL*" }, { quoted: msg });
+  }
+
+  try {
+    // Show processing message
+    await socket.sendMessage(from, { text: "*📥 Downloading MP3... Please wait*" }, { quoted: msg });
+    
+    const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+    const { data } = await axios.get(apiUrl, { timeout: 30000 });
+
+    if (!data || !data.result?.download_url) {
+      return await socket.sendMessage(from, { text: "*❌ Failed to fetch MP3 download link*" }, { quoted: msg });
     }
 
-    try {
-        const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
-        const { data } = await axios.get(apiUrl);
+    await socket.sendMessage(from, {
+      audio: { url: data.result.download_url },
+      mimetype: "audio/mpeg",
+      fileName: `song_${Date.now()}.mp3`
+    }, { quoted: msg });
 
-        if (!data || !data.result?.download_url) {
-            return await socket.sendMessage(sender, { text: "*`Failed to fetch MP3 download link`*" });
-        }
+  } catch (err) {
+    console.error('MP3 Play error:', err);
+    await socket.sendMessage(from, { text: "*❌ Error occurred while downloading MP3. Please try again.*" }, { quoted: msg });
+  }
 
-        await socket.sendMessage(sender, {
-            audio: { url: data.result.download_url },
-            mimetype: "audio/mpeg"
-        }, { quoted: msg });
-
-    } catch (err) {
-        console.error(err);
-        await socket.sendMessage(sender, { text: "*`Error occurred while downloading MP3`*" });
-    }
-
-    break;
+  break;
 }
 
 case 'mp3doc': {
-    const url = msg.body?.split(" ")[1];
-    if (!url || !url.startsWith('http')) {
-        return await socket.sendMessage(sender, { text: "*`Invalid or missing URL`*" });
+  const axios = require("axios");
+  
+  const url = msg.body?.split(" ")[1] || args[0];
+  if (!url || !url.startsWith('http')) {
+    return await socket.sendMessage(from, { text: "*❌ Invalid or missing YouTube URL*" }, { quoted: msg });
+  }
+
+  try {
+    await socket.sendMessage(from, { text: "*📥 Downloading as document... Please wait*" }, { quoted: msg });
+    
+    const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+    const { data } = await axios.get(apiUrl, { timeout: 30000 });
+
+    if (!data || !data.result?.download_url) {
+      return await socket.sendMessage(from, { text: "*❌ Failed to fetch MP3 download link*" }, { quoted: msg });
     }
 
-    try {
-        const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
-        const { data } = await axios.get(apiUrl);
+    await socket.sendMessage(from, {
+      document: { url: data.result.download_url },
+      mimetype: "audio/mpeg",
+      fileName: `mini_bot_song_${Date.now()}.mp3`
+    }, { quoted: msg });
 
-        if (!data || !data.result?.download_url) {
-            return await socket.sendMessage(sender, { text: "*`Failed to fetch MP3 download link`*" });
-        }
+  } catch (err) {
+    console.error('MP3 Doc error:', err);
+    await socket.sendMessage(from, { text: "*❌ Error occurred while downloading as document*" }, { quoted: msg });
+  }
 
-        await socket.sendMessage(sender, {
-            document: { url: data.result.download_url },
-            mimetype: "audio/mpeg",
-            fileName: `ꜱʜᴏɴᴜ x ᴍɪɴɪ ʙᴏᴛ ᴍᴘ3ᴅᴏᴄ 💚💆‍♂️🎧`
-        }, { quoted: msg });
-
-    } catch (err) {
-        console.error(err);
-        await socket.sendMessage(sender, { text: "*`Error occurred while downloading as document`*" });
-    }
-
-    break;
+  break;
 }
 
 case 'mp3ptt': {
-    const url = msg.body?.split(" ")[1];
-    if (!url || !url.startsWith('http')) {
-        return await socket.sendMessage(sender, { text: "*`Invalid or missing URL`*" });
+  const axios = require("axios");
+  
+  const url = msg.body?.split(" ")[1] || args[0];
+  if (!url || !url.startsWith('http')) {
+    return await socket.sendMessage(from, { text: "*❌ Invalid or missing YouTube URL*" }, { quoted: msg });
+  }
+
+  try {
+    await socket.sendMessage(from, { text: "*📥 Preparing voice note... Please wait*" }, { quoted: msg });
+    
+    const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+    const { data } = await axios.get(apiUrl, { timeout: 30000 });
+
+    if (!data || !data.result?.download_url) {
+      return await socket.sendMessage(from, { text: "*❌ Failed to fetch MP3 download link*" }, { quoted: msg });
     }
 
-    try {
-        const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
-        const { data } = await axios.get(apiUrl);
+    await socket.sendMessage(from, {
+      audio: { url: data.result.download_url },
+      mimetype: "audio/mpeg",
+      ptt: true, // voice note
+      fileName: `voice_note_${Date.now()}.mp3`
+    }, { quoted: msg });
 
-        if (!data || !data.result?.download_url) {
-            return await socket.sendMessage(sender, { text: "*`Failed to fetch MP3 download link`*" });
-        }
+  } catch (err) {
+    console.error('MP3 PTT error:', err);
+    await socket.sendMessage(from, { text: "*❌ Error occurred while sending as voice note*" }, { quoted: msg });
+  }
 
-        await socket.sendMessage(sender, {
-            audio: { url: data.result.download_url },
-            mimetype: "audio/mpeg",
-            ptt: true // voice note
-        }, { quoted: msg });
-
-    } catch (err) {
-        console.error(err);
-        await socket.sendMessage(sender, { text: "*`Error occurred while sending as voice note`*" });
-    }
-
-    break;
+  break;
 }
 					
 //video case
