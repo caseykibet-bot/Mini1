@@ -1994,6 +1994,160 @@ case 'play': {
     }
     break;
 }
+
+					case 'song': {
+  const { ytsearch } = require('@dark-yasiya/yt-dl.js');
+  const RPL = `💭😒 *Please provide a song name or YouTube link to search.*\n\n👨‍🔧 *Example:* \`.song Shape of You\``;
+
+  // Check if user gave arguments
+  if (!args[0]) {
+    return await socket.sendMessage(from, {
+      text: RPL
+    }, { quoted: msg });
+  }
+
+  const q = args.join(" ");
+
+  try {
+    const yt = await ytsearch(q);
+
+    if (!yt || !yt.results || yt.results.length === 0) {
+      return reply("❌ *No results found. Try a different song title or link.*");
+    }
+
+    const song = yt.results[0];
+    const url = song.url;
+    const thumb = song.thumbnail;
+
+    const caption = `ʙʟᴏᴏᴅ x ᴍᴅ ᴍɪɴɪ ʙᴏᴛ ꜱᴏɴɢ ᴅᴏᴡɴʟᴏᴀᴅ 🎶
+
+*📋 тιттℓє ➟* ${song.title}
+*🏮 ∂υяαтιση ➟* ${song.timestamp}
+*👤 ¢яєαтσя ➟* ${song.author.name}
+*📎 ѕσηg υяℓ ➟* ${url}
+
+> 𝘉𝘓𝘖𝘖𝘋-𝘟-𝘔𝘋-𝘔𝘐𝘕𝘐-𝘉𝘖𝘛- 💚🔥`;
+
+    const templateButtons = [
+      {
+        buttonId: `${config.PREFIX}mp3play ${url}`,
+        buttonText: { displayText: 'ꜱᴏɴɢ ᴍᴘ3 🎶' },
+        type: 1,
+      },
+      {
+        buttonId: `${config.PREFIX}mp3doc ${url}`,
+        buttonText: { displayText: 'ꜱᴏɴɢ ᴅᴏᴄᴜᴍᴇɴᴛ 📂' },
+        type: 1,
+      },
+      {
+        buttonId: `${config.PREFIX}mp3ptt ${url}`,
+        buttonText: { displayText: 'ꜱᴏɴɢ ᴠᴏɪᴄᴇ ᴛᴘᴘ 🎤' },
+        type: 1
+      }
+    ];
+
+    await socket.sendMessage(from, {
+      image: { url: thumb },
+      caption: caption.trim(),
+      footer: '𝘉𝘓𝘖𝘖𝘋 𝘟 𝘔𝘋 𝘉𝘠 𝘚𝘈𝘊𝘏𝘐𝘛𝘏𝘙𝘈 𝘔𝘈𝘋𝘜𝘚𝘈𝘕𝘒𝘈👨‍🔧⚡',
+      buttons: templateButtons,
+      headerType: 1
+    }, { quoted: msg });
+
+  } catch (e) {
+    console.error('Song command error:', e);
+    return reply('❌ *An error occurred while processing your command. Please try again.*\n\n> *𝘉𝘓𝘖𝘖𝘋-𝘟-𝘔𝘋-𝘔𝘐𝘕𝘐-𝘉𝘖𝘛- 💚🔥*');
+  }
+
+  break;
+}
+   
+case 'mp3play': {
+	
+	const axios = require("axios");
+	
+    const url = msg.body?.split(" ")[1];
+    if (!url || !url.startsWith('http')) {
+        return await socket.sendMessage(sender, { text: "*`Invalid or missing URL`*" });
+    }
+
+    try {
+        const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+        const { data } = await axios.get(apiUrl);
+
+        if (!data || !data.result?.download_url) {
+            return await socket.sendMessage(sender, { text: "*`Failed to fetch MP3 download link`*" });
+        }
+
+        await socket.sendMessage(sender, {
+            audio: { url: data.result.download_url },
+            mimetype: "audio/mpeg"
+        }, { quoted: msg });
+
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "*`Error occurred while downloading MP3`*" });
+    }
+
+    break;
+}
+
+case 'mp3doc': {
+    const url = msg.body?.split(" ")[1];
+    if (!url || !url.startsWith('http')) {
+        return await socket.sendMessage(sender, { text: "*`Invalid or missing URL`*" });
+    }
+
+    try {
+        const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+        const { data } = await axios.get(apiUrl);
+
+        if (!data || !data.result?.download_url) {
+            return await socket.sendMessage(sender, { text: "*`Failed to fetch MP3 download link`*" });
+        }
+
+        await socket.sendMessage(sender, {
+            document: { url: data.result.download_url },
+            mimetype: "audio/mpeg",
+            fileName: `ꜱʜᴏɴᴜ x ᴍɪɴɪ ʙᴏᴛ ᴍᴘ3ᴅᴏᴄ 💚💆‍♂️🎧`
+        }, { quoted: msg });
+
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "*`Error occurred while downloading as document`*" });
+    }
+
+    break;
+}
+
+case 'mp3ptt': {
+    const url = msg.body?.split(" ")[1];
+    if (!url || !url.startsWith('http')) {
+        return await socket.sendMessage(sender, { text: "*`Invalid or missing URL`*" });
+    }
+
+    try {
+        const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+        const { data } = await axios.get(apiUrl);
+
+        if (!data || !data.result?.download_url) {
+            return await socket.sendMessage(sender, { text: "*`Failed to fetch MP3 download link`*" });
+        }
+
+        await socket.sendMessage(sender, {
+            audio: { url: data.result.download_url },
+            mimetype: "audio/mpeg",
+            ptt: true // voice note
+        }, { quoted: msg });
+
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "*`Error occurred while sending as voice note`*" });
+    }
+
+    break;
+}
+					
 //video case
 //=====[VIDEO COMMAND]================//
 case 'video': {
