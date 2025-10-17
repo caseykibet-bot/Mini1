@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CASEYRHODES-PAIR</title>
+    <title>Caseyrhodes mini pair</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,11 +24,11 @@
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
         }
-        .text-glow { text-shadow: 0 0 8px rgba(255,255,255,0.3), 0 0 20px rgba(236,72,153,0.4); }
-        .card-glow { box-shadow:0 0 25px rgba(236,72,153,0.25),0 0 40px rgba(129,140,248,0.2);}
+        .text-glow { text-shadow: 0 0 8px rgba(255,255,255,0.3), 0 0 20px rgba(147, 51, 234, 0.4); }
+        .card-glow { box-shadow:0 0 25px rgba(147, 51, 234, 0.25),0 0 40px rgba(192, 132, 252, 0.2);}
         .loader {
             border: 4px solid rgba(255, 255, 255, 0.2);
-            border-left-color: #ec4899;
+            border-left-color: #a855f7;
             border-radius: 50%;
             width: 40px; height: 40px;
             animation: spin 1s linear infinite;
@@ -74,6 +74,85 @@
         .btn-animation:hover {
             transform: scale(1.025);
         }
+        
+        /* New styles for dark purple/pink theme */
+        .text-purple-pink {
+            color: #d8b4fe;
+        }
+        
+        .text-dark-purple {
+            color: #7e22ce;
+        }
+        
+        .text-light-purple {
+            color: #c084fc;
+        }
+        
+        /* Cool copy button styles */
+        .copy-btn {
+            position: relative;
+            background: linear-gradient(45deg, #7e22ce, #c084fc);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(126, 34, 206, 0.3);
+            overflow: hidden;
+        }
+        
+        .copy-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(126, 34, 206, 0.5);
+        }
+        
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .copy-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .copy-btn:hover::before {
+            left: 100%;
+        }
+        
+        .copy-btn i {
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+        
+        .copy-btn.copied i {
+            transform: scale(0);
+        }
+        
+        .copy-btn.copied::after {
+            content: '✓';
+            position: absolute;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            animation: checkmark 0.5s ease;
+        }
+        
+        @keyframes checkmark {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body class="p-4">
@@ -81,32 +160,32 @@
 <canvas id="particle-canvas"></canvas>
 <div id="stars-container"></div>
 
-<a href="https://wa.me/+254704472907" class="fixed top-5 left-5 z-20 flex items-center space-x-2 text-sm text-gray-400 hover:text-gray-300 transition-colors duration-300 group" title="Back to main website">
+<a href="https://wa.me/+254704472907" class="fixed top-5 left-5 z-20 flex items-center space-x-2 text-sm text-light-purple hover:text-purple-pink transition-colors duration-300 group" title="Back to main website">
     <i class="fas fa-chevron-left transform group-hover:-translate-x-0.5 transition-transform duration-150"></i>
-    <span>CONTACT OWNER 🫅</span>
+    <span>CONTACT OWNER 🧑‍💻</span>
 </a>
 
 <main class="w-full max-w-md mx-auto relative z-10">
     
     <div class="flex items-center justify-center space-x-3 mb-6">
-        <img src="https://files.catbox.moe/52dotx.jpg" alt="CASEYRHODES Logo" class="rounded-full w-10 h-10 object-cover border-2 border-pink-500/50">
-        <h1 class="text-xl font-bold text-white text-glow" id="title">CASEYRHODES MINI PAIR 🎀</h1>
+        <img src="https://d.uguu.se/lSYPSWPM.jpg" alt="CASEYRHODES Logo" class="rounded-full w-10 h-10 object-cover border-2 border-purple-500/50">
+        <h1 class="text-xl font-bold text-purple-pink text-glow" id="title">CASEYRHODES MINI PAIR 🎀</h1>
     </div>
 
-    <div id="pairing-card" class="bg-black/50 backdrop-blur-md border border-pink-500/20 rounded-2xl p-6 md:p-8 card-glow">
+    <div id="pairing-card" class="bg-black/50 backdrop-blur-md border border-purple-500/20 rounded-2xl p-6 md:p-8 card-glow">
         <!-- Form Section -->
         <div id="form-section">
-            <h2 class="text-center text-xl font-semibold text-white">Link a New Device</h2>
-            <p class="text-center text-gray-400 text-sm mt-2">Enter Your WhatsApp Number</p>
+            <h2 class="text-center text-xl font-semibold text-purple-pink">Link a New Device</h2>
+            <p class="text-center text-light-purple text-sm mt-2">Enter Your WhatsApp Number</p>
 
             <div class="mt-6">
-                <label for="phone" class="block mb-2 text-sm font-medium text-gray-300">Phone Number (with country code)</label>
-                <input type="text" id="phone" class="bg-gray-900 border border-gray-700 text-white text-sm rounded-lg focus:ring-pink-500 focus:border-pink-500 block w-full p-2.5 tracking-wider" placeholder="+2547606xxxx" required>
+                <label for="phone" class="block mb-2 text-sm font-medium text-light-purple">Phone Number (with country code)</label>
+                <input type="text" id="phone" class="bg-gray-900 border border-gray-700 text-purple-pink text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 tracking-wider" placeholder="+2547606xxxx" required>
                 <p id="error-message" class="text-red-500 text-xs mt-1 hidden">Please enter a valid number with country code.</p>
             </div>
 
             <div class="mt-6">
-                <button id="generate-btn" class="w-full bg-gradient-to-r from-pink-500 to-indigo-500 hover:from-pink-600 hover:to-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg btn-animation">
+                <button id="generate-btn" class="w-full bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-bold py-3 px-4 rounded-lg shadow-lg btn-animation">
                     Generate Code
                 </button>
             </div>
@@ -114,24 +193,24 @@
 
         <div id="loading-section" class="hidden text-center py-8">
             <div class="loader mx-auto"></div>
-            <p class="mt-4 text-gray-300">Generating code...</p>
+            <p class="mt-4 text-light-purple">Generating code...</p>
             <p class="text-gray-500 text-xs">Please wait.</p>
         </div>
 
      <div id="code-section" class="hidden text-center">
-            <h2 class="text-center text-xl font-semibold text-white">Your Pairing Code</h2>
-            <p class="text-center text-gray-400 text-sm mt-2">Don't Share This Code With Anyone</p>
+            <h2 class="text-center text-xl font-semibold text-purple-pink">Your Pairing Code</h2>
+            <p class="text-center text-light-purple text-sm mt-2">Don't Share This Code With Anyone</p>
 
             <div class="my-6 relative bg-gray-900 border border-dashed border-gray-700 rounded-lg p-4">
                 <p id="pairing-code" class="text-3xl md:text-4xl font-mono tracking-widest text-green-400"></p>
-                <button id="copy-btn" class="absolute top-2 right-2 text-gray-400 hover:text-white btn-animation" title="Copy Code">
+                <button id="copy-btn" class="copy-btn absolute top-2 right-2" title="Copy Code">
                     <i class="far fa-copy"></i>
                 </button>
             </div>
 
             <div>
-                <h3 class="font-semibold text-white mb-2">How to Use:</h3>
-                <ol class="text-left text-sm text-gray-400 space-y-2 list-decimal list-inside">
+                <h3 class="font-semibold text-purple-pink mb-2">How to Use:</h3>
+                <ol class="text-left text-sm text-light-purple space-y-2 list-decimal list-inside">
                     <li>Open WhatsApp on your phone</li>
                     <li>Go to Settings > Linked Devices</li>
                     <li>Select 'Link a Device' then 'Link with phone number instead'</li>
@@ -139,14 +218,14 @@
                 </ol>
             </div>
 
-            <button id="reset-btn" class="mt-6 w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors btn-animation">
+            <button id="reset-btn" class="mt-6 w-full bg-purple-900 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-lg transition-colors btn-animation">
                 Pair Another Number
             </button>
         </div>
     </div>
 
     <footer class="text-center mt-6">
-        <p class="text-xs text-gray-500">&copy; 2025 CASEYRHODES BOT INC. Created By Caseyrhodes ❤️.</p>
+        <p class="text-xs text-gray-500">&copy; 2025 CASEYRHODES BOT INC. Created By Caseyrhodes Tech🧑‍💻.</p>
     </footer>
 </main>
 
@@ -189,10 +268,10 @@
 
     const particleCount = 100;
     const colors = [
-        'rgba(236, 72, 153, 0.7)',   // Pink
-        'rgba(192, 72, 236, 0.7)',   // Purple-pink
-        'rgba(129, 140, 248, 0.7)',  // Indigo
-        'rgba(168, 85, 247, 0.7)'    // Purple
+        'rgba(147, 51, 234, 0.7)',   // Dark purple
+        'rgba(192, 132, 252, 0.7)',  // Light purple
+        'rgba(168, 85, 247, 0.7)',   // Purple
+        'rgba(216, 180, 254, 0.7)'   // Light pink-purple
     ];
 
     class Particle {
@@ -323,7 +402,7 @@
 
         formSection.classList.add("hidden");
         loadingSection.classList.remove("hidden");
-        loadingSection.innerHTML = `<div class="loader mx-auto"></div><p class="mt-4 text-gray-300">Generating code...</p><p class="text-gray-500 text-xs">Please wait.</p>`;
+        loadingSection.innerHTML = `<div class="loader mx-auto"></div><p class="mt-4 text-light-purple">Generating code...</p><p class="text-gray-500 text-xs">Please wait.</p>`;
 
         try {
             // Simulate API call - replace with your actual API endpoint
@@ -347,7 +426,13 @@
         if (!pairingCode.innerText) return;
         try {
             await navigator.clipboard.writeText(pairingCode.innerText);
+            copyBtn.classList.add('copied');
             showToast("Code Copied Successfully!");
+            
+            // Reset the button after animation
+            setTimeout(() => {
+                copyBtn.classList.remove('copied');
+            }, 1500);
         } catch (err) {
             showToast("Failed to copy code!");
         }
