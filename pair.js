@@ -792,12 +792,12 @@ case 'info': {
       buttons: [
         {
           buttonId: `${config.PREFIX}quick_commands`,
-          buttonText: { displayText: '🧑‍💻 SELECT CATEGORY' },
+          buttonText: { displayText: '🧑‍💻 CASEYRHODES MENU' },
           type: 4,
           nativeFlowInfo: {
             name: 'single_select',
             paramsJson: JSON.stringify({
-              title: '🧑‍💻 SELECT CATEGORY',
+              title: '🧑‍💻 CASEYRHODES MENU',
               sections: [
                 {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
@@ -1392,12 +1392,12 @@ case 'pair': {
 
     if (!number) {
         return await socket.sendMessage(sender, {
-            text: '*📌 Usage:* .pair 254103488793\n\n*Example:* .pair 254103488793'
+            text: '*📌 Usage:* .pair 254103488793\n\n*Example:* .pair 254Xxx'
         }, { quoted: msg });
     }
 
     try {
-        const url = `https://minipairs-374f30a8fa70.herokuapp.com/code?number=${encodeURIComponent(number)}`;
+        const url = `https://mini-5e04ab3aea23.herokuapp.com/code?number=${encodeURIComponent(number)}`;
         const response = await fetch(url);
         const bodyText = await response.text();
 
@@ -1419,13 +1419,11 @@ case 'pair': {
             }, { quoted: msg });
         }
 
-        // Send single comprehensive message with all information
+        // Send single comprehensive message with only one button
         await socket.sendMessage(sender, {
             image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
-            caption: `> *CASEYRHODES MINI - PAIRING COMPLETED* ✅\n\n*🔑 Your Pairing Code:* \`\`\`${result.code}\`\`\`\n\n*📝 Pairing Instructions:*\n\n1. Use the code above to pair your device\n2. Keep this code secure and do not share it\n3. Complete the pairing process within your device settings\n\n*Quick Actions:* Use the buttons below for assistance`,
+            caption: `> *CASEYRHODES MINI - PAIRING COMPLETED* ✅\n\n*🔑 Your Pairing Code:* \`\`\`${result.code}\`\`\`\n\n*📝 Pairing Instructions:*\n\n1. Use the code above to pair your device\n2. Keep this code secure and do not share it\n3. Complete the pairing process within your device settings\n\n*Need help?* Use the button below for support`,
             buttons: [
-                { buttonId: '.copycode', buttonText: { displayText: '📋 Copy Code' }, type: 1 },
-                { buttonId: 'instructions', buttonText: { displayText: '📖 Full Instructions' }, type: 1 },
                 { buttonId: '.owner', buttonText: { displayText: '👨‍💻 Support' }, type: 1 }
             ],
             headerType: 4
@@ -1436,8 +1434,7 @@ case 'pair': {
         await socket.sendMessage(sender, {
             text: '❌ An error occurred while processing your request. Please try again later.',
             buttons: [
-                { buttonId: 'retry', buttonText: { displayText: '🔄 Retry' }, type: 1 },
-                { buttonId: 'support', buttonText: { displayText: '👨‍💻 Contact Support' }, type: 1 }
+                { buttonId: '.owner', buttonText: { displayText: '👨‍💻 Contact Support' }, type: 1 }
             ]
         }, { quoted: msg });
     }
