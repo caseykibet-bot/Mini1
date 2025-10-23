@@ -16,6 +16,7 @@
      "denethdev-ytmp3":"1.0.3",
     "@dark-yasiya/yt-dl.js": "1.0.5",
     "@dark-yasiya/scrap": "^1.0.1",
+      "mumaker": "^2.0.0",
     "pino": "^9.7.0",
     "canvas": "latest",
     "ytdl-core": "^4.11.5",
