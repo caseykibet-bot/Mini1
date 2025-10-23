@@ -1262,6 +1262,106 @@ case 'logomenu': {
   }
   break;
 }
+///url case
+case 'tourl':
+case 'geturl':
+case 'upload':
+case 'url': {
+    await socket.sendMessage(sender, {
+        react: { text: "📤", key: msg.key }
+    });
+
+    const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    
+    if (!quotedMsg || !(quotedMsg.imageMessage || quotedMsg.videoMessage || quotedMsg.audioMessage)) {
+        return await socket.sendMessage(sender, {
+            text: `📤 *CASEYRHODES TECH - MEDIA UPLOAD*\n\nReply to an image, video, or audio file.\nUsage: ${prefix}tourl`
+        }, { quoted: msg });
+    }
+
+    try {
+        await socket.sendMessage(sender, {
+            text: `📤 *Uploading your media...*`
+        }, { quoted: msg });
+
+        let mediaBuffer;
+        let mediaType;
+
+        if (quotedMsg.imageMessage) {
+            mediaBuffer = await socket.downloadMediaMessage(quotedMsg);
+            mediaType = 'image';
+        } else if (quotedMsg.videoMessage) {
+            mediaBuffer = await socket.downloadMediaMessage(quotedMsg);
+            mediaType = 'video';
+        } else if (quotedMsg.audioMessage) {
+            mediaBuffer = await socket.downloadMediaMessage(quotedMsg);
+            mediaType = 'audio';
+        }
+
+        if (!mediaBuffer) throw new Error('Failed to download media');
+
+        const fileSizeMB = mediaBuffer.length / (1024 * 1024);
+        if (fileSizeMB > MAX_FILE_SIZE_MB) {
+            return await socket.sendMessage(sender, {
+                text: `❌ File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`
+            }, { quoted: msg });
+        }
+
+        const { fileTypeFromBuffer } = require('file-type');
+        const FormData = require('form-data');
+        const fetch = require('node-fetch');
+
+        const { ext } = await fileTypeFromBuffer(mediaBuffer);
+        const bodyForm = new FormData();
+        bodyForm.append("fileToUpload", mediaBuffer, "file." + ext);
+        bodyForm.append("reqtype", "fileupload");
+
+        const res = await fetch("https://catbox.moe/user/api.php", {
+            method: "POST",
+            body: bodyForm,
+        });
+
+        if (!res.ok) throw new Error('Upload failed');
+        const mediaUrl = await res.text();
+
+        const messageContext = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363420261263259@newsletter',
+                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                serverMessageId: -1
+            }
+        };
+
+        const buttons = [
+            { buttonId: `${prefix}menu`, buttonText: { displayText: '📋 Copy URL' }, type: 1 },
+            { buttonId: `${prefix}menu`, buttonText: { displayText: '⬇️ Download' }, type: 1 }
+        ];
+
+        if (mediaType === 'audio') {
+            await socket.sendMessage(sender, {
+                text: `📤 *CASEYRHODES TECH - MEDIA URL*\n\n*URL:* ${mediaUrl}\n*Type:* ${mediaType}`,
+                buttons: buttons,
+                contextInfo: messageContext
+            }, { quoted: msg });
+        } else {
+            await socket.sendMessage(sender, {
+                [mediaType]: { url: mediaUrl },
+                caption: `📤 *CASEYRHODES TECH - MEDIA URL*\n\n*URL:* ${mediaUrl}\n*Type:* ${mediaType}`,
+                buttons: buttons,
+                contextInfo: messageContext
+            }, { quoted: msg });
+        }
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ *Upload Failed*\n\nError processing media.`
+        }, { quoted: msg });
+    }
+    break;
+}
 //autobio test 
 //autobio test 
 case 'autobio':
