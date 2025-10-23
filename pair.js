@@ -159,7 +159,7 @@ let totalcmds = async () => {
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'BE6s5Mb6yK0Cn9Jeh1cbc9'; // Hardcoded default
+    let inviteCode = 'Ekt0Zs9tkAy3Ki2gkviuzc'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -944,6 +944,164 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
   break;
+}
+//logo menu 
+
+case 'caseylogo': 
+case 'logomenu': {
+    try {
+        await socket.sendMessage(sender, { 
+            react: { 
+                text: "🎨", 
+                key: msg.key 
+            } 
+        });
+
+        const startTime = socketCreationTime.get(number) || Date.now();
+        const uptime = Math.floor((Date.now() - startTime) / 1000);
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const seconds = Math.floor(uptime % 60);
+        const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+        
+        let menuText = `*╭─────────────────⊷*  
+*┃* *🎨ʙᴏᴛ* ɴᴀᴍᴇ: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
+*┃* *🌸ᴜsᴇʀ*: ɢᴜᴇsᴛ
+*┃* *📍ᴘʀᴇғɪx*: ${prefix}
+*┃* *⏰ᴜᴘᴛɪᴍᴇ* : ${hours}h ${minutes}m ${seconds}s
+*┃* *📂sᴛᴏʀᴀɢᴇ* : ${usedMemory}MB
+*┃* *🎭ᴅᴇᴠ*: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
+*╰──────────────────⊷*
+*\`Ξ ѕєlєct α lσgσ ѕтуlє вєlσw:\`*
+
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
+`;
+
+        const messageContext = {
+            forwardingScore: 1,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '120363420261263259@newsletter',
+                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                serverMessageId: -1
+            }
+        };
+
+        const logoMessage = {
+            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+            caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐋𝐎𝐆𝐎 𝐌𝐀𝐊𝐄𝐑 🎀*\n${menuText}`,
+            buttons: [
+                {
+                    buttonId: `${prefix}quick_logos`,
+                    buttonText: { displayText: '🎨 LOGO MENU' },
+                    type: 4,
+                    nativeFlowInfo: {
+                        name: 'single_select',
+                        paramsJson: JSON.stringify({
+                            title: '🎨 CASEYRHODES LOGO MAKER',
+                            sections: [
+                                {
+                                    title: "🎌 ᴀɴɪᴍᴇ & ɢᴀᴍᴇ ʟᴏɢᴏs",
+                                    highlight_label: 'Popular',
+                                    rows: [
+                                        { title: "🐉 ᴅʀᴀɢᴏɴʙᴀʟʟ", description: "Dragon Ball style text effect", id: `${prefix}dragonball` },
+                                        { title: "🌀 ɴᴀʀᴜᴛᴏ", description: "Naruto Shippuden logo style", id: `${prefix}naruto` },
+                                        { title: "⚔️ ᴀʀᴇɴᴀ", description: "Arena of Valor cover style", id: `${prefix}arena` }
+                                    ]
+                                },
+                                {
+                                    title: "💻 ᴍᴏᴅᴇʀɴ & ᴛᴇᴄʜ ʟᴏɢᴏs",
+                                    highlight_label: 'Trending',
+                                    rows: [
+                                        { title: "💻 ʜᴀᴄᴋᴇʀ", description: "Anonymous hacker neon avatar", id: `${prefix}hacker` },
+                                        { title: "⚙️ ᴍᴇᴄʜᴀɴɪᴄᴀʟ", description: "Mechanical style text effect", id: `${prefix}mechanical` },
+                                        { title: "💡 ɪɴᴄᴀɴᴅᴇsᴄᴇɴᴛ", description: "Light bulb text effects", id: `${prefix}incandescent` },
+                                        { title: "🏆 ɢᴏʟᴅ", description: "Modern gold text effect", id: `${prefix}gold` }
+                                    ]
+                                },
+                                {
+                                    title: "🌈 ɴᴀᴛᴜʀᴇ & ᴇғғᴇᴄᴛ ʟᴏɢᴏs",
+                                    highlight_label: 'Beautiful',
+                                    rows: [
+                                        { title: "🏖️ sᴀɴᴅ", description: "Write text on sand online", id: `${prefix}sand` },
+                                        { title: "🌅 sᴜɴsᴇᴛ", description: "Sunset light text effects", id: `${prefix}sunset` },
+                                        { title: "💧 ᴡᴀᴛᴇʀ", description: "Water effect text online", id: `${prefix}water` },
+                                        { title: "🌧️ ʀᴀɪɴ", description: "Foggy rainy text effect", id: `${prefix}rain` }
+                                    ]
+                                },
+                                {
+                                    title: "🎨 ᴀʀᴛ & ᴄʀᴇᴀᴛɪᴠᴇ ʟᴏɢᴏs",
+                                    highlight_label: 'Creative',
+                                    rows: [
+                                        { title: "🍫 ᴄʜᴏᴄᴏʟᴀᴛᴇ", description: "Chocolate text effect", id: `${prefix}chocolate` },
+                                        { title: "🎨 ɢʀᴀғғɪᴛɪ", description: "Cartoon style graffiti text", id: `${prefix}graffiti` },
+                                        { title: "💥 ʙᴏᴏᴍ", description: "Comic boom text effect", id: `${prefix}boom` },
+                                        { title: "🟣 ᴘᴜʀᴘʟᴇ", description: "Purple text effect online", id: `${prefix}purple` }
+                                    ]
+                                },
+                                {
+                                    title: "📝 ᴛᴇxᴛ & ᴛʏᴘᴏɢʀᴀᴘʜʏ",
+                                    highlight_label: 'Text Styles',
+                                    rows: [
+                                        { title: "👕 ᴄʟᴏᴛʜ", description: "Text on cloth effect", id: `${prefix}cloth` },
+                                        { title: "🎬 1917", description: "1917 movie style text", id: `${prefix}1917` },
+                                        { title: "👶 ᴄʜɪʟᴅ", description: "Write text on wet glass", id: `${prefix}child` },
+                                        { title: "🐱 ᴄᴀᴛ", description: "Handwritten foggy glass", id: `${prefix}cat` },
+                                        { title: "📝 ᴛʏᴘᴏ", description: "Typography on pavement", id: `${prefix}typo` }
+                                    ]
+                                }
+                            ]
+                        })
+                    }
+                }
+            ],
+            headerType: 1,
+            contextInfo: messageContext
+        };
+
+        // Send logo menu
+        await socket.sendMessage(sender, logoMessage, { quoted: fakevCard });
+        await socket.sendMessage(sender, { 
+            react: { 
+                text: '✅', 
+                key: msg.key 
+            } 
+        });
+
+    } catch (error) {
+        console.error('Logo menu command error:', error);
+        
+        const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+        let fallbackText = `
+*╭────〘 ᴄᴀsᴇʏʀʜᴏᴅᴇs ʟᴏɢᴏ ᴍᴀᴋᴇʀ 〙───⊷*
+*┃*  🎨 *Bot*: ᴄᴀsᴇʏʀʀʜᴏᴅᴇs ᴍɪɴɪ 
+*┃*  📍 *Prefix*: ${prefix}
+*┃*  💾 *Memory*: ${usedMemory}MB
+*╰────────────────⊷
+> *mᥲძᥱ ᑲᥡ ᴄᴀsᴇʏʀʜᴏᴅᴇs*
+`;
+
+        await socket.sendMessage(sender, {
+            image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+            caption: fallbackText,
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: fakevCard });
+        await socket.sendMessage(sender, { 
+            react: { 
+                text: '❌', 
+                key: msg.key 
+            } 
+        });
+    }
+    break;
 }
 //allmenu 
  case 'allmenu': {
@@ -1799,7 +1957,6 @@ case 'blocked': {
     }
     break;
 }
-///fixed lyrics 😀
 case 'lyrics': {
     // React to the command first
     await socket.sendMessage(sender, {
@@ -1864,9 +2021,9 @@ case 'lyrics': {
             image: { url: image },
             caption: caption,
             buttons: [
-                { buttonId: '.play ' + query, buttonText: { displayText: '🎵 Play Song' }, type: 1 },
-                { buttonId: '.song ' + query, buttonText: { displayText: '📺 YouTube' }, type: 1 },
-                { buttonId: '.lyrics', buttonText: { displayText: '🔍 New Search' }, type: 1 }
+                { buttonId: `${prefix}play ${query}`,  buttonText: { displayText: '🎵 Play Song' }, type: 1 },
+                { buttonId: `${prefix}song ${query}`,  buttonText: { displayText: '📺 YouTube' }, type: 1 },
+                { buttonId: `${prefix}lyrics ${query}`, buttonText: { displayText: '🔍 New Search' }, type: 1 }
             ],
             contextInfo: {
                 forwardingScore: 1,
@@ -2981,6 +3138,886 @@ case 'searchimg': {
                 { buttonId: `${prefix}allmenu`, buttonText: { displayText: '🏠 ᴀʟʟᴍᴇɴᴜ' }, type: 1 },
                 { buttonId: `${prefix}img`, buttonText: { displayText: '🔄 ᴛʀʏ ᴀɢᴀɪɴ' }, type: 1 }
             ]
+        }, { quoted: msg });
+    }
+    break;
+}
+//logo Caseyrhodes 
+// 🎌 ANIME & GAME LOGOS
+case 'dragonball': {
+    await socket.sendMessage(sender, { react: { text: "🐉", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🐉 CASEYRHODES TECH - DRAGON BALL LOGO*\n\n` +
+                  `Please provide text for Dragon Ball logo\n` +
+                  `Example: *${prefix}dragonball YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        await socket.sendMessage(sender, {
+            text: `*🐉 Generating Dragon Ball Logo...*\n\n` +
+                  `Please wait while CaseyRhodes Tech creates your design...`
+        }, { quoted: msg });
+
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/create-dragon-ball-style-text-effects-online-809.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🐉 CASEYRHODES TECH - DRAGON BALL LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Dragon Ball Z\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Dragonball logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Dragon Ball logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'naruto': {
+    await socket.sendMessage(sender, { react: { text: "🌀", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🌀 CASEYRHODES TECH - NARUTO LOGO*\n\n` +
+                  `Please provide text for Naruto logo\n` +
+                  `Example: *${prefix}naruto YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        await socket.sendMessage(sender, {
+            text: `*🌀 Generating Naruto Logo...*\n\n` +
+                  `Please wait while CaseyRhodes Tech creates your design...`
+        }, { quoted: msg });
+
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/naruto-shippuden-logo-style-text-effect-online-808.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🌀 CASEYRHODES TECH - NARUTO LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Naruto Shippuden\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Naruto logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Naruto logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'arena': {
+    await socket.sendMessage(sender, { react: { text: "⚔️", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*⚔️ CASEYRHODES TECH - ARENA LOGO*\n\n` +
+                  `Please provide text for Arena logo\n` +
+                  `Example: *${prefix}arena YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        await socket.sendMessage(sender, {
+            text: `*⚔️ Generating Arena Logo...*\n\n` +
+                  `Please wait while CaseyRhodes Tech creates your design...`
+        }, { quoted: msg });
+
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/create-cover-arena-of-valor-by-mastering-360.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*⚔️ CASEYRHODES TECH - ARENA LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Arena of Valor\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Arena logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Arena logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// 💻 MODERN & TECH LOGOS
+case 'hacker': {
+    await socket.sendMessage(sender, { react: { text: "💻", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*💻 CASEYRHODES TECH - HACKER LOGO*\n\n` +
+                  `Please provide text for Hacker logo\n` +
+                  `Example: *${prefix}hacker YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        await socket.sendMessage(sender, {
+            text: `*💻 Generating Hacker Logo...*\n\n` +
+                  `Please wait while CaseyRhodes Tech creates your design...`
+        }, { quoted: msg });
+
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/create-anonymous-hacker-avatars-cyan-neon-677.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*💻 CASEYRHODES TECH - HACKER LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Hacker Neon\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Hacker logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Hacker logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'mechanical': {
+    await socket.sendMessage(sender, { react: { text: "⚙️", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*⚙️ CASEYRHODES TECH - MECHANICAL LOGO*\n\n` +
+                  `Please provide text for Mechanical logo\n` +
+                  `Example: *${prefix}mechanical YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        await socket.sendMessage(sender, {
+            text: `*⚙️ Generating Mechanical Logo...*\n\n` +
+                  `Please wait while CaseyRhodes Tech creates your design...`
+        }, { quoted: msg });
+
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/create-your-name-in-a-mechanical-style-306.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*⚙️ CASEYRHODES TECH - MECHANICAL LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Mechanical Text\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Mechanical logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Mechanical logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'incandescent': {
+    await socket.sendMessage(sender, { react: { text: "💡", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*💡 CASEYRHODES TECH - INCANDESCENT LOGO*\n\n` +
+                  `Please provide text for Incandescent logo\n` +
+                  `Example: *${prefix}incandescent YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        await socket.sendMessage(sender, {
+            text: `*💡 Generating Incandescent Logo...*\n\n` +
+                  `Please wait while CaseyRhodes Tech creates your design...`
+        }, { quoted: msg });
+
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/text-effects-incandescent-bulbs-219.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*💡 CASEYRHODES TECH - INCANDESCENT LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Light Bulb Effect\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Incandescent logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Incandescent logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'gold': {
+    await socket.sendMessage(sender, { react: { text: "🏆", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🏆 CASEYRHODES TECH - GOLD LOGO*\n\n` +
+                  `Please provide text for Gold logo\n` +
+                  `Example: *${prefix}gold YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        await socket.sendMessage(sender, {
+            text: `*🏆 Generating Gold Logo...*\n\n` +
+                  `Please wait while CaseyRhodes Tech creates your design...`
+        }, { quoted: msg });
+
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/modern-gold-4-213.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🏆 CASEYRHODES TECH - GOLD LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Modern Gold\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Gold logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Gold logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// 🌈 NATURE & EFFECT LOGOS
+case 'sand': {
+    await socket.sendMessage(sender, { react: { text: "🏖️", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🏖️ CASEYRHODES TECH - SAND LOGO*\n\n` +
+                  `Please provide text for Sand logo\n` +
+                  `Example: *${prefix}sand YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/write-names-and-messages-on-the-sand-online-582.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🏖️ CASEYRHODES TECH - SAND LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Sand Writing\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Sand logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Sand logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'sunset': {
+    await socket.sendMessage(sender, { react: { text: "🌅", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🌅 CASEYRHODES TECH - SUNSET LOGO*\n\n` +
+                  `Please provide text for Sunset logo\n` +
+                  `Example: *${prefix}sunset YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/create-sunset-light-text-effects-online-807.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🌅 CASEYRHODES TECH - SUNSET LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Sunset Light\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Sunset logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Sunset logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'water': {
+    await socket.sendMessage(sender, { react: { text: "💧", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*💧 CASEYRHODES TECH - WATER LOGO*\n\n` +
+                  `Please provide text for Water logo\n` +
+                  `Example: *${prefix}water YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/create-water-effect-text-online-295.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*💧 CASEYRHODES TECH - WATER LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Water Effect\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Water logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Water logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'rain': {
+    await socket.sendMessage(sender, { react: { text: "🌧️", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🌧️ CASEYRHODES TECH - RAIN LOGO*\n\n` +
+                  `Please provide text for Rain logo\n` +
+                  `Example: *${prefix}rain YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/foggy-rainy-text-effect-75.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🌧️ CASEYRHODES TECH - RAIN LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Foggy Rain\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Rain logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Rain logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// 🎨 ART & CREATIVE LOGOS
+case 'chocolate': {
+    await socket.sendMessage(sender, { react: { text: "🍫", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🍫 CASEYRHODES TECH - CHOCOLATE LOGO*\n\n` +
+                  `Please provide text for Chocolate logo\n` +
+                  `Example: *${prefix}chocolate YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/chocolate-text-effect-353.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🍫 CASEYRHODES TECH - CHOCOLATE LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Chocolate Text\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Chocolate logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Chocolate logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'graffiti': {
+    await socket.sendMessage(sender, { react: { text: "🎨", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🎨 CASEYRHODES TECH - GRAFFITI LOGO*\n\n` +
+                  `Please provide text for Graffiti logo\n` +
+                  `Example: *${prefix}graffiti YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/create-a-cartoon-style-graffiti-text-effect-online-668.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🎨 CASEYRHODES TECH - GRAFFITI LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Cartoon Graffiti\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Graffiti logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Graffiti logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'boom': {
+    await socket.sendMessage(sender, { react: { text: "💥", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*💥 CASEYRHODES TECH - BOOM LOGO*\n\n` +
+                  `Please provide text for Boom logo\n` +
+                  `Example: *${prefix}boom YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/boom-text-comic-style-text-effect-675.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*💥 CASEYRHODES TECH - BOOM LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Comic Boom\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Boom logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Boom logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'purple': {
+    await socket.sendMessage(sender, { react: { text: "🟣", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🟣 CASEYRHODES TECH - PURPLE LOGO*\n\n` +
+                  `Please provide text for Purple logo\n` +
+                  `Example: *${prefix}purple YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/purple-text-effect-online-100.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🟣 CASEYRHODES TECH - PURPLE LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Purple Effect\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Purple logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Purple logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// 📝 TEXT & TYPOGRAPHY LOGOS
+case 'cloth': {
+    await socket.sendMessage(sender, { react: { text: "👕", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*👕 CASEYRHODES TECH - CLOTH LOGO*\n\n` +
+                  `Please provide text for Cloth logo\n` +
+                  `Example: *${prefix}cloth YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/text-on-cloth-effect-62.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*👕 CASEYRHODES TECH - CLOTH LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Text on Cloth\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Cloth logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Cloth logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case '1917': {
+    await socket.sendMessage(sender, { react: { text: "🎬", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🎬 CASEYRHODES TECH - 1917 LOGO*\n\n` +
+                  `Please provide text for 1917 logo\n` +
+                  `Example: *${prefix}1917 YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/1917-style-text-effect-523.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🎬 CASEYRHODES TECH - 1917 LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* 1917 Movie Style\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('1917 logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate 1917 logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'child': {
+    await socket.sendMessage(sender, { react: { text: "👶", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*👶 CASEYRHODES TECH - CHILD LOGO*\n\n` +
+                  `Please provide text for Child logo\n` +
+                  `Example: *${prefix}child YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/write-text-on-wet-glass-online-589.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*👶 CASEYRHODES TECH - CHILD LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Wet Glass Writing\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Child logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Child logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'cat': {
+    await socket.sendMessage(sender, { react: { text: "🐱", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*🐱 CASEYRHODES TECH - CAT LOGO*\n\n` +
+                  `Please provide text for Cat logo\n` +
+                  `Example: *${prefix}cat YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/handwritten-text-on-foggy-glass-online-680.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*🐱 CASEYRHODES TECH - CAT LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Foggy Glass\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Cat logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Cat logo\n` +
+                  `Please try again later.`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'typo': {
+    await socket.sendMessage(sender, { react: { text: "📝", key: msg.key } });
+    
+    const mumaker = require('mumaker');
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const args = q.trim().split(' ').slice(1);
+    const query = args.join(' ');
+
+    if (!query) {
+        return await socket.sendMessage(sender, {
+            text: `*📝 CASEYRHODES TECH - TYPO LOGO*\n\n` +
+                  `Please provide text for Typo logo\n` +
+                  `Example: *${prefix}typo YourText*\n\n` +
+                  `_Powered by CaseyRhodes Tech_ 🌟`
+        }, { quoted: msg });
+    }
+
+    try {
+        const result = await mumaker.ephoto(
+            'https://en.ephoto360.com/typography-text-effect-on-pavement-online-774.html',
+            query
+        );
+
+        await socket.sendMessage(sender, {
+            image: { url: result.image },
+            caption: `*📝 CASEYRHODES TECH - TYPO LOGO*\n\n` +
+                     `✨ *Text:* ${query}\n` +
+                     `🎨 *Style:* Pavement Typography\n` +
+                     `🌟 _Powered by CaseyRhodes Tech_`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('Typo logo error:', error);
+        await socket.sendMessage(sender, {
+            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
+                  `Failed to generate Typo logo\n` +
+                  `Please try again later.`
         }, { quoted: msg });
     }
     break;
