@@ -763,12 +763,12 @@ case 'info': {
     const totalMemory = Math.round(os.totalmem() / 1024 / 1024);
     
     let menuText = `*╭─────────────────⊷*  
-*┃* 🌟ʙᴏᴛ ɴᴀᴍᴇ: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
-*┃* 🌸ᴜsᴇʀ: ɢᴜᴇsᴛ
-*┃* 📍ᴘʀᴇғɪx: .
-*┃* ⏰ᴜᴘᴛɪᴍᴇ : ${hours}h ${minutes}m ${seconds}s
-*┃* 📂sᴛᴏʀᴀɢᴇ : ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
-*┃* 🎭ᴅᴇᴠ: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
+*┃* *🌟ʙᴏᴛ ɴᴀᴍᴇ*: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
+*┃* *🌸ᴜsᴇʀ*: ɢᴜᴇsᴛ
+*┃* *📍ᴘʀᴇғɪx*: .
+*┃* *⏰ᴜᴘᴛɪᴍᴇ* : ${hours}h ${minutes}m ${seconds}s
+*┃* *📂sᴛᴏʀᴀɢᴇ* : ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
+*┃* *🎭ᴅᴇᴠ*: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
 *╰──────────────────⊷*
 *\`Ξ ѕєlєct α cαtєgσrч вєlσw:\`*
 
@@ -787,7 +787,7 @@ case 'info': {
     };
 
     const menuMessage = {
-      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+      image: { url: "https://i.ibb.co/gKnBmq8/casey.jpg" },
       caption: `*🎀 𝐂𝐀𝐒𝐄𝐘𝐑𝐇𝐎𝐃𝐄𝐒 𝐌𝐈𝐍𝐈 𝐁𝐎𝐓 🎀*\n${menuText}`,
       buttons: [
         {
@@ -803,6 +803,7 @@ case 'info': {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
+                    { title: "🎨 Logomenu", description: "get yoir own logo texts", id: `${config.PREFIX}logomenu` }, 
                     { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` }, 
                     { title: "♻️ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },
                     { title: "🪀ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "set your bio on and off", id: `${config.PREFIX}autorecording` },    
@@ -966,15 +967,7 @@ case 'logomenu': {
         
         let menuText = `*╭─────────────────⊷*  
 *┃* *🎨ʙᴏᴛ* ɴᴀᴍᴇ: ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ
-*┃* *🌸ᴜsᴇʀ*: ɢᴜᴇsᴛ
-*┃* *📍ᴘʀᴇғɪx*: ${prefix}
-*┃* *⏰ᴜᴘᴛɪᴍᴇ* : ${hours}h ${minutes}m ${seconds}s
-*┃* *📂sᴛᴏʀᴀɢᴇ* : ${usedMemory}MB
-*┃* *🎭ᴅᴇᴠ*: ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ
 *╰──────────────────⊷*
-*\`Ξ ѕєlєct α lσgσ ѕтуlє вєlσw:\`*
-
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
 
         const messageContext = {
