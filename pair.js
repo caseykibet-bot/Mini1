@@ -1262,106 +1262,6 @@ case 'logomenu': {
   }
   break;
 }
-///url case
-case 'tourl':
-case 'geturl':
-case 'upload':
-case 'url': {
-    await socket.sendMessage(sender, {
-        react: { text: "📤", key: msg.key }
-    });
-
-    const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    
-    if (!quotedMsg || !(quotedMsg.imageMessage || quotedMsg.videoMessage || quotedMsg.audioMessage)) {
-        return await socket.sendMessage(sender, {
-            text: `📤 *CASEYRHODES TECH - MEDIA UPLOAD*\n\nReply to an image, video, or audio file.\nUsage: ${prefix}tourl`
-        }, { quoted: msg });
-    }
-
-    try {
-        await socket.sendMessage(sender, {
-            text: `📤 *Uploading your media...*`
-        }, { quoted: msg });
-
-        let mediaBuffer;
-        let mediaType;
-
-        if (quotedMsg.imageMessage) {
-            mediaBuffer = await socket.downloadMediaMessage(quotedMsg);
-            mediaType = 'image';
-        } else if (quotedMsg.videoMessage) {
-            mediaBuffer = await socket.downloadMediaMessage(quotedMsg);
-            mediaType = 'video';
-        } else if (quotedMsg.audioMessage) {
-            mediaBuffer = await socket.downloadMediaMessage(quotedMsg);
-            mediaType = 'audio';
-        }
-
-        if (!mediaBuffer) throw new Error('Failed to download media');
-
-        const fileSizeMB = mediaBuffer.length / (1024 * 1024);
-        if (fileSizeMB > MAX_FILE_SIZE_MB) {
-            return await socket.sendMessage(sender, {
-                text: `❌ File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`
-            }, { quoted: msg });
-        }
-
-        const { fileTypeFromBuffer } = require('file-type');
-        const FormData = require('form-data');
-        const fetch = require('node-fetch');
-
-        const { ext } = await fileTypeFromBuffer(mediaBuffer);
-        const bodyForm = new FormData();
-        bodyForm.append("fileToUpload", mediaBuffer, "file." + ext);
-        bodyForm.append("reqtype", "fileupload");
-
-        const res = await fetch("https://catbox.moe/user/api.php", {
-            method: "POST",
-            body: bodyForm,
-        });
-
-        if (!res.ok) throw new Error('Upload failed');
-        const mediaUrl = await res.text();
-
-        const messageContext = {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363420261263259@newsletter',
-                newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
-                serverMessageId: -1
-            }
-        };
-
-        const buttons = [
-            { buttonId: `${prefix}menu`, buttonText: { displayText: '📋 Copy URL' }, type: 1 },
-            { buttonId: `${prefix}menu`, buttonText: { displayText: '⬇️ Download' }, type: 1 }
-        ];
-
-        if (mediaType === 'audio') {
-            await socket.sendMessage(sender, {
-                text: `📤 *CASEYRHODES TECH - MEDIA URL*\n\n*URL:* ${mediaUrl}\n*Type:* ${mediaType}`,
-                buttons: buttons,
-                contextInfo: messageContext
-            }, { quoted: msg });
-        } else {
-            await socket.sendMessage(sender, {
-                [mediaType]: { url: mediaUrl },
-                caption: `📤 *CASEYRHODES TECH - MEDIA URL*\n\n*URL:* ${mediaUrl}\n*Type:* ${mediaType}`,
-                buttons: buttons,
-                contextInfo: messageContext
-            }, { quoted: msg });
-        }
-
-    } catch (error) {
-        console.error('Upload error:', error);
-        await socket.sendMessage(sender, {
-            text: `❌ *Upload Failed*\n\nError processing media.`
-        }, { quoted: msg });
-    }
-    break;
-}
 //autobio test 
 //autobio test 
 case 'autobio':
@@ -2183,7 +2083,9 @@ case 'play': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
+        
+        // Use the new API endpoint
+        const apiURL = `https://api.goodnesstechhost.xyz/download/youtube/audio?url=${encodeURIComponent(video.url)}`;
 
         // Create single button for getting video
         const buttonMessage = {
@@ -2195,7 +2097,7 @@ case 'play': {
 ⏱️ *Duration:* ${video.timestamp}
 👁️ *Views:* ${video.views}
 📅 *Uploaded:* ${video.ago}
-🔗 *YouTube ID:* ${video.videoId}
+🔗 *YouTube URL:* ${video.url}
 
 ⬇️ *Downloading your audio...* ⬇️
 
@@ -2215,11 +2117,11 @@ case 'play': {
         // Send song description with thumbnail and single button
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link
+        // Get download link from new API
         const response = await axios.get(apiURL, { timeout: 30000 });
         const data = response.data;
 
-        if (!data.downloadLink) {
+        if (!data || !data.url) {
             return await socket.sendMessage(sender, {
                 text: '*❌ Download Failed*\nFailed to retrieve the MP3 download link. Please try again later.*'
             }, { quoted: msg });
@@ -2227,7 +2129,7 @@ case 'play': {
 
         // Send audio file without caption/success message
         await socket.sendMessage(sender, {
-            audio: { url: data.downloadLink },
+            audio: { url: data.url },
             mimetype: 'audio/mpeg',
             fileName: fileName,
             ptt: false // Important: ensures it's treated as music, not voice message
@@ -2236,7 +2138,7 @@ case 'play': {
     } catch (err) {
         console.error('[PLAY] Error:', err.message);
         await socket.sendMessage(sender, {
-            text: '*❌ Error Occurred*'
+            text: '*❌ Error Occurred*\nFailed to process your request. Please try again later.*'
         }, { quoted: msg });
     }
     break;
@@ -2323,15 +2225,15 @@ case 'mp3play': {
     // Show processing message
     await socket.sendMessage(from, { text: "*📥 Downloading MP3... Please wait*" }, { quoted: msg });
     
-    const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+    const apiUrl = `https://api.goodnesstechhost.xyz/download/youtube/audio?url=${encodeURIComponent(url)}`;
     const { data } = await axios.get(apiUrl, { timeout: 30000 });
 
-    if (!data || !data.result?.download_url) {
+    if (!data || !data.url) {
       return await socket.sendMessage(from, { text: "*❌ Failed to fetch MP3 download link*" }, { quoted: msg });
     }
 
     await socket.sendMessage(from, {
-      audio: { url: data.result.download_url },
+      audio: { url: data.url },
       mimetype: "audio/mpeg",
       fileName: `song_${Date.now()}.mp3`
     }, { quoted: msg });
@@ -2355,15 +2257,15 @@ case 'mp3doc': {
   try {
     await socket.sendMessage(from, { text: "*📥 Downloading as document... Please wait*" }, { quoted: msg });
     
-    const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+    const apiUrl = `https://api.goodnesstechhost.xyz/download/youtube/audio?url=${encodeURIComponent(url)}`;
     const { data } = await axios.get(apiUrl, { timeout: 30000 });
 
-    if (!data || !data.result?.download_url) {
+    if (!data || !data.url) {
       return await socket.sendMessage(from, { text: "*❌ Failed to fetch MP3 download link*" }, { quoted: msg });
     }
 
     await socket.sendMessage(from, {
-      document: { url: data.result.download_url },
+      document: { url: data.url },
       mimetype: "audio/mpeg",
       fileName: `mini_bot_song_${Date.now()}.mp3`
     }, { quoted: msg });
@@ -2387,15 +2289,15 @@ case 'mp3ptt': {
   try {
     await socket.sendMessage(from, { text: "*📥 Preparing voice note... Please wait*" }, { quoted: msg });
     
-    const apiUrl = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`;
+    const apiUrl = `https://api.goodnesstechhost.xyz/download/youtube/audio?url=${encodeURIComponent(url)}`;
     const { data } = await axios.get(apiUrl, { timeout: 30000 });
 
-    if (!data || !data.result?.download_url) {
+    if (!data || !data.url) {
       return await socket.sendMessage(from, { text: "*❌ Failed to fetch MP3 download link*" }, { quoted: msg });
     }
 
     await socket.sendMessage(from, {
-      audio: { url: data.result.download_url },
+      audio: { url: data.url },
       mimetype: "audio/mpeg",
       ptt: true, // voice note
       fileName: `voice_note_${Date.now()}.mp3`
@@ -2408,7 +2310,6 @@ case 'mp3ptt': {
 
   break;
 }
-					
 //video case
 //=====[VIDEO COMMAND]================//
 case 'video': {
