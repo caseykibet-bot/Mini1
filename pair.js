@@ -948,7 +948,7 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 }
 //logo menu 
 
-case 'caseylogo': 
+case 'logo': 
 case 'logomenu': {
     try {
         await socket.sendMessage(sender, { 
@@ -1127,7 +1127,9 @@ case 'logomenu': {
 *┃*  📊 *${config.PREFIX}bot_stats*
 *┃*  🧑‍💻 *${config.PREFIX}webzip*
 *┃*  ℹ️ *${config.PREFIX}bot_info*
+*┃*  ℹ️ *${config.PREFIX}bot_info*
 *┃*  📋 *${config.PREFIX}menu*
+*┃*  🎊 *${config.PREFIX}creact*
 *┃*  💠 *${config.PREFIX}bible*
 *┃*  🌸 *${config.PREFIX}jid*
 *┃*  🎀 *${config.PREFIX}gitclone*
@@ -1151,25 +1153,27 @@ case 'logomenu': {
 *┃*  🎨 *${config.PREFIX}logo*
 *┃*  📱 *${config.PREFIX}qr*
 *╰──────────────⊷*
-*╭────〘 phσtσ єdít 360° 〙───⊷*
-*┃*  ${config.PREFIX}metallic
-*┃*  ${config.PREFIX}ice
-*┃*  ${config.PREFIX}snow
-*┃*  ${config.PREFIX}impressive
-*┃*  ${config.PREFIX}matrix
-*┃*  ${config.PREFIX}light
-*┃*  ${config.PREFIX}neon
-*┃*  ${config.PREFIX}devil
-*┃*  ${config.PREFIX}purple
-*┃*  ${config.PREFIX}thunder
-*┃*  ${config.PREFIX}leaves
-*┃*  ${config.PREFIX}1917
-*┃*  ${config.PREFIX}arena
-*┃*  ${config.PREFIX}hacker
-*┃*  ${config.PREFIX}sand
-*┃*  ${config.PREFIX}blackpink
-*┃*  ${config.PREFIX}glitch
-*┃*  ${config.PREFIX}fire
+ ╭─『 🎨 *ʟᴏɢᴏ ᴄᴏᴍᴍᴀɴᴅs* 』─╮
+*┃*  🐉 *${config.PREFIX}dragonball*
+*┃*  🌀 *${config.PREFIX}naruto*
+*┃*  ⚔️ *${config.PREFIX}arena*
+*┃*  💻 *${config.PREFIX}hacker*
+*┃*  ⚙️ *${config.PREFIX}mechanical*
+*┃*  💡 *${config.PREFIX}incandescent*
+*┃*  🏆 *${config.PREFIX}gold*
+*┃*  🏖️ *${config.PREFIX}sand*
+*┃*  🌅 *${config.PREFIX}sunset*
+*┃*  💧 *${config.PREFIX}water*
+*┃*  🌧️ *${config.PREFIX}rain*
+*┃*  🍫 *${config.PREFIX}chocolate*
+*┃*  🎨 *${config.PREFIX}graffiti*
+*┃*  💥 *${config.PREFIX}boom*
+*┃*  🟣 *${config.PREFIX}purple*
+*┃*  👕 *${config.PREFIX}cloth*
+*┃*  🎬 *${config.PREFIX}1917*
+*┃*  👶 *${config.PREFIX}child*
+*┃*  🐱 *${config.PREFIX}cat*
+*┃*  📝 *${config.PREFIX}typo*
 *╰──────────────⊷*
 *╭────〘 ᴅᴏᴡɴʟᴏᴀᴅs 〙───⊷*
 *┃*  🎵 *${config.PREFIX}song*
@@ -1178,6 +1182,7 @@ case 'logomenu': {
 *┃*  📸 *${config.PREFIX}ig*
 *┃*  🖼️ *${config.PREFIX}aiimg*
 *┃*  👀 *${config.PREFIX}viewonce*
+*┃*  🐣 *${config.PREFIX}vv*
 *┃*  🗣️ *${config.PREFIX}tts*
 *┃*  🎬 *${config.PREFIX}ts*
 *┃*  🖼️ *${config.PREFIX}sticker*
@@ -1406,7 +1411,7 @@ case 'bio': {
             }
 		
 // Case: fc (follow channel)
-case 'fc': {
+case 'follow': {
   if (args.length === 0) {
     return await socket.sendMessage(sender, {
       text: '❗ Please provide a channel JID.\n\nExample:\n.fcn 120363299029326322@newsletter'
@@ -2043,7 +2048,6 @@ case 'lyrics': {
     break;
 }
 //=====[PLAY COMMAND]================//
- fix the New API here too 
 case 'play': {
     try {
         // React to the command first
@@ -2468,58 +2472,7 @@ case 'grouplist': {
     }
     break;
 }
-//logo casey
- case 'logo': {
-    const q = args.join(" ");
-    
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, { text: '*`Need a name for logo, darling 😘`*' });
-    }
 
-    await socket.sendMessage(sender, { react: { text: '⬆️', key: msg.key } });
-    
-    try {
-        const list = await axios.get('https://raw.githubusercontent.com/md2839pv404/anony0808/refs/heads/main/ep.json');
-        
-        const rows = list.data.map((v) => ({
-            title: v.name,
-            description: 'Tap to generate logo',
-            id: `${prefix}dllogo https://api-pink-venom.vercel.app/api/logo?url=${encodeURIComponent(v.url)}&name=${encodeURIComponent(q)}`
-        }));
-        
-        const buttonMessage = {
-            buttons: [
-                {
-                    buttonId: 'action',
-                    buttonText: { displayText: '🎨 Select Text Effect' },
-                    type: 4,
-                    nativeFlowInfo: {
-                        name: 'single_select',
-                        paramsJson: JSON.stringify({
-                            title: 'Available Text Effects',
-                            sections: [
-                                {
-                                    title: 'Choose your logo style',
-                                    rows: rows
-                                }
-                            ]
-                        })
-                    }
-                }
-            ],
-            headerType: 1,
-            viewOnce: true,
-            caption: '❏ *LOGO MAKER*',
-            image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' }
-        };
-
-        await socket.sendMessage(from, buttonMessage, { quoted: fakevCard });
-    } catch (error) {
-        console.error('Error fetching logo data:', error);
-        await socket.sendMessage(sender, { text: '*`Sorry, couldn\'t fetch logo styles at the moment 😢`*' });
-    }
-    break;
-}
 //===============================                
 // 9
                 case 'dllogo': { 
@@ -3135,7 +3088,7 @@ case 'searchimg': {
     }
     break;
 }
-//logo Caseyrhodes 
+//caseyrhodes logo Caseyrhodes 
 // 🎌 ANIME & GAME LOGOS
 case 'dragonball': {
     await socket.sendMessage(sender, { react: { text: "🐉", key: msg.key } });
@@ -3147,17 +3100,14 @@ case 'dragonball': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🐉 CASEYRHODES TECH - DRAGON BALL LOGO*\n\n` +
-                  `Please provide text for Dragon Ball logo\n` +
-                  `Example: *${prefix}dragonball YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🐉 DRAGON BALL LOGO*\n\nPlease provide text\nExample: *${prefix}dragonball YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
     try {
         await socket.sendMessage(sender, {
-            text: `*🐉 Generating Dragon Ball Logo...*\n\n` +
-                  `Please wait while CaseyRhodes Tech creates your design...`
+            text: `*🐉 Generating Dragon Ball Logo...*`
         }, { quoted: msg });
 
         const result = await mumaker.ephoto(
@@ -3167,18 +3117,15 @@ case 'dragonball': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🐉 CASEYRHODES TECH - DRAGON BALL LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Dragon Ball Z\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🐉 DRAGON BALL LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}dragonball ${query}`, buttonText: { displayText: '✨ CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Dragonball logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Dragon Ball logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Dragon Ball logo`
         }, { quoted: msg });
     }
     break;
@@ -3194,17 +3141,14 @@ case 'naruto': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🌀 CASEYRHODES TECH - NARUTO LOGO*\n\n` +
-                  `Please provide text for Naruto logo\n` +
-                  `Example: *${prefix}naruto YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🌀 NARUTO LOGO*\n\nPlease provide text\nExample: *${prefix}naruto YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
     try {
         await socket.sendMessage(sender, {
-            text: `*🌀 Generating Naruto Logo...*\n\n` +
-                  `Please wait while CaseyRhodes Tech creates your design...`
+            text: `*🌀 Generating Naruto Logo...*`
         }, { quoted: msg });
 
         const result = await mumaker.ephoto(
@@ -3214,18 +3158,15 @@ case 'naruto': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🌀 CASEYRHODES TECH - NARUTO LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Naruto Shippuden\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🌀 NARUTO LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}naruto ${query}`, buttonText: { displayText: '🌀 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Naruto logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Naruto logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Naruto logo`
         }, { quoted: msg });
     }
     break;
@@ -3241,17 +3182,14 @@ case 'arena': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*⚔️ CASEYRHODES TECH - ARENA LOGO*\n\n` +
-                  `Please provide text for Arena logo\n` +
-                  `Example: *${prefix}arena YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*⚔️ ARENA LOGO*\n\nPlease provide text\nExample: *${prefix}arena YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
     try {
         await socket.sendMessage(sender, {
-            text: `*⚔️ Generating Arena Logo...*\n\n` +
-                  `Please wait while CaseyRhodes Tech creates your design...`
+            text: `*⚔️ Generating Arena Logo...*`
         }, { quoted: msg });
 
         const result = await mumaker.ephoto(
@@ -3261,18 +3199,15 @@ case 'arena': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*⚔️ CASEYRHODES TECH - ARENA LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Arena of Valor\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*⚔️ ARENA LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}arena ${query}`, buttonText: { displayText: '⚔️ CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Arena logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Arena logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Arena logo`
         }, { quoted: msg });
     }
     break;
@@ -3289,17 +3224,14 @@ case 'hacker': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*💻 CASEYRHODES TECH - HACKER LOGO*\n\n` +
-                  `Please provide text for Hacker logo\n` +
-                  `Example: *${prefix}hacker YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*💻 HACKER LOGO*\n\nPlease provide text\nExample: *${prefix}hacker YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
     try {
         await socket.sendMessage(sender, {
-            text: `*💻 Generating Hacker Logo...*\n\n` +
-                  `Please wait while CaseyRhodes Tech creates your design...`
+            text: `*💻 Generating Hacker Logo...*`
         }, { quoted: msg });
 
         const result = await mumaker.ephoto(
@@ -3309,18 +3241,15 @@ case 'hacker': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*💻 CASEYRHODES TECH - HACKER LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Hacker Neon\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*💻 HACKER LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}hacker ${query}`, buttonText: { displayText: '💻 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Hacker logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Hacker logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Hacker logo`
         }, { quoted: msg });
     }
     break;
@@ -3336,17 +3265,14 @@ case 'mechanical': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*⚙️ CASEYRHODES TECH - MECHANICAL LOGO*\n\n` +
-                  `Please provide text for Mechanical logo\n` +
-                  `Example: *${prefix}mechanical YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*⚙️ MECHANICAL LOGO*\n\nPlease provide text\nExample: *${prefix}mechanical YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
     try {
         await socket.sendMessage(sender, {
-            text: `*⚙️ Generating Mechanical Logo...*\n\n` +
-                  `Please wait while CaseyRhodes Tech creates your design...`
+            text: `*⚙️ Generating Mechanical Logo...*`
         }, { quoted: msg });
 
         const result = await mumaker.ephoto(
@@ -3356,18 +3282,15 @@ case 'mechanical': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*⚙️ CASEYRHODES TECH - MECHANICAL LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Mechanical Text\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*⚙️ MECHANICAL LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}mechanical ${query}`, buttonText: { displayText: '⚙️ CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Mechanical logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Mechanical logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Mechanical logo`
         }, { quoted: msg });
     }
     break;
@@ -3383,17 +3306,14 @@ case 'incandescent': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*💡 CASEYRHODES TECH - INCANDESCENT LOGO*\n\n` +
-                  `Please provide text for Incandescent logo\n` +
-                  `Example: *${prefix}incandescent YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*💡 INCANDESCENT LOGO*\n\nPlease provide text\nExample: *${prefix}incandescent YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
     try {
         await socket.sendMessage(sender, {
-            text: `*💡 Generating Incandescent Logo...*\n\n` +
-                  `Please wait while CaseyRhodes Tech creates your design...`
+            text: `*💡 Generating Incandescent Logo...*`
         }, { quoted: msg });
 
         const result = await mumaker.ephoto(
@@ -3403,18 +3323,15 @@ case 'incandescent': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*💡 CASEYRHODES TECH - INCANDESCENT LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Light Bulb Effect\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*💡 INCANDESCENT LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}incandescent ${query}`, buttonText: { displayText: '💡 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Incandescent logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Incandescent logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Incandescent logo`
         }, { quoted: msg });
     }
     break;
@@ -3430,17 +3347,14 @@ case 'gold': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🏆 CASEYRHODES TECH - GOLD LOGO*\n\n` +
-                  `Please provide text for Gold logo\n` +
-                  `Example: *${prefix}gold YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🏆 GOLD LOGO*\n\nPlease provide text\nExample: *${prefix}gold YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
     try {
         await socket.sendMessage(sender, {
-            text: `*🏆 Generating Gold Logo...*\n\n` +
-                  `Please wait while CaseyRhodes Tech creates your design...`
+            text: `*🏆 Generating Gold Logo...*`
         }, { quoted: msg });
 
         const result = await mumaker.ephoto(
@@ -3450,18 +3364,15 @@ case 'gold': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🏆 CASEYRHODES TECH - GOLD LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Modern Gold\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🏆 GOLD LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}gold ${query}`, buttonText: { displayText: '🏆 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Gold logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Gold logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Gold logo`
         }, { quoted: msg });
     }
     break;
@@ -3478,10 +3389,8 @@ case 'sand': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🏖️ CASEYRHODES TECH - SAND LOGO*\n\n` +
-                  `Please provide text for Sand logo\n` +
-                  `Example: *${prefix}sand YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🏖️ SAND LOGO*\n\nPlease provide text\nExample: *${prefix}sand YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3493,18 +3402,15 @@ case 'sand': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🏖️ CASEYRHODES TECH - SAND LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Sand Writing\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🏖️ SAND LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}sand ${query}`, buttonText: { displayText: '🏖️ CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Sand logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Sand logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Sand logo`
         }, { quoted: msg });
     }
     break;
@@ -3520,10 +3426,8 @@ case 'sunset': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🌅 CASEYRHODES TECH - SUNSET LOGO*\n\n` +
-                  `Please provide text for Sunset logo\n` +
-                  `Example: *${prefix}sunset YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🌅 SUNSET LOGO*\n\nPlease provide text\nExample: *${prefix}sunset YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3535,18 +3439,15 @@ case 'sunset': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🌅 CASEYRHODES TECH - SUNSET LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Sunset Light\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🌅 SUNSET LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}sunset ${query}`, buttonText: { displayText: '🌅 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Sunset logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Sunset logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Sunset logo`
         }, { quoted: msg });
     }
     break;
@@ -3562,10 +3463,8 @@ case 'water': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*💧 CASEYRHODES TECH - WATER LOGO*\n\n` +
-                  `Please provide text for Water logo\n` +
-                  `Example: *${prefix}water YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*💧 WATER LOGO*\n\nPlease provide text\nExample: *${prefix}water YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3577,18 +3476,15 @@ case 'water': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*💧 CASEYRHODES TECH - WATER LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Water Effect\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*💧 WATER LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}water ${query}`, buttonText: { displayText: '💧 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Water logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Water logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Water logo`
         }, { quoted: msg });
     }
     break;
@@ -3604,10 +3500,8 @@ case 'rain': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🌧️ CASEYRHODES TECH - RAIN LOGO*\n\n` +
-                  `Please provide text for Rain logo\n` +
-                  `Example: *${prefix}rain YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🌧️ RAIN LOGO*\n\nPlease provide text\nExample: *${prefix}rain YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3619,18 +3513,15 @@ case 'rain': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🌧️ CASEYRHODES TECH - RAIN LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Foggy Rain\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🌧️ RAIN LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}rain ${query}`, buttonText: { displayText: '🌧️ CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Rain logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Rain logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Rain logo`
         }, { quoted: msg });
     }
     break;
@@ -3647,10 +3538,8 @@ case 'chocolate': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🍫 CASEYRHODES TECH - CHOCOLATE LOGO*\n\n` +
-                  `Please provide text for Chocolate logo\n` +
-                  `Example: *${prefix}chocolate YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🍫 CHOCOLATE LOGO*\n\nPlease provide text\nExample: *${prefix}chocolate YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3662,18 +3551,15 @@ case 'chocolate': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🍫 CASEYRHODES TECH - CHOCOLATE LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Chocolate Text\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🍫 CHOCOLATE LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}chocolate ${query}`, buttonText: { displayText: '🍫 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Chocolate logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Chocolate logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Chocolate logo`
         }, { quoted: msg });
     }
     break;
@@ -3689,10 +3575,8 @@ case 'graffiti': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🎨 CASEYRHODES TECH - GRAFFITI LOGO*\n\n` +
-                  `Please provide text for Graffiti logo\n` +
-                  `Example: *${prefix}graffiti YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🎨 GRAFFITI LOGO*\n\nPlease provide text\nExample: *${prefix}graffiti YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3704,18 +3588,15 @@ case 'graffiti': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🎨 CASEYRHODES TECH - GRAFFITI LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Cartoon Graffiti\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🎨 GRAFFITI LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}graffiti ${query}`, buttonText: { displayText: '🎨 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Graffiti logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Graffiti logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Graffiti logo`
         }, { quoted: msg });
     }
     break;
@@ -3731,10 +3612,8 @@ case 'boom': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*💥 CASEYRHODES TECH - BOOM LOGO*\n\n` +
-                  `Please provide text for Boom logo\n` +
-                  `Example: *${prefix}boom YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*💥 BOOM LOGO*\n\nPlease provide text\nExample: *${prefix}boom YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3746,18 +3625,15 @@ case 'boom': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*💥 CASEYRHODES TECH - BOOM LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Comic Boom\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*💥 BOOM LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}boom ${query}`, buttonText: { displayText: '💥 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Boom logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Boom logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Boom logo`
         }, { quoted: msg });
     }
     break;
@@ -3773,10 +3649,8 @@ case 'purple': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🟣 CASEYRHODES TECH - PURPLE LOGO*\n\n` +
-                  `Please provide text for Purple logo\n` +
-                  `Example: *${prefix}purple YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🟣 PURPLE LOGO*\n\nPlease provide text\nExample: *${prefix}purple YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3788,18 +3662,15 @@ case 'purple': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🟣 CASEYRHODES TECH - PURPLE LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Purple Effect\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🟣 PURPLE LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}purple ${query}`, buttonText: { displayText: '🟣 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Purple logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Purple logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Purple logo`
         }, { quoted: msg });
     }
     break;
@@ -3816,10 +3687,8 @@ case 'cloth': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*👕 CASEYRHODES TECH - CLOTH LOGO*\n\n` +
-                  `Please provide text for Cloth logo\n` +
-                  `Example: *${prefix}cloth YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*👕 CLOTH LOGO*\n\nPlease provide text\nExample: *${prefix}cloth YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3831,18 +3700,15 @@ case 'cloth': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*👕 CASEYRHODES TECH - CLOTH LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Text on Cloth\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*👕 CLOTH LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}cloth ${query}`, buttonText: { displayText: '👕 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Cloth logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Cloth logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Cloth logo`
         }, { quoted: msg });
     }
     break;
@@ -3858,10 +3724,8 @@ case '1917': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🎬 CASEYRHODES TECH - 1917 LOGO*\n\n` +
-                  `Please provide text for 1917 logo\n` +
-                  `Example: *${prefix}1917 YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🎬 1917 LOGO*\n\nPlease provide text\nExample: *${prefix}1917 YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3873,18 +3737,15 @@ case '1917': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🎬 CASEYRHODES TECH - 1917 LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* 1917 Movie Style\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🎬 1917 LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}1917 ${query}`, buttonText: { displayText: '🎬 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('1917 logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate 1917 logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate 1917 logo`
         }, { quoted: msg });
     }
     break;
@@ -3900,10 +3761,8 @@ case 'child': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*👶 CASEYRHODES TECH - CHILD LOGO*\n\n` +
-                  `Please provide text for Child logo\n` +
-                  `Example: *${prefix}child YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*👶 CHILD LOGO*\n\nPlease provide text\nExample: *${prefix}child YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3915,18 +3774,15 @@ case 'child': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*👶 CASEYRHODES TECH - CHILD LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Wet Glass Writing\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*👶 CHILD LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}child ${query}`, buttonText: { displayText: '👶 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Child logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Child logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Child logo`
         }, { quoted: msg });
     }
     break;
@@ -3942,10 +3798,8 @@ case 'cat': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*🐱 CASEYRHODES TECH - CAT LOGO*\n\n` +
-                  `Please provide text for Cat logo\n` +
-                  `Example: *${prefix}cat YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*🐱 CAT LOGO*\n\nPlease provide text\nExample: *${prefix}cat YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3957,18 +3811,15 @@ case 'cat': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*🐱 CASEYRHODES TECH - CAT LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Foggy Glass\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*🐱 CAT LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}cat ${query}`, buttonText: { displayText: '🐱 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Cat logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Cat logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Cat logo`
         }, { quoted: msg });
     }
     break;
@@ -3984,10 +3835,8 @@ case 'typo': {
 
     if (!query) {
         return await socket.sendMessage(sender, {
-            text: `*📝 CASEYRHODES TECH - TYPO LOGO*\n\n` +
-                  `Please provide text for Typo logo\n` +
-                  `Example: *${prefix}typo YourText*\n\n` +
-                  `_Powered by CaseyRhodes Tech_ 🌟`
+            text: `*📝 TYPO LOGO*\n\nPlease provide text\nExample: *${prefix}typo YourText*`,
+            footer: `CaseyRhodes Tech`
         }, { quoted: msg });
     }
 
@@ -3999,18 +3848,15 @@ case 'typo': {
 
         await socket.sendMessage(sender, {
             image: { url: result.image },
-            caption: `*📝 CASEYRHODES TECH - TYPO LOGO*\n\n` +
-                     `✨ *Text:* ${query}\n` +
-                     `🎨 *Style:* Pavement Typography\n` +
-                     `🌟 _Powered by CaseyRhodes Tech_`
+            caption: `*📝 TYPO LOGO*\n\n✨ *Text:* ${query}`,
+            footer: `CaseyRhodes Tech`,
+            buttons: [{ buttonId: `${prefix}typo ${query}`, buttonText: { displayText: '📝 CREATE AGAIN' }, type: 1 }]
         }, { quoted: msg });
 
     } catch (error) {
         console.error('Typo logo error:', error);
         await socket.sendMessage(sender, {
-            text: `*❌ CASEYRHODES TECH - ERROR*\n\n` +
-                  `Failed to generate Typo logo\n` +
-                  `Please try again later.`
+            text: `*❌ ERROR*\nFailed to generate Typo logo`
         }, { quoted: msg });
     }
     break;
