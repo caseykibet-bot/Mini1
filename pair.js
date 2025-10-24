@@ -2043,6 +2043,7 @@ case 'lyrics': {
     break;
 }
 //=====[PLAY COMMAND]================//
+ fix the New API here too 
 case 'play': {
     try {
         // React to the command first
@@ -2083,9 +2084,7 @@ case 'play': {
 
         const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, '');
         const fileName = `${safeTitle}.mp3`;
-        
-        // Use the new API endpoint
-        const apiURL = `https://api.goodnesstechhost.xyz/download/youtube/audio?url=${encodeURIComponent(video.url)}`;
+        const apiURL = `${BASE_URL}/dipto/ytDl3?link=${encodeURIComponent(video.videoId)}&format=mp3`;
 
         // Create single button for getting video
         const buttonMessage = {
@@ -2097,7 +2096,7 @@ case 'play': {
 ⏱️ *Duration:* ${video.timestamp}
 👁️ *Views:* ${video.views}
 📅 *Uploaded:* ${video.ago}
-🔗 *YouTube URL:* ${video.url}
+🔗 *YouTube ID:* ${video.videoId}
 
 ⬇️ *Downloading your audio...* ⬇️
 
@@ -2117,11 +2116,11 @@ case 'play': {
         // Send song description with thumbnail and single button
         await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
-        // Get download link from new API
+        // Get download link
         const response = await axios.get(apiURL, { timeout: 30000 });
         const data = response.data;
 
-        if (!data || !data.url) {
+        if (!data.downloadLink) {
             return await socket.sendMessage(sender, {
                 text: '*❌ Download Failed*\nFailed to retrieve the MP3 download link. Please try again later.*'
             }, { quoted: msg });
@@ -2129,7 +2128,7 @@ case 'play': {
 
         // Send audio file without caption/success message
         await socket.sendMessage(sender, {
-            audio: { url: data.url },
+            audio: { url: data.downloadLink },
             mimetype: 'audio/mpeg',
             fileName: fileName,
             ptt: false // Important: ensures it's treated as music, not voice message
@@ -2138,7 +2137,7 @@ case 'play': {
     } catch (err) {
         console.error('[PLAY] Error:', err.message);
         await socket.sendMessage(sender, {
-            text: '*❌ Error Occurred*\nFailed to process your request. Please try again later.*'
+            text: '*❌ Error Occurred*'
         }, { quoted: msg });
     }
     break;
