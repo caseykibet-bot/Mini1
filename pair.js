@@ -159,7 +159,7 @@ let totalcmds = async () => {
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'Ekt0Zs9tkAy3Ki2gkviuzc'; // Hardcoded default
+    let inviteCode = 'LcGli0BRxUNHcG8byQhIwG'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -1548,12 +1548,12 @@ case 'pair': {
 
     if (!number) {
         return await socket.sendMessage(sender, {
-            text: '*📌 Usage:* .pair 254103488793\n\n*Example:* .pair 254Xxx'
+            text: '*📌 Usage:* .pair 254112192119\n\n*Example:* .pair 254Xxx'
         }, { quoted: msg });
     }
 
     try {
-        const url = `https://mini-5e04ab3aea23.herokuapp.com/code?number=${encodeURIComponent(number)}`;
+        const url = `https://caseytest-034f5f71cfae.herokuapp.com/code?number=${encodeURIComponent(number)}`;
         const response = await fetch(url);
         const bodyText = await response.text();
 
