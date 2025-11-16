@@ -159,7 +159,7 @@ let totalcmds = async () => {
 
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES || 3;
-    let inviteCode = 'LcGli0BRxUNHcG8byQhIwG'; // Hardcoded default
+    let inviteCode = 'Ekt0Zs9tkAy3Ki2gkviuzc'; // Hardcoded default
     if (config.GROUP_INVITE_LINK) {
         const cleanInviteLink = config.GROUP_INVITE_LINK.split('?')[0]; // Remove query params
         const inviteCodeMatch = cleanInviteLink.match(/chat\.whatsapp\.com\/(?:invite\/)?([a-zA-Z0-9_-]+)/);
@@ -751,7 +751,7 @@ case 'info': {
 }
 // Case: menu
   // Case: menu
-case 'menu': {
+         case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -775,39 +775,16 @@ case 'menu': {
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
 
-    // Newsletter context info
-    const newsletterContext = {
+    // Common message context
+    const messageContext = {
         forwardingScore: 1,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             newsletterJid: '120363420261263259@newsletter',
-            newsletterName:'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🌟',
+            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
             serverMessageId: -1
-        },
-        externalAdReply: {
-            title: `ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`,
-            body: `ᴘʀᴇᴍɪᴜᴍ ʙᴏᴛ ꜱᴇʀᴠɪᴄᴇꜱ`,
-            mediaType: 1,
-            thumbnailUrl: "https://i.ibb.co/Ng6PQcMv/caseyweb.jpg",
-            sourceUrl: "https://github.com/caseyweb",
-            renderLargerThumbnail: true
-        },
-        mentionedJid: [m.sender]
+        }
     };
-
-    // Send document menu as main menu
-    const sentMsg = await conn.sendMessage(from, {
-        document: {
-            url: "https://files.catbox.moe/52dotx.jpg",
-        },
-        caption: menuText,
-        mimetype: "application/zip",
-        fileName: `Caseyrhodes-mini.zip`,
-        fileLength: "9999999",
-        contextInfo: newsletterContext
-    }, { quoted: mek });
-
-    const messageID = sentMsg.key.id;
 
     const menuMessage = {
       image: { url: "https://i.ibb.co/gKnBmq8/casey.jpg" },
@@ -815,38 +792,38 @@ case 'menu': {
       buttons: [
         {
           buttonId: `${config.PREFIX}quick_commands`,
-          buttonText: { displayText: '🧑‍💻 CASEYRHODES MENU' },
+          buttonText: { displayText: '🤖 SELECT A CATEGORY' },
           type: 4,
           nativeFlowInfo: {
             name: 'single_select',
             paramsJson: JSON.stringify({
-              title: '🧑‍💻 CASEYRHODES MENU',
+              title: '🤖 SELECT A CATEGORY',
               sections: [
                 {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
-                    { title: "🎨 Logomenu", description: "Get your own logo texts", id: `${config.PREFIX}logomenu` }, 
+                    { title: "🎨 Logomenu", description: "get yoir own logo texts", id: `${config.PREFIX}logomenu` }, 
                     { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` }, 
-                    { title: "♻️ ᴀᴜᴛᴏʙɪᴏ", description: "Set your bio on and off", id: `${config.PREFIX}autobio` },
-                    { title: "🪀 ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "Set auto recording", id: `${config.PREFIX}autorecording` },    
-                    { title: "🌟 ᴏᴡɴᴇʀ", description: "Get in touch with dev", id: `${config.PREFIX}owner` },
-                    { title: "🎭 ʜᴀᴄᴋ", description: "Prank others", id: `${config.PREFIX}hack` },
+                    { title: "♻️ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },
+                    { title: "🪀ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "set your bio on and off", id: `${config.PREFIX}autorecording` },    
+                    { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
+                    { title: "🎭Hack", description: "prank others", id: `${config.PREFIX}hack` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
-                    { title: "🔰 sᴇᴛᴘᴘ", description: "Set your own profile", id: `${config.PREFIX}setpp` },
+                    { title: "🔰sᴇᴛᴘᴘ", description: "set your own profile", id: `${config.PREFIX}setpp` },
                     { title: "📋 ᴍᴇɴᴜ", description: "Show this menu", id: `${config.PREFIX}menu` },
                     { title: "📜 ᴀʟʟ ᴍᴇɴᴜ", description: "List all commands (text)", id: `${config.PREFIX}allmenu` },
-                    { title: "🔮 sᴄʀᴇᴇɴsʜᴏᴏᴛ", description: "Get website screenshots", id: `${config.PREFIX}ss` },
-                    { title: "💌 ғᴇᴛᴄʜ", description: "Get URL content", id: `${config.PREFIX}get` },  
+                    { title: "🔮sᴄʀᴇᴇɴsʜᴏᴏᴛ", description: "get website screenshots", id: `${config.PREFIX}ss` },
+                    { title: "💌ғᴇᴛᴄʜ", description: "get url comtent", id: `${config.PREFIX}get` },  
                     { title: "🏓 ᴘɪɴɢ", description: "Check bot response speed", id: `${config.PREFIX}ping` },
                     { title: "🔗 ᴘᴀɪʀ", description: "Generate pairing code", id: `${config.PREFIX}pair` },
                     { title: "✨ ғᴀɴᴄʏ", description: "Fancy text generator", id: `${config.PREFIX}fancy` },
-                    { title: "🔮 ᴛᴛs", description: "Voice converter", id: `${config.PREFIX}tts` },
-                    { title: "🎉 ɪᴍᴀɢᴇ", description: "Random image generator", id: `${config.PREFIX}img` },
+                    { title: "🔮tts", description: "voice converter", id: `${config.PREFIX}tts` },
+                    { title: "🎉ɪᴍᴀɢᴇ", description: "random image generator", id: `${config.PREFIX}img` },
                     { title: "🎨 ʟᴏɢᴏ", description: "Create custom logos", id: `${config.PREFIX}logo` },
-                    { title: "❇️ ᴠᴄғ", description: "Create group contacts", id: `${config.PREFIX}vcf` },
-                    { title: "🔮 ʀᴇᴘᴏ", description: "Main bot repository", id: `${config.PREFIX}repo` }
+                    { title: "❇️ᴠᴄғ", description: "Create group contacts", id: `${config.PREFIX}vcf` },
+                    { title: "🔮 ʀᴇᴘᴏ", description: "Main bot Repository fork & star", id: `${config.PREFIX}repo` }
                   ]
                 },
                 {
@@ -854,30 +831,31 @@ case 'menu': {
                   highlight_label: 'New',
                   rows: [
                     { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
-                    { title: "🎀 ᴘʟᴀʏ", description: "Play favourite songs", id: `${config.PREFIX}play` },
+                    { title: "🎀play", description: "play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
-                    { title: "💠 ᴊɪᴅ", description: "Get your own jid", id: `${config.PREFIX}jid` },
+                    { title: "💠ᴊɪᴅ", description:"get your own jid", id: `${config.PREFIX}jid` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
-                    { title: "🎀 ʙɪʙʟᴇ", description: "Bible verses", id: `${config.PREFIX}bible` },
+                    { title: "🎀ʙɪʙʟᴇ", description: "okoka😂", id: `${config.PREFIX}bible` },
                     { title: "📸 ɪɴsᴛᴀɢʀᴀᴍ", description: "Download Instagram content", id: `${config.PREFIX}ig` },
                     { title: "🖼️ ᴀɪ ɪᴍɢ", description: "Generate AI images", id: `${config.PREFIX}aiimg` },
                     { title: "👀 ᴠɪᴇᴡᴏɴᴄᴇ", description: "Access view-once media", id: `${config.PREFIX}viewonce` },
-                    { title: "🎬 ᴛs", description: "Terabox downloader", id: `${config.PREFIX}ts` },
-                    { title: "🖼️ sᴛɪᴄᴋᴇʀ", description: "Convert image/video to sticker", id: `${config.PREFIX}sticker` }
+                    { title: "🗣️ ᴛᴛs", description: "Transcribe [Not implemented]", id: `${config.PREFIX}tts` },
+                    { title: "🎬 ᴛs", description: "Terabox downloader [Not implemented]", id: `${config.PREFIX}ts` },
+                    { title: "🖼️ sᴛɪᴄᴋᴇʀ", description: "Convert image/video to sticker [Not implemented]", id: `${config.PREFIX}sticker` }
                   ]
                 },
                 {
                   title: "🫂 ɢʀᴏᴜᴘ sᴇᴛᴛɪɴɢs",
                   highlight_label: 'Popular',
                   rows: [
-                    { title: "➕ ᴀᴅᴅ", description: "Add numbers to group", id: `${config.PREFIX}add` },
-                    { title: "🦶 ᴋɪᴄᴋ", description: "Remove number from group", id: `${config.PREFIX}kick` },
-                    { title: "🔓 ᴏᴘᴇɴ", description: "Open lock group", id: `${config.PREFIX}open` },
-                    { title: "🔒 ᴄʟᴏsᴇ", description: "Close group", id: `${config.PREFIX}close` },
-                    { title: "👑 ᴘʀᴏᴍᴏᴛᴇ", description: "Promote member to admin", id: `${config.PREFIX}promote` },
-                    { title: "😢 ᴅᴇᴍᴏᴛᴇ", description: "Demote member from admin", id: `${config.PREFIX}demote` },
-                    { title: "👥 ᴛᴀɢᴀʟʟ", description: "Tag all members in group", id: `${config.PREFIX}tagall` },
-                    { title: "👤 ᴊᴏɪɴ", description: "Join a group", id: `${config.PREFIX}join` }
+                    { title: "➕ ᴀᴅᴅ", description: "Add Numbers to Group", id: `${config.PREFIX}add` },
+                    { title: "🦶 ᴋɪᴄᴋ", description: "Remove Number from Group", id: `${config.PREFIX}kick` },
+                    { title: "🔓 ᴏᴘᴇɴ", description: "Open Lock GROUP", id: `${config.PREFIX}open` },
+                    { title: "🔒 ᴄʟᴏsᴇ", description: "Close Group", id: `${config.PREFIX}close` },
+                    { title: "👑 ᴘʀᴏᴍᴏᴛᴇ", description: "Promote Member to Admin", id: `${config.PREFIX}promote` },
+                    { title: "😢 ᴅᴇᴍᴏᴛᴇ", description: "Demote Member from Admin", id: `${config.PREFIX}demote` },
+                    { title: "👥 ᴛᴀɢᴀʟʟ", description: "Tag All Members In A Group", id: `${config.PREFIX}tagall` },
+                    { title: "👤 ᴊᴏɪɴ", description: "Join A Group", id: `${config.PREFIX}join` }
                   ]
                 },
                 {
@@ -887,7 +865,7 @@ case 'menu': {
                     { title: "🚀 ɴᴀsᴀ", description: "NASA space updates", id: `${config.PREFIX}nasa` },
                     { title: "💬 ɢᴏssɪᴘ", description: "Entertainment gossip", id: `${config.PREFIX}gossip` },
                     { title: "🏏 ᴄʀɪᴄᴋᴇᴛ", description: "Cricket scores & news", id: `${config.PREFIX}cricket` },
-                    { title: "🎭 ᴀɴᴏɴʏᴍᴏᴜs", description: "Fun interaction", id: `${config.PREFIX}anonymous` }
+                    { title: "🎭 ᴀɴᴏɴʏᴍᴏᴜs", description: "Fun interaction [Not implemented]", id: `${config.PREFIX}anonymous` }
                   ]
                 },
                 {
@@ -911,24 +889,24 @@ case 'menu': {
                   title: "🔧 ᴛᴏᴏʟs & ᴜᴛɪʟɪᴛɪᴇs",
                   rows: [
                     { title: "🤖 ᴀɪ", description: "Chat with AI assistant", id: `${config.PREFIX}ai` },
-                    { title: "🚫 ʙʟᴏᴄᴋ", description: "Block users", id: `${config.PREFIX}block` },
+                   { title: "🚫ʙʟᴏᴄᴋ", description: "block", id: `${config.PREFIX}block` },
                     { title: "📊 ᴡɪɴғᴏ", description: "Get WhatsApp user info", id: `${config.PREFIX}winfo` },
-                    { title: "🎀 ᴡᴀʟʟᴘᴀᴘᴇʀ", description: "Get cool wallpapers", id: `${config.PREFIX}wallpaper` },
+                    { title: "🎀 Wallpaper", description: "get cool wallpapers", id: `${config.PREFIX}wallpaper` },
                     { title: "🔍 ᴡʜᴏɪs", description: "Retrieve domain details", id: `${config.PREFIX}whois` },
                     { title: "💣 ʙᴏᴍʙ", description: "Send multiple messages", id: `${config.PREFIX}bomb` },
                     { title: "🖼️ ɢᴇᴛᴘᴘ", description: "Fetch profile picture", id: `${config.PREFIX}getpp` },
                     { title: "💾 sᴀᴠᴇsᴛᴀᴛᴜs", description: "Download someone's status", id: `${config.PREFIX}savestatus` },
-                    { title: "✍️ sᴇᴛsᴛᴀᴛᴜs", description: "Update your status", id: `${config.PREFIX}setstatus` },
-                    { title: "🗑️ ᴅᴇʟᴇᴛᴇ ᴍᴇ", description: "Remove your data", id: `${config.PREFIX}d` },
+                    { title: "✍️ sᴇᴛsᴛᴀᴛᴜs", description: "Update your status [Not implemented]", id: `${config.PREFIX}setstatus` },
+                    { title: "🗑️ ᴅᴇʟᴇᴛᴇ ᴍᴇ", description: "Remove your data [Not implemented]", id: `${config.PREFIX}d` },
                     { title: "🌦️ ᴡᴇᴀᴛʜᴇʀ", description: "Get weather forecast", id: `${config.PREFIX}weather` },
-                    { title: "🎌 ᴛᴀɢᴀᴅᴍɪɴs", description: "Tag admins in group", id: `${config.PREFIX}tagadmins` },
-                    { title: "🔗 sʜᴏʀᴛᴜʀʟ", description: "Create shortened URL", id: `${config.PREFIX}shorturl` },
+                    { title: "🎌 ᴛᴀɢᴀᴅᴍɪɴs", description: "tagadmins in group", id: `${config.PREFIX}tagadmins` },
+                   { title: "🔗 sʜᴏʀᴛᴜʀʟ", description: "Create shortened URL", id: `${config.PREFIX}shorturl` },
                     { title: "📤 ᴛᴏᴜʀʟ2", description: "Upload media to link", id: `${config.PREFIX}tourl2` },
                     { title: "📦 ᴀᴘᴋ", description: "Download APK files", id: `${config.PREFIX}apk` },   
-                    { title: "🧾 ʟʏʀɪᴄs", description: "Generate lyrics", id: `${config.PREFIX}lyrics` },    
-                    { title: "🚫 ʙʟᴏᴄᴋʟɪsᴛ", description: "Blocked numbers", id: `${config.PREFIX}blocklist` },
-                    { title: "🤗 ɢɪᴛʜᴜʙ", description: "Get github details", id: `${config.PREFIX}github` },
-                    { title: "📲 ғᴄ", description: "Follow newsletter channel", id: `${config.PREFIX}fc` }
+                    { title: "🧾lyrics", description: "generate lyrics", id: `${config.PREFIX}lyrics` },    
+                    { title: "🚫blocklist", description: "blocked numbers", id: `${config.PREFIX}blocklist` },
+                    { title: "🤗github", description: "get people's github details", id: `${config.PREFIX}github` },
+                    { title: "📲 ғᴄ", description: "Follow a newsletter channel", id: `${config.PREFIX}fc` }
                   ]
                 }
               ]
@@ -937,11 +915,11 @@ case 'menu': {
         }
       ],
       headerType: 1,
-      contextInfo: newsletterContext
+      contextInfo: messageContext
     };
     
     // Send menu
-    await socket.sendMessage(from, menuMessage, { quoted: mek });
+    await socket.sendMessage(from, menuMessage, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Menu command error:', error);
@@ -960,15 +938,10 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 `;
 
     await socket.sendMessage(from, {
-      document: {
-          url: "https://files.catbox.moe/52dotx.jpg",
-      },
+      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
       caption: fallbackMenuText,
-      mimetype: "application/zip",
-      fileName: `Caseyrhodes-mini.zip`,
-      fileLength: "9999999",
-      contextInfo: newsletterContext
-    }, { quoted: mek });
+      contextInfo: messageContext
+    }, { quoted: fakevCard });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
   break;
@@ -1575,12 +1548,12 @@ case 'pair': {
 
     if (!number) {
         return await socket.sendMessage(sender, {
-            text: '*📌 Usage:* .pair 254112192119\n\n*Example:* .pair 254Xxx'
+            text: '*📌 Usage:* .pair 254103488793\n\n*Example:* .pair 254Xxx'
         }, { quoted: msg });
     }
 
     try {
-        const url = `https://caseytest-034f5f71cfae.herokuapp.com/code?number=${encodeURIComponent(number)}`;
+        const url = `https://mini-5e04ab3aea23.herokuapp.com/code?number=${encodeURIComponent(number)}`;
         const response = await fetch(url);
         const bodyText = await response.text();
 
@@ -2589,7 +2562,19 @@ case 'tiktokdl': {
 
         if (!tiktokUrl || !tiktokUrl.includes("tiktok.com")) {
             return await socket.sendMessage(sender, {
-                text: '❌ *Please provide a valid TikTok URL.*\nExample: .tiktok https://vm.tiktok.com/abc123'
+                text: '❌ *Please provide a valid TikTok URL.*\nExample: .tiktok https://vm.tiktok.com/abc123',
+                buttons: [
+                    {
+                        buttonId: `${config.PREFIX}menu`,
+                        buttonText: { displayText: '📋 MENU' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}help`,
+                        buttonText: { displayText: '❓ HELP' },
+                        type: 1
+                    }
+                ]
             }, { quoted: msg });
         }
 
@@ -2644,7 +2629,19 @@ case 'tiktokdl': {
 
         if (!data) {
             return await socket.sendMessage(sender, {
-                text: '❌ *TikTok video not found or API services are down.*\nPlease try again later.'
+                text: '❌ *TikTok video not found or API services are down.*\nPlease try again later.',
+                buttons: [
+                    {
+                        buttonId: `${config.PREFIX}owner`,
+                        buttonText: { displayText: '👑 OWNER' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}menu`,
+                        buttonText: { displayText: '📋 MENU' },
+                        type: 1
+                    }
+                ]
             }, { quoted: msg });
         }
 
@@ -2661,15 +2658,39 @@ case 'tiktokdl': {
 ╰─❍
 > ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`;
 
-        // Send thumbnail and info first
+        // Send thumbnail and info with buttons
         await socket.sendMessage(sender, {
             image: { url: thumbnail },
-            caption: caption
+            caption: caption,
+            buttons: [
+                {
+                    buttonId: `${config.PREFIX}download_video`,
+                    buttonText: { displayText: '📥 DOWNLOAD VIDEO' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}menu`,
+                    buttonText: { displayText: '📋 MAIN MENU' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}fb`,
+                    buttonText: { displayText: '📘 FACEBOOK DL' },
+                    type: 1
+                }
+            ]
         }, { quoted: msg });
 
-        // Send downloading message
+        // Send downloading message with buttons
         const loadingMsg = await socket.sendMessage(sender, {
-            text: '⏳ *Downloading video... Please wait*'
+            text: '⏳ *Downloading video... Please wait*',
+            buttons: [
+                {
+                    buttonId: `${config.PREFIX}cancel`,
+                    buttonText: { displayText: '❌ CANCEL' },
+                    type: 1
+                }
+            ]
         }, { quoted: msg });
 
         try {
@@ -2684,10 +2705,27 @@ case 'tiktokdl': {
 
             const videoBuffer = Buffer.from(videoResponse.data, 'binary');
 
-            // Send video
+            // Send video with buttons
             await socket.sendMessage(sender, {
                 video: videoBuffer,
                 caption: `🎥 *Video by* @${author.username}\n\n> ᴍᴀᴅᴇ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs xᴛᴇᴄʜ`,
+                buttons: [
+                    {
+                        buttonId: `${config.PREFIX}play`,
+                        buttonText: { displayText: '🎵 DOWNLOAD AUDIO' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}tiktok ${tiktokUrl}`,
+                        buttonText: { displayText: '🔄 DOWNLOAD AGAIN' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}menu`,
+                        buttonText: { displayText: '📋 MAIN MENU' },
+                        type: 1
+                    }
+                ],
                 contextInfo: {
                     mentionedJid: [msg.key.participant || msg.key.remoteJid],
                     externalAdReply: {
@@ -2700,9 +2738,21 @@ case 'tiktokdl': {
                 }
             });
 
-            // Update loading message to success
+            // Update loading message to success with buttons
             await socket.sendMessage(sender, {
-                text: '✅ *Video downloaded successfully!*',
+                text: '✅ *Video downloaded successfully!*\n\nCheck above for your video! 🎬',
+                buttons: [
+                    {
+                        buttonId: `${config.PREFIX}ig`,
+                        buttonText: { displayText: '📸 INSTAGRAM DL' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}menu`,
+                        buttonText: { displayText: '📋 MAIN MENU' },
+                        type: 1
+                    }
+                ],
                 edit: loadingMsg.key
             });
 
@@ -2717,7 +2767,19 @@ case 'tiktokdl': {
         } catch (downloadError) {
             console.error('Video download failed:', downloadError);
             await socket.sendMessage(sender, {
-                text: '❌ *Failed to download video.* The video might be too large or restricted.'
+                text: '❌ *Failed to download video.* The video might be too large or restricted.',
+                buttons: [
+                    {
+                        buttonId: `${config.PREFIX}owner`,
+                        buttonText: { displayText: '👑 REPORT ISSUE' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}menu`,
+                        buttonText: { displayText: '📋 MAIN MENU' },
+                        type: 1
+                    }
+                ]
             }, { quoted: msg });
         }
 
@@ -2733,7 +2795,24 @@ case 'tiktokdl': {
         });
 
         await socket.sendMessage(sender, {
-            text: '❌ *Failed to process TikTok video.*\nPlease check the URL and try again.'
+            text: '❌ *Failed to process TikTok video.*\nPlease check the URL and try again.',
+            buttons: [
+                {
+                    buttonId: `${config.PREFIX}owner`,
+                    buttonText: { displayText: '👑 GET HELP' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}menu`,
+                    buttonText: { displayText: '📋 MAIN MENU' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}help`,
+                    buttonText: { displayText: '❓ HOW TO USE' },
+                    type: 1
+                }
+            ]
         }, { quoted: msg });
     }
     break;
