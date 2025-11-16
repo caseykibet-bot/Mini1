@@ -751,7 +751,7 @@ case 'info': {
 }
 // Case: menu
   // Case: menu
-         case 'menu': {
+case 'menu': {
   try {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
     const startTime = socketCreationTime.get(number) || Date.now();
@@ -775,16 +775,39 @@ case 'info': {
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴛᴇᴄʜ
 `;
 
-    // Common message context
-    const messageContext = {
+    // Newsletter context info
+    const newsletterContext = {
         forwardingScore: 1,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             newsletterJid: '120363420261263259@newsletter',
-            newsletterName: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ ʙᴏᴛ🌟',
+            newsletterName:'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ 🌟',
             serverMessageId: -1
-        }
+        },
+        externalAdReply: {
+            title: `ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ`,
+            body: `ᴘʀᴇᴍɪᴜᴍ ʙᴏᴛ ꜱᴇʀᴠɪᴄᴇꜱ`,
+            mediaType: 1,
+            thumbnailUrl: "https://i.ibb.co/Ng6PQcMv/caseyweb.jpg",
+            sourceUrl: "https://github.com/caseyweb",
+            renderLargerThumbnail: true
+        },
+        mentionedJid: [m.sender]
     };
+
+    // Send document menu as main menu
+    const sentMsg = await conn.sendMessage(from, {
+        document: {
+            url: "https://files.catbox.moe/52dotx.jpg",
+        },
+        caption: menuText,
+        mimetype: "application/zip",
+        fileName: `Caseyrhodes-mini.zip`,
+        fileLength: "9999999",
+        contextInfo: newsletterContext
+    }, { quoted: mek });
+
+    const messageID = sentMsg.key.id;
 
     const menuMessage = {
       image: { url: "https://i.ibb.co/gKnBmq8/casey.jpg" },
@@ -803,27 +826,27 @@ case 'info': {
                   title: "🌐 ɢᴇɴᴇʀᴀʟ ᴄᴏᴍᴍᴀɴᴅs",
                   highlight_label: 'ᴄᴀsᴇʏʀʜᴏᴅᴇs ᴍɪɴɪ',
                   rows: [
-                    { title: "🎨 Logomenu", description: "get yoir own logo texts", id: `${config.PREFIX}logomenu` }, 
+                    { title: "🎨 Logomenu", description: "Get your own logo texts", id: `${config.PREFIX}logomenu` }, 
                     { title: "🟢 ᴀʟɪᴠᴇ", description: "Check if bot is active", id: `${config.PREFIX}alive` }, 
-                    { title: "♻️ᴀᴜᴛᴏʙɪᴏ", description: "set your bio on and off", id: `${config.PREFIX}autobio` },
-                    { title: "🪀ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "set your bio on and off", id: `${config.PREFIX}autorecording` },    
-                    { title: "🌟owner", description: "get intouch with dev", id: `${config.PREFIX}owner` },
-                    { title: "🎭Hack", description: "prank others", id: `${config.PREFIX}hack` },
+                    { title: "♻️ ᴀᴜᴛᴏʙɪᴏ", description: "Set your bio on and off", id: `${config.PREFIX}autobio` },
+                    { title: "🪀 ᴀᴜᴛᴏʀᴇᴄᴏʀᴅɪɴɢ", description: "Set auto recording", id: `${config.PREFIX}autorecording` },    
+                    { title: "🌟 ᴏᴡɴᴇʀ", description: "Get in touch with dev", id: `${config.PREFIX}owner` },
+                    { title: "🎭 ʜᴀᴄᴋ", description: "Prank others", id: `${config.PREFIX}hack` },
                     { title: "📊 ʙᴏᴛ sᴛᴀᴛs", description: "View bot statistics", id: `${config.PREFIX}session` },
                     { title: "ℹ️ ʙᴏᴛ ɪɴғᴏ", description: "Get bot information", id: `${config.PREFIX}active` },
-                    { title: "🔰sᴇᴛᴘᴘ", description: "set your own profile", id: `${config.PREFIX}setpp` },
+                    { title: "🔰 sᴇᴛᴘᴘ", description: "Set your own profile", id: `${config.PREFIX}setpp` },
                     { title: "📋 ᴍᴇɴᴜ", description: "Show this menu", id: `${config.PREFIX}menu` },
                     { title: "📜 ᴀʟʟ ᴍᴇɴᴜ", description: "List all commands (text)", id: `${config.PREFIX}allmenu` },
-                    { title: "🔮sᴄʀᴇᴇɴsʜᴏᴏᴛ", description: "get website screenshots", id: `${config.PREFIX}ss` },
-                    { title: "💌ғᴇᴛᴄʜ", description: "get url comtent", id: `${config.PREFIX}get` },  
+                    { title: "🔮 sᴄʀᴇᴇɴsʜᴏᴏᴛ", description: "Get website screenshots", id: `${config.PREFIX}ss` },
+                    { title: "💌 ғᴇᴛᴄʜ", description: "Get URL content", id: `${config.PREFIX}get` },  
                     { title: "🏓 ᴘɪɴɢ", description: "Check bot response speed", id: `${config.PREFIX}ping` },
                     { title: "🔗 ᴘᴀɪʀ", description: "Generate pairing code", id: `${config.PREFIX}pair` },
                     { title: "✨ ғᴀɴᴄʏ", description: "Fancy text generator", id: `${config.PREFIX}fancy` },
-                    { title: "🔮tts", description: "voice converter", id: `${config.PREFIX}tts` },
-                    { title: "🎉ɪᴍᴀɢᴇ", description: "random image generator", id: `${config.PREFIX}img` },
+                    { title: "🔮 ᴛᴛs", description: "Voice converter", id: `${config.PREFIX}tts` },
+                    { title: "🎉 ɪᴍᴀɢᴇ", description: "Random image generator", id: `${config.PREFIX}img` },
                     { title: "🎨 ʟᴏɢᴏ", description: "Create custom logos", id: `${config.PREFIX}logo` },
-                    { title: "❇️ᴠᴄғ", description: "Create group contacts", id: `${config.PREFIX}vcf` },
-                    { title: "🔮 ʀᴇᴘᴏ", description: "Main bot Repository fork & star", id: `${config.PREFIX}repo` }
+                    { title: "❇️ ᴠᴄғ", description: "Create group contacts", id: `${config.PREFIX}vcf` },
+                    { title: "🔮 ʀᴇᴘᴏ", description: "Main bot repository", id: `${config.PREFIX}repo` }
                   ]
                 },
                 {
@@ -831,31 +854,30 @@ case 'info': {
                   highlight_label: 'New',
                   rows: [
                     { title: "🎵 sᴏɴɢ", description: "Download music from YouTube", id: `${config.PREFIX}song` }, 
-                    { title: "🎀play", description: "play favourite songs", id: `${config.PREFIX}play` },
+                    { title: "🎀 ᴘʟᴀʏ", description: "Play favourite songs", id: `${config.PREFIX}play` },
                     { title: "📱 ᴛɪᴋᴛᴏᴋ", description: "Download TikTok videos", id: `${config.PREFIX}tiktok` },
-                    { title: "💠ᴊɪᴅ", description:"get your own jid", id: `${config.PREFIX}jid` },
+                    { title: "💠 ᴊɪᴅ", description: "Get your own jid", id: `${config.PREFIX}jid` },
                     { title: "📘 ғᴀᴄᴇʙᴏᴏᴋ", description: "Download Facebook content", id: `${config.PREFIX}fb` },
-                    { title: "🎀ʙɪʙʟᴇ", description: "okoka😂", id: `${config.PREFIX}bible` },
+                    { title: "🎀 ʙɪʙʟᴇ", description: "Bible verses", id: `${config.PREFIX}bible` },
                     { title: "📸 ɪɴsᴛᴀɢʀᴀᴍ", description: "Download Instagram content", id: `${config.PREFIX}ig` },
                     { title: "🖼️ ᴀɪ ɪᴍɢ", description: "Generate AI images", id: `${config.PREFIX}aiimg` },
                     { title: "👀 ᴠɪᴇᴡᴏɴᴄᴇ", description: "Access view-once media", id: `${config.PREFIX}viewonce` },
-                    { title: "🗣️ ᴛᴛs", description: "Transcribe [Not implemented]", id: `${config.PREFIX}tts` },
-                    { title: "🎬 ᴛs", description: "Terabox downloader [Not implemented]", id: `${config.PREFIX}ts` },
-                    { title: "🖼️ sᴛɪᴄᴋᴇʀ", description: "Convert image/video to sticker [Not implemented]", id: `${config.PREFIX}sticker` }
+                    { title: "🎬 ᴛs", description: "Terabox downloader", id: `${config.PREFIX}ts` },
+                    { title: "🖼️ sᴛɪᴄᴋᴇʀ", description: "Convert image/video to sticker", id: `${config.PREFIX}sticker` }
                   ]
                 },
                 {
                   title: "🫂 ɢʀᴏᴜᴘ sᴇᴛᴛɪɴɢs",
                   highlight_label: 'Popular',
                   rows: [
-                    { title: "➕ ᴀᴅᴅ", description: "Add Numbers to Group", id: `${config.PREFIX}add` },
-                    { title: "🦶 ᴋɪᴄᴋ", description: "Remove Number from Group", id: `${config.PREFIX}kick` },
-                    { title: "🔓 ᴏᴘᴇɴ", description: "Open Lock GROUP", id: `${config.PREFIX}open` },
-                    { title: "🔒 ᴄʟᴏsᴇ", description: "Close Group", id: `${config.PREFIX}close` },
-                    { title: "👑 ᴘʀᴏᴍᴏᴛᴇ", description: "Promote Member to Admin", id: `${config.PREFIX}promote` },
-                    { title: "😢 ᴅᴇᴍᴏᴛᴇ", description: "Demote Member from Admin", id: `${config.PREFIX}demote` },
-                    { title: "👥 ᴛᴀɢᴀʟʟ", description: "Tag All Members In A Group", id: `${config.PREFIX}tagall` },
-                    { title: "👤 ᴊᴏɪɴ", description: "Join A Group", id: `${config.PREFIX}join` }
+                    { title: "➕ ᴀᴅᴅ", description: "Add numbers to group", id: `${config.PREFIX}add` },
+                    { title: "🦶 ᴋɪᴄᴋ", description: "Remove number from group", id: `${config.PREFIX}kick` },
+                    { title: "🔓 ᴏᴘᴇɴ", description: "Open lock group", id: `${config.PREFIX}open` },
+                    { title: "🔒 ᴄʟᴏsᴇ", description: "Close group", id: `${config.PREFIX}close` },
+                    { title: "👑 ᴘʀᴏᴍᴏᴛᴇ", description: "Promote member to admin", id: `${config.PREFIX}promote` },
+                    { title: "😢 ᴅᴇᴍᴏᴛᴇ", description: "Demote member from admin", id: `${config.PREFIX}demote` },
+                    { title: "👥 ᴛᴀɢᴀʟʟ", description: "Tag all members in group", id: `${config.PREFIX}tagall` },
+                    { title: "👤 ᴊᴏɪɴ", description: "Join a group", id: `${config.PREFIX}join` }
                   ]
                 },
                 {
@@ -865,7 +887,7 @@ case 'info': {
                     { title: "🚀 ɴᴀsᴀ", description: "NASA space updates", id: `${config.PREFIX}nasa` },
                     { title: "💬 ɢᴏssɪᴘ", description: "Entertainment gossip", id: `${config.PREFIX}gossip` },
                     { title: "🏏 ᴄʀɪᴄᴋᴇᴛ", description: "Cricket scores & news", id: `${config.PREFIX}cricket` },
-                    { title: "🎭 ᴀɴᴏɴʏᴍᴏᴜs", description: "Fun interaction [Not implemented]", id: `${config.PREFIX}anonymous` }
+                    { title: "🎭 ᴀɴᴏɴʏᴍᴏᴜs", description: "Fun interaction", id: `${config.PREFIX}anonymous` }
                   ]
                 },
                 {
@@ -889,24 +911,24 @@ case 'info': {
                   title: "🔧 ᴛᴏᴏʟs & ᴜᴛɪʟɪᴛɪᴇs",
                   rows: [
                     { title: "🤖 ᴀɪ", description: "Chat with AI assistant", id: `${config.PREFIX}ai` },
-                   { title: "🚫ʙʟᴏᴄᴋ", description: "block", id: `${config.PREFIX}block` },
+                    { title: "🚫 ʙʟᴏᴄᴋ", description: "Block users", id: `${config.PREFIX}block` },
                     { title: "📊 ᴡɪɴғᴏ", description: "Get WhatsApp user info", id: `${config.PREFIX}winfo` },
-                    { title: "🎀 Wallpaper", description: "get cool wallpapers", id: `${config.PREFIX}wallpaper` },
+                    { title: "🎀 ᴡᴀʟʟᴘᴀᴘᴇʀ", description: "Get cool wallpapers", id: `${config.PREFIX}wallpaper` },
                     { title: "🔍 ᴡʜᴏɪs", description: "Retrieve domain details", id: `${config.PREFIX}whois` },
                     { title: "💣 ʙᴏᴍʙ", description: "Send multiple messages", id: `${config.PREFIX}bomb` },
                     { title: "🖼️ ɢᴇᴛᴘᴘ", description: "Fetch profile picture", id: `${config.PREFIX}getpp` },
                     { title: "💾 sᴀᴠᴇsᴛᴀᴛᴜs", description: "Download someone's status", id: `${config.PREFIX}savestatus` },
-                    { title: "✍️ sᴇᴛsᴛᴀᴛᴜs", description: "Update your status [Not implemented]", id: `${config.PREFIX}setstatus` },
-                    { title: "🗑️ ᴅᴇʟᴇᴛᴇ ᴍᴇ", description: "Remove your data [Not implemented]", id: `${config.PREFIX}d` },
+                    { title: "✍️ sᴇᴛsᴛᴀᴛᴜs", description: "Update your status", id: `${config.PREFIX}setstatus` },
+                    { title: "🗑️ ᴅᴇʟᴇᴛᴇ ᴍᴇ", description: "Remove your data", id: `${config.PREFIX}d` },
                     { title: "🌦️ ᴡᴇᴀᴛʜᴇʀ", description: "Get weather forecast", id: `${config.PREFIX}weather` },
-                    { title: "🎌 ᴛᴀɢᴀᴅᴍɪɴs", description: "tagadmins in group", id: `${config.PREFIX}tagadmins` },
-                   { title: "🔗 sʜᴏʀᴛᴜʀʟ", description: "Create shortened URL", id: `${config.PREFIX}shorturl` },
+                    { title: "🎌 ᴛᴀɢᴀᴅᴍɪɴs", description: "Tag admins in group", id: `${config.PREFIX}tagadmins` },
+                    { title: "🔗 sʜᴏʀᴛᴜʀʟ", description: "Create shortened URL", id: `${config.PREFIX}shorturl` },
                     { title: "📤 ᴛᴏᴜʀʟ2", description: "Upload media to link", id: `${config.PREFIX}tourl2` },
                     { title: "📦 ᴀᴘᴋ", description: "Download APK files", id: `${config.PREFIX}apk` },   
-                    { title: "🧾lyrics", description: "generate lyrics", id: `${config.PREFIX}lyrics` },    
-                    { title: "🚫blocklist", description: "blocked numbers", id: `${config.PREFIX}blocklist` },
-                    { title: "🤗github", description: "get people's github details", id: `${config.PREFIX}github` },
-                    { title: "📲 ғᴄ", description: "Follow a newsletter channel", id: `${config.PREFIX}fc` }
+                    { title: "🧾 ʟʏʀɪᴄs", description: "Generate lyrics", id: `${config.PREFIX}lyrics` },    
+                    { title: "🚫 ʙʟᴏᴄᴋʟɪsᴛ", description: "Blocked numbers", id: `${config.PREFIX}blocklist` },
+                    { title: "🤗 ɢɪᴛʜᴜʙ", description: "Get github details", id: `${config.PREFIX}github` },
+                    { title: "📲 ғᴄ", description: "Follow newsletter channel", id: `${config.PREFIX}fc` }
                   ]
                 }
               ]
@@ -915,11 +937,11 @@ case 'info': {
         }
       ],
       headerType: 1,
-      contextInfo: messageContext
+      contextInfo: newsletterContext
     };
     
     // Send menu
-    await socket.sendMessage(from, menuMessage, { quoted: fakevCard });
+    await socket.sendMessage(from, menuMessage, { quoted: mek });
     await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
   } catch (error) {
     console.error('Menu command error:', error);
@@ -938,10 +960,15 @@ ${config.PREFIX}allmenu ᴛᴏ ᴠɪᴇᴡ ᴀʟʟ ᴄᴍᴅs
 `;
 
     await socket.sendMessage(from, {
-      image: { url: "https://i.ibb.co/fGSVG8vJ/caseyweb.jpg" },
+      document: {
+          url: "https://files.catbox.moe/52dotx.jpg",
+      },
       caption: fallbackMenuText,
-      contextInfo: messageContext
-    }, { quoted: fakevCard });
+      mimetype: "application/zip",
+      fileName: `Caseyrhodes-mini.zip`,
+      fileLength: "9999999",
+      contextInfo: newsletterContext
+    }, { quoted: mek });
     await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
   }
   break;
