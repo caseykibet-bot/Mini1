@@ -749,339 +749,6 @@ case 'info': {
     }
     break;
 }
-case 'menu2':
-case 'help':
-case 'casey': {
-    try {
-        const axios = require('axios');
-        const { prepareWAMessageMedia, generateWAMessageFromContent, proto } = require('@whiskeysockets/baileys');
-
-        const IMAGES = [
-            'https://files.catbox.moe/5uli5p.jpeg',
-            // Add more images later
-        ];
-
-        /**
-         * Read More Spoiler (WhatsApp Hack)
-         */
-        const READ_MORE = '\u200B'.repeat(4001);
-
-        /**
-         * Dynamic Uptime
-         */
-        function getUptime() {
-            const uptime = process.uptime();
-            const hours = Math.floor(uptime / 3600);
-            const minutes = Math.floor((uptime % 3600) / 60);
-            const seconds = Math.floor(uptime % 60);
-            return `${hours}h ${minutes}m ${seconds}s`;
-        }
-
-        /**
-         * Full Help Message (used only for building slides)
-         */
-        const HELP_MESSAGE = `
-# CASEYRHODES MINI BOT
-╭━━━〔 ⚡ CASEYRHODES MINI ⚡ 〕━━━┈⊷
-┃⚙️ USER: ${config.BOT_NAME || 'Caseyrhodes Mini'}
-┃🌐 MODE: PUBLIC
-┃💠 PREFIX: ${config.PREFIX}
-┃🧠 VERSION: 1.0.0
-┃🕐 UPTIME: ${getUptime()}
-╰━━━━━━━━━━━━━━━┈⊷
-
-👋 Welcome to Caseyrhodes Mini — your digital powerhouse 💫
-${READ_MORE}
-
-# 📥 DOWNLOAD COMMANDS
-╭━━━〔 🔽 DOWNLOAD 〕━━━┈⊷
-┃📥 • SONG
-┃📥 • VIDEO  
-┃📥 • TIKTOK
-┃📥 • FB
-┃📥 • APK
-┃📥 • IMG
-╰━━━━━━━━━━━━━━━┈⊷
-
-Download media from various platforms with ease!
-${READ_MORE}
-
-# 🔍 SEARCH COMMANDS
-╭━━━〔 🔍 SEARCH 〕━━━┈⊷
-┃🔎 • YTS
-┃🔎 • LYRICS
-╰━━━━━━━━━━━━━━━┈⊷
-
-Search for movies, music lyrics and more!
-${READ_MORE}
-
-# 🧭 MAIN COMMANDS  
-╭━━━〔 🧭 MAIN 〕━━━┈⊷
-┃⚡ • ALIVE
-┃⚡ • PING
-┃⚡ • UPTIME
-┃⚡ • SYSTEM
-┃⚡ • HELP
-┃⚡ • OWNER
-╰━━━━━━━━━━━━━━━┈⊷
-
-Essential bot commands and utilities!
-${READ_MORE}
-
-# 🛠️ EXTRA COMMANDS
-╭━━━〔 🛠️ EXTRA 〕━━━┈⊷
-┃✨ • VV
-┃✨ • DELETE
-╰━━━━━━━━━━━━━━━┈⊷
-
-Additional utility commands!
-${READ_MORE}
-
-# 👥 GROUP COMMANDS
-╭━━━〔 👥 GROUP 〕━━━┈⊷
-┃💬 • HIDETAG
-┃💬 • DELETE
-┃💬 • MUTE
-┃💬 • UNMUTE
-╰━━━━━━━━━━━━━━━┈⊷
-
-Manage your groups efficiently!
-${READ_MORE}
-
-# 🙋 USER COMMANDS
-╭━━━〔 🙋 USER 〕━━━┈⊷
-┃🔒 • BLOCK
-┃🔓 • UNBLOCK
-┃🧾 • AUTOBIO
-╰━━━━━━━━━━━━━━━┈⊷
-
-User management and utilities!
-${READ_MORE}
-
-# 🤖 AI COMMANDS
-╭━━━〔 🤖 AI 〕━━━┈⊷
-┃🧠 • AI
-┃🧠 • GPT
-╰━━━━━━━━━━━━━━━┈⊷
-
-Artificial Intelligence powered features!
-${READ_MORE}
-
-# 🎙️ CONVERT COMMANDS
-╭━━━〔 🎙️ CONVERT 〕━━━┈⊷
-┃🔊 • TTS
-╰━━━━━━━━━━━━━━━┈⊷
-
-Text-to-speech and conversion tools!
-${READ_MORE}
-
-# 📞 CONTACT & SUPPORT
-🔰 CASEYRHODES MINI BOT 🔰
-
-💬 DEVELOPER:
-https://github.com/caseyweb
-
-📢 SUPPORT CHANNEL:
-https://whatsapp.com/channel/0029Vb6TqBXGk1Ft09397f0r
-
-👥 SUPPORT GROUP:
-https://chat.whatsapp.com/your-group-link
-
-Powered by Caseyrhodes Tech
-`.trim();
-
-        /**
-         * Pick Random Item from Array
-         */
-        const pickRandom = (arr) => arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
-
-        /**
-         * Validate URL via HEAD request
-         */
-        const isValidUrl = async (url) => {
-            try {
-                const { status } = await axios.head(url, { timeout: 6000 });
-                return status >= 200 && status < 400;
-            } catch {
-                return false;
-            }
-        };
-
-        /**
-         * SLIDE MENU - Interactive Carousel
-         */
-        const sendSlideHelpMenu = async (sock, chatId, message, pushname = "there") => {
-            const quoted = message || null;
-
-            try {
-                // Replace placeholder with actual pushname
-                const personalizedHelpMessage = HELP_MESSAGE.replace('${config.BOT_NAME || \"Caseyrhodes Mini\"}', pushname);
-
-                const sections = personalizedHelpMessage.split('# ').filter(Boolean).map(s => '# ' + s);
-                const cards = [];
-
-                for (let i = 0; i < sections.length; i++) {  
-                    const section = sections[i];  
-                    const titleMatch = section.match(/# ([^\n]+)/);  
-                    const title = titleMatch ? titleMatch[1].trim() : `Section ${i + 1}`;  
-                    const imageUrl = IMAGES[i % IMAGES.length] || IMAGES[0];  
-
-                    let media = null;  
-                    try {  
-                        media = await prepareWAMessageMedia(  
-                            { image: { url: imageUrl } },  
-                            { upload: sock.waUploadToServer }  
-                        );  
-                    } catch (e) {  
-                        console.warn(`Image upload failed for slide ${i + 1}:`, e.message);  
-                    }  
-
-                    const header = proto.Message.InteractiveMessage.Header.create({  
-                        ...(media || {}),  
-                        title: `*${title}*`,  
-                        subtitle: "⚡ Caseyrhodes Mini",  
-                        hasMediaAttachment: !!media,  
-                    });  
-
-                    const bodyText = section.replace(/^#[^\n]*\n/, '').trim().split('\n').slice(0, 25).join('\n');  
-
-                    cards.push({  
-                        header,  
-                        body: { text: bodyText },  
-                        nativeFlowMessage: {  
-                            buttons: [  
-                                {  
-                                    name: "quick_reply",  
-                                    buttonParamsJson: JSON.stringify({  
-                                        display_text: `View ${i + 1}`,  
-                                        id: `view_help_${i + 1}`  
-                                    })  
-                                }  
-                            ]  
-                        }  
-                    });  
-                }  
-
-                const carouselMessage = generateWAMessageFromContent(  
-                    chatId,  
-                    {  
-                        viewOnceMessage: {  
-                            message: {  
-                                interactiveMessage: {  
-                                    body: { text: "*🔄 Swipe to navigate menu*" },  
-                                    footer: { text: "© Caseyrhodes Tech • Caseyrhodes Mini Bot" },  
-                                    carouselMessage: { cards, messageVersion: 1 },  
-                                    contextInfo: { 
-                                        forwardingScore: 0, 
-                                        isForwarded: false,
-                                        mentionedJid: [message?.key?.participant || chatId],
-                                    }  
-                                }  
-                            }  
-                        }  
-                    },  
-                    { quoted }  
-                );  
-
-                const sent = await sock.relayMessage(chatId, carouselMessage.message, {  
-                    messageId: carouselMessage.key.id  
-                });  
-
-                // Listener: React & Send Full Section on Button Press  
-                const listener = async (m) => {  
-                    const mek = m.messages[0];  
-                    if (!mek.message) return;  
-
-                    const text = mek.message?.conversation || mek.message?.extendedTextMessage?.text || '';  
-                    const isReply = mek.message?.extendedTextMessage?.contextInfo?.stanzaId === sent.key.id;  
-                    const from = mek.key.remoteJid;  
-
-                    if (!isReply || from !== chatId) return;  
-
-                    await sock.sendMessage(from, { react: { text: '✅', key: mek.key } });  
-
-                    const match = text.match(/view_help_(\d+)/);  
-                    if (match) {  
-                        const idx = parseInt(match[1]) - 1;  
-                        if (idx >= 0 && idx < sections.length) {  
-                            const selected = sections[idx];  
-                            const title = selected.match(/# ([^\n]+)/)?.[1]?.trim() || 'Menu';  
-                            const imageUrl = IMAGES[idx % IMAGES.length] || IMAGES[0];  
-
-                            await sock.sendMessage(from, {  
-                                image: { url: imageUrl },  
-                                caption: `*${title}*\n\n${selected.replace(/^#[^\n]*\n/, '').replace(READ_MORE, '').trim()}`  
-                            }, { quoted: mek });  
-                        }  
-                    }  
-
-                    sock.ev.off('messages.upsert', listener);  
-                };  
-
-                sock.ev.on('messages.upsert', listener);
-
-            } catch (error) {
-                console.error('Slide Menu Error:', error);
-                // Fallback to regular menu
-                const fallbackMenu = `
-╭━━━〔 ⚡ CASEYRHODES MINI ⚡ 〕━━━┈⊷
-┃⚙️ USER: ${pushname}
-┃🌐 MODE: PUBLIC
-┃💠 PREFIX: ${config.PREFIX}
-┃🧠 VERSION: 1.0.0
-╰━━━━━━━━━━━━━━━┈⊷
-
-👋 Hey ${pushname}! Use .help [category] for specific commands!
-Type .download, .search, .main, .group, .ai, etc.
-`.trim();
-                
-                await sock.sendMessage(chatId, { 
-                    image: { url: IMAGES[0] },
-                    caption: fallbackMenu 
-                }, { quoted });
-            }
-        };
-
-        // Send processing reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "⏳",
-                key: msg.key
-            }
-        });
-
-        const from = msg.key.remoteJid;
-        const sender = msg.key.participant || from;
-        const pushname = msg.pushName || "there";
-
-        // Send the interactive slide menu
-        await sendSlideHelpMenu(socket, sender, msg, pushname);
-
-        // Send success reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "✅",
-                key: msg.key
-            }
-        });
-
-    } catch (error) {  
-        console.error('Menu command error:', error);  
-        
-        // Send error reaction
-        await socket.sendMessage(sender, {
-            react: {
-                text: "❌",
-                key: msg.key
-            }
-        });
-        
-        await socket.sendMessage(msg.key.remoteJid, {   
-            text: `❌ ERROR: Failed to load menu. Please try again later.`   
-        }, { quoted: msg });  
-    }
-    break;
-}
 // Case: menu
   // Case: menu
          case 'menu': {
@@ -1928,6 +1595,175 @@ case 'pair': {
         }, { quoted: msg });
     }
     
+    break;
+}
+///status save case
+case 'send':
+case 'sendme':
+case 'save': {
+    try {
+        // Send processing reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "📤",
+                key: msg.key
+            }
+        });
+
+        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+            return await socket.sendMessage(from, {
+                text: "*🍁 Please reply to a message!*",
+                buttons: [
+                    {
+                        buttonId: `${config.PREFIX}help`,
+                        buttonText: { displayText: '❓ HELP' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}menu`,
+                        buttonText: { displayText: '📋 MENU' },
+                        type: 1
+                    }
+                ]
+            }, { quoted: msg });
+        }
+
+        const quotedMsg = msg.message.extendedTextMessage.contextInfo.quotedMessage;
+        const mtype = Object.keys(quotedMsg)[0];
+        
+        let messageContent = {};
+        let successMessage = '';
+
+        switch (mtype) {
+            case "imageMessage":
+                const imageBuffer = await socket.downloadMediaMessage(quotedMsg.imageMessage);
+                messageContent = {
+                    image: imageBuffer,
+                    caption: quotedMsg.imageMessage.caption || '',
+                    mimetype: quotedMsg.imageMessage.mimetype || "image/jpeg"
+                };
+                successMessage = '🖼️ *Image sent successfully!*';
+                break;
+                
+            case "videoMessage":
+                const videoBuffer = await socket.downloadMediaMessage(quotedMsg.videoMessage);
+                messageContent = {
+                    video: videoBuffer,
+                    caption: quotedMsg.videoMessage.caption || '',
+                    mimetype: quotedMsg.videoMessage.mimetype || "video/mp4"
+                };
+                successMessage = '🎥 *Video sent successfully!*';
+                break;
+                
+            case "audioMessage":
+                const audioBuffer = await socket.downloadMediaMessage(quotedMsg.audioMessage);
+                messageContent = {
+                    audio: audioBuffer,
+                    mimetype: quotedMsg.audioMessage.mimetype || "audio/mp4",
+                    ptt: quotedMsg.audioMessage.ptt || false
+                };
+                successMessage = '🎵 *Audio sent successfully!*';
+                break;
+                
+            case "conversation":
+            case "extendedTextMessage":
+                const text = quotedMsg.conversation || quotedMsg.extendedTextMessage?.text;
+                if (text) {
+                    messageContent = {
+                        text: text
+                    };
+                    successMessage = '💬 *Text message sent successfully!*';
+                } else {
+                    throw new Error("No text content found");
+                }
+                break;
+                
+            case "stickerMessage":
+                const stickerBuffer = await socket.downloadMediaMessage(quotedMsg.stickerMessage);
+                messageContent = {
+                    sticker: stickerBuffer
+                };
+                successMessage = '🩷 *Sticker sent successfully!*';
+                break;
+                
+            default:
+                return await socket.sendMessage(from, {
+                    text: "❌ *Unsupported message type*\n\nOnly image, video, audio, text, and sticker messages are supported",
+                    buttons: [
+                        {
+                            buttonId: `${config.PREFIX}help`,
+                            buttonText: { displayText: '❓ HELP' },
+                            type: 1
+                        },
+                        {
+                            buttonId: `${config.PREFIX}menu`,
+                            buttonText: { displayText: '📋 MENU' },
+                            type: 1
+                        }
+                    ]
+                }, { quoted: msg });
+        }
+
+        // Send the downloaded message
+        await socket.sendMessage(sender, messageContent, { quoted: msg });
+
+        // Send success confirmation with buttons
+        await socket.sendMessage(from, {
+            text: successMessage,
+            buttons: [
+                {
+                    buttonId: `${config.PREFIX}send`,
+                    buttonText: { displayText: '📤 SEND AGAIN' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}menu`,
+                    buttonText: { displayText: '📋 MAIN MENU' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}owner`,
+                    buttonText: { displayText: '👑 OWNER' },
+                    type: 1
+                }
+            ]
+        }, { quoted: msg });
+
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error("Send command error:", error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        await socket.sendMessage(from, {
+            text: `❌ *Error forwarding message:*\n\n${error.message}`,
+            buttons: [
+                {
+                    buttonId: `${config.PREFIX}owner`,
+                    buttonText: { displayText: '👑 REPORT ISSUE' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}menu`,
+                    buttonText: { displayText: '📋 MAIN MENU' },
+                    type: 1
+                }
+            ]
+        }, { quoted: msg });
+    }
     break;
 }
 //case tagadmin
@@ -6089,158 +5925,275 @@ case 'fb': {
 }
                 //===============================
 // 22
-case 'ai': {
-    const axios = require("axios");
-
-    await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
-
-    const q = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text ||
-              msg.message?.imageMessage?.caption ||
-              msg.message?.videoMessage?.caption || '';
-
-    if (!q || q.trim() === '') {
-        return await socket.sendMessage(sender, {
-            text: `❓ *Please ask me something*\n\n` +
-                  `*Example:* ${config.PREFIX}ai Who are you?`
-        }, { quoted: fakevCard });
-    }
-
-    // Function to handle custom responses
-    const getCustomResponse = (text, prefix) => {
-        const lowerText = text.toLowerCase();
+case 'ai':
+case 'ask':
+case 'gpt':
+case 'casey': {
+    try {
+        const axios = require("axios");
         
-        // Check for owner/developer related queries
-        if (lowerText.includes('owner') || lowerText.includes('developer') || lowerText.includes('creator') || 
-            lowerText.includes('who owns you') || lowerText.includes('who created you') || 
-            lowerText.includes('who developed you') || lowerText.includes('who built you')) {
-            
-            return {
-                text: `*👨‍💻 MEET THE DEVELOPER*\n\n🇰🇪 *Primary Developer:* CaseyRhodes Tech\n• Location: Kenya\n• Specialization: AI Integration & Bot Development\n• Role: Lead Developer & Project Owner\n\n🤖 *Technical Partner:* Caseyrhodes\n• Specialization: Backend Systems & API Management\n• Role: Technical Support & Infrastructure\n\n*About Our Team:*\nCasey AI is the result of a CaseyRhodes Tech  Together, we bring you cutting-edge AI technology with reliable bot functionality, ensuring you get the best AI experience possible.\n\n*Proudly Made in Kenya* 🇰🇪`,
-                footer: "CaseyRhodes Tech - Kenyan Innovation",
-                buttons: [
-                    { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 },
-                    { buttonId: `${prefix}aimenu`, buttonText: { displayText: "AI MENU" }, type: 1 },
-                    { buttonId: `${prefix}owner`, buttonText: { displayText: "GET SUPPORT" }, type: 1 }
-                ],
-                headerType: 1
-            };
-        }
-        
-        // Check for creation date/when made queries
-        if (lowerText.includes('when were you made') || lowerText.includes('when were you created') || 
-            lowerText.includes('when were you developed') || lowerText.includes('creation date') || 
-            lowerText.includes('when did you start') || lowerText.includes('how old are you') ||
-            lowerText.includes('when were you built') || lowerText.includes('release date')) {
-            
-            return {
-                text: `*📅 CASEY AI TIMELINE*\n\n🚀 *Development Started:* December 2025\n🎯 *First Release:* January 2025\n🔄 *Current Version:* 2.0 (February 2025)\n\n*Development Journey:*\n• *Phase 1:* Core AI integration and basic functionality\n• *Phase 2:* Enhanced response system and multi-API support\n• *Phase 3:* Advanced customization and user experience improvements\n\n*What's Next:*\nWe're constantly working on updates to make Casey AI smarter, faster, and more helpful. Stay tuned for exciting new features!\n\n*Age:* Just a few months old, but getting smarter every day! 🧠✨`,
-                footer: "Casey AI - Born in Kenya, Growing Worldwide",
-                buttons: [
-                    { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 },
-                    { buttonId: `${prefix}aimenu`, buttonText: { displayText: "AI MENU" }, type: 1 },
-                    { buttonId: `${prefix}owner`, buttonText: { displayText: "MEET DEVS OF ME" }, type: 1 }
-                ],
-                headerType: 1
-            };
-        }
+        // Send processing reaction
+        await socket.sendMessage(sender, { 
+            react: { 
+                text: '🤖', 
+                key: msg.key 
+            } 
+        });
 
-        // Check for AI name queries
-        if (lowerText.includes('what is your name') || lowerText.includes('what\'s your name') || 
-            lowerText.includes('tell me your name') || lowerText.includes('your name') || 
-            lowerText.includes('name?') || lowerText.includes('called?')) {
-            
-            return {
-                text: `*🏷️ MY NAME*\n\n👋 Hello! My name is *CASEY AI*\n\n*About My Name:*\n• Full Name: Casey AI\n• Short Name: Casey\n• You can call me: Casey, Casey AI, or just AI\n\n*Name Origin:*\nI'm named after my primary developer *CaseyRhodes Tech*, combining the personal touch of my creator with the intelligence of artificial intelligence technology.\n\n*What Casey Stands For:*\n🔹 *C* - Creative Problem Solving\n🔹 *A* - Advanced AI Technology\n🔹 *S* - Smart Assistance\n🔹 *E* - Efficient Responses\n🔹 *Y* - Your Reliable Companion\n\n*Made in Kenya* 🇰🇪 *by CaseyRhodes Tech*`,
-                footer: "Casey AI - That's Me! 😊",
+        const q = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
+
+        if (!q || q.trim() === '') {
+            return await socket.sendMessage(from, {
+                text: `❓ *Please ask me something*\n\n*Example:* ${config.PREFIX}ai Who are you?`,
                 buttons: [
-                    { buttonId: `${prefix}aimenu`, buttonText: { displayText: "AI MENU" }, type: 1 },
-                    { buttonId: `${prefix}bowner`, buttonText: { displayText: "MEET MY DEVS" }, type: 1 },
-                    { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 }
-                ],
-                headerType: 1
-            };
+                    {
+                        buttonId: `${config.PREFIX}ai Who are you?`,
+                        buttonText: { displayText: '👋 WHO ARE YOU' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}ai What can you do?`,
+                        buttonText: { displayText: '🤖 WHAT CAN YOU DO' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}menu`,
+                        buttonText: { displayText: '📋 MAIN MENU' },
+                        type: 1
+                    }
+                ]
+            }, { quoted: msg });
         }
 
-        // Check for general info about Casey AI
-        if (lowerText.includes('what are you') || lowerText.includes('tell me about yourself') || 
-            lowerText.includes('who are you') || lowerText.includes('about casey')) {
+        // Function to handle custom responses
+        const getCustomResponse = (text) => {
+            const lowerText = text.toLowerCase();
             
-            return {
-                text: `👋 Hi! I'm *Casey AI*, your intelligent WhatsApp assistant developed by CaseyRhodes Tech.\n\n*What I Can Do:*\n• Answer questions on any topic\n• Help with problem-solving\n• Provide information and explanations\n• Assist with creative tasks\n• Engage in meaningful conversations\n\n*My Features:*\n✅ Advanced AI technology\n✅ Multi-language support\n✅ Fast response times\n✅ Reliable dual-API system\n✅ User-friendly interface\n\n*My Identity:*\n• Name: Casey AI\n• Origin: Kenya 🇰🇪\n• Purpose: Making AI accessible and helpful\n\n*Proudly Kenyan:* 🇰🇪\nBuilt with passion in Kenya, serving users worldwide with cutting-edge AI technology.\n\nHow can I assist you today?`,
-                footer: "Casey AI - Your Intelligent WhatsApp Companion",
-                buttons: [
-                    { buttonId: `${prefix}menu`, buttonText: { displayText: "AI MENU" }, type: 1 },
-                    { buttonId: `${prefix}owner`, buttonText: { displayText: "MEET DEVS" }, type: 1 },
-                    { buttonId: `${prefix}menu`, buttonText: { displayText: "MAIN MENU" }, type: 1 }
-                ],
-                headerType: 1
-            };
+            // Check for owner/developer related queries
+            if (lowerText.includes('owner') || lowerText.includes('developer') || lowerText.includes('creator') || 
+                lowerText.includes('who owns you') || lowerText.includes('who created you') || 
+                lowerText.includes('who developed you') || lowerText.includes('who built you')) {
+                
+                return {
+                    text: `*👨‍💻 MEET THE DEVELOPER*\n\n🇰🇪 *Primary Developer:* CaseyRhodes Tech\n• Location: Kenya\n• Specialization: AI Integration & Bot Development\n• Role: Lead Developer & Project Owner\n\n🤖 *Technical Partner:* Caseyrhodes\n• Specialization: Backend Systems & API Management\n• Role: Technical Support & Infrastructure\n\n*About Our Team:*\nCasey AI is the result of a CaseyRhodes Tech  Together, we bring you cutting-edge AI technology with reliable bot functionality, ensuring you get the best AI experience possible.\n\n*Proudly Made in Kenya* 🇰🇪`,
+                    buttons: [
+                        {
+                            buttonId: `${config.PREFIX}owner`,
+                            buttonText: { displayText: '👑 CONTACT OWNER' },
+                            type: 1
+                        },
+                        {
+                            buttonId: `${config.PREFIX}repo`,
+                            buttonText: { displayText: '🔮 REPOSITORY' },
+                            type: 1
+                        }
+                    ]
+                };
+            }
+
+            // Check for creation date/when made queries
+            if (lowerText.includes('when were you made') || lowerText.includes('when were you created') || 
+                lowerText.includes('when were you developed') || lowerText.includes('creation date') || 
+                lowerText.includes('when did you start') || lowerText.includes('how old are you') ||
+                lowerText.includes('when were you built') || lowerText.includes('release date')) {
+                
+                return {
+                    text: `*📅 CASEY AI TIMELINE*\n\n🚀 *Development Started:* December 2025\n🎯 *First Release:* January 2025\n🔄 *Current Version:* 2.0 (February 2025)\n\n*Development Journey:*\n• *Phase 1:* Core AI integration and basic functionality\n• *Phase 2:* Enhanced response system and multi-API support\n• *Phase 3:* Advanced customization and user experience improvements\n\n*What's Next:*\nWe're constantly working on updates to make Casey AI smarter, faster, and more helpful. Stay tuned for exciting new features!\n\n*Age:* Just a few months old, but getting smarter every day! 🧠✨`,
+                    buttons: [
+                        {
+                            buttonId: `${config.PREFIX}ai What are your features?`,
+                            buttonText: { displayText: '✨ FEATURES' },
+                            type: 1
+                        },
+                        {
+                            buttonId: `${config.PREFIX}menu`,
+                            buttonText: { displayText: '📋 MAIN MENU' },
+                            type: 1
+                        }
+                    ]
+                };
+            }
+
+            // Check for AI name queries
+            if (lowerText.includes('what is your name') || lowerText.includes('what\'s your name') || 
+                lowerText.includes('tell me your name') || lowerText.includes('your name') || 
+                lowerText.includes('name?') || lowerText.includes('called?')) {
+                
+                return {
+                    text: `*🏷️ MY NAME*\n\n👋 Hello! My name is *CASEY AI*\n\n*About My Name:*\n• Full Name: Casey AI\n• Short Name: Casey\n• You can call me: Casey, Casey AI, or just AI\n\n*Name Origin:*\nI'm named after my primary developer *CaseyRhodes Tech*, combining the personal touch of my creator with the intelligence of artificial intelligence technology.\n\n*What Casey Stands For:*\n🔹 *C* - Creative Problem Solving\n🔹 *A* - Advanced AI Technology\n🔹 *S* - Smart Assistance\n🔹 *E* - Efficient Responses\n🔹 *Y* - Your Reliable Companion\n\n*Made in Kenya* 🇰🇪 *by CaseyRhodes Tech*`,
+                    buttons: [
+                        {
+                            buttonId: `${config.PREFIX}ai Who created you?`,
+                            buttonText: { displayText: '👨‍💻 CREATOR' },
+                            type: 1
+                        },
+                        {
+                            buttonId: `${config.PREFIX}ai Tell me about yourself`,
+                            buttonText: { displayText: '🤖 ABOUT ME' },
+                            type: 1
+                        }
+                    ]
+                };
+            }
+
+            // Check for general info about Casey AI
+            if (lowerText.includes('what are you') || lowerText.includes('tell me about yourself') || 
+                lowerText.includes('who are you') || lowerText.includes('about casey')) {
+                
+                return {
+                    text: `👋 Hi! I'm *Casey AI*, your intelligent WhatsApp assistant developed by CaseyRhodes Tech.\n\n*What I Can Do:*\n• Answer questions on any topic\n• Help with problem-solving\n• Provide information and explanations\n• Assist with creative tasks\n• Engage in meaningful conversations\n\n*My Features:*\n✅ Advanced AI technology\n✅ Multi-language support\n✅ Fast response times\n✅ Reliable dual-API system\n✅ User-friendly interface\n\n*My Identity:*\n• Name: Casey AI\n• Origin: Kenya 🇰🇪\n• Purpose: Making AI accessible and helpful\n\n*Proudly Kenyan:* 🇰🇪\nBuilt with passion in Kenya, serving users worldwide with cutting-edge AI technology.\n\nHow can I assist you today?`,
+                    buttons: [
+                        {
+                            buttonId: `${config.PREFIX}ai What can you help me with?`,
+                            buttonText: { displayText: '💡 HELP TOPICS' },
+                            type: 1
+                        },
+                        {
+                            buttonId: `${config.PREFIX}menu`,
+                            buttonText: { displayText: '📋 MAIN MENU' },
+                            type: 1
+                        },
+                        {
+                            buttonId: `${config.PREFIX}owner`,
+                            buttonText: { displayText: '👑 OWNER' },
+                            type: 1
+                        }
+                    ]
+                };
+            }
+
+            // Return null if no custom response matches
+            return null;
+        };
+
+        // Check for custom responses first
+        const customResponse = getCustomResponse(q);
+        if (customResponse) {
+            return await socket.sendMessage(from, {
+                image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
+                caption: customResponse.text,
+                buttons: customResponse.buttons,
+                contextInfo: {
+                    forwardingScore: 1,
+                    isForwarded: true,
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: '120363420261263259@newsletter',
+                        newsletterName: 'CASEYRHODES XMD🌟',
+                        serverMessageId: -1
+                    }
+                }
+            }, { quoted: msg });
         }
 
-        // Return null if no custom response matches
-        return null;
-    };
+        const apis = [
+            `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(q)}`,
+            `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(q)}`
+        ];
 
-    // Check for custom responses first
-    const customResponse = getCustomResponse(q, config.PREFIX);
-    if (customResponse) {
-        return await socket.sendMessage(sender, {
+        let response = null;
+        for (const apiUrl of apis) {
+            try {
+                const res = await axios.get(apiUrl, { timeout: 10000 });
+                response = res.data?.result || res.data?.response || res.data?.answer || res.data;
+                if (response && typeof response === 'string' && response.trim() !== '') {
+                    break;
+                }
+            } catch (err) {
+                console.error(`AI Error (${apiUrl}):`, err.message);
+                continue;
+            }
+        }
+
+        if (!response) {
+            return await socket.sendMessage(from, {
+                text: `❌ *I'm experiencing technical difficulties*\nAll AI APIs are currently unavailable. Please try again later.`,
+                buttons: [
+                    {
+                        buttonId: `${config.PREFIX}owner`,
+                        buttonText: { displayText: '👑 REPORT ISSUE' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `${config.PREFIX}menu`,
+                        buttonText: { displayText: '📋 MAIN MENU' },
+                        type: 1
+                    }
+                ]
+            }, { quoted: msg });
+        }
+
+        // Send AI response with image and buttons
+        await socket.sendMessage(from, {
             image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
-            caption: customResponse.text,
-            footer: customResponse.footer,
-            buttons: customResponse.buttons,
-            headerType: customResponse.headerType
-        }, { quoted: fakevCard });
+            caption: `🤖 *Caseyrhodes AI:*\n\n${response}\n\n👨‍💻 *Developer:* CaseyRhodes Tech`,
+            buttons: [
+                {
+                    buttonId: `${config.PREFIX}ai`,
+                    buttonText: { displayText: '🤖 ASK AGAIN' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}menu`,
+                    buttonText: { displayText: '📋 MAIN MENU' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}owner`,
+                    buttonText: { displayText: '👑 OWNER' },
+                    type: 1
+                }
+            ],
+            contextInfo: {
+                forwardingScore: 1,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363420261263259@newsletter',
+                    newsletterName: 'CASEYRHODES XMD🌟',
+                    serverMessageId: -1
+                }
+            }
+        }, { quoted: msg });
+
+        // Send success reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "✅",
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error('AI Command Error:', error);
+        
+        // Send error reaction
+        await socket.sendMessage(sender, {
+            react: {
+                text: "❌",
+                key: msg.key
+            }
+        });
+
+        await socket.sendMessage(from, {
+            text: `❌ *AI Error:* ${error.message}\nPlease try again later.`,
+            buttons: [
+                {
+                    buttonId: `${config.PREFIX}owner`,
+                    buttonText: { displayText: '👑 REPORT ISSUE' },
+                    type: 1
+                },
+                {
+                    buttonId: `${config.PREFIX}menu`,
+                    buttonText: { displayText: '📋 MAIN MENU' },
+                    type: 1
+                }
+            ]
+        }, { quoted: msg });
     }
-
-    const apis = [
-        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(q)}`,
-        `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(q)}`,
-        `https://lance-frank-asta.onrender.com/api/gpt?q=${encodeURIComponent(q)}`
-    ];
-
-    let response = null;
-    for (const apiUrl of apis) {
-        try {
-            const res = await axios.get(apiUrl);
-            response = res.data?.result || res.data?.response || res.data;
-            if (response) break;
-        } catch (err) {
-            console.error(`AI Error (${apiUrl}):`, err.message || err);
-            continue;
-        }
-    }
-
-    if (!response) {
-        return await socket.sendMessage(sender, {
-            text: `❌ *I'm experiencing technical difficulties*\n` +
-                  `Please try again in a moment.`
-        }, { quoted: fakevCard });
-    }
-
-    // Add professional buttons
-    const buttons = [
-        {buttonId: `${config.PREFIX}ai`, buttonText: {displayText: '🌟 Ask Again'}, type: 1},
-        {buttonId: `${config.PREFIX}menu`, buttonText: {displayText: '🎀 Menu'}, type: 1},
-        {buttonId: `${config.PREFIX}owner`, buttonText: {displayText: '👨‍💻 Owner'}, type: 1}
-    ];
-
-    // Add owner message
-    const ownerMessage = `\n\n👨‍💻 *Developer:* ${config.OWNER_NAME}`;
-
-    // Send AI response with image and buttons
-    await socket.sendMessage(sender, {
-        image: { url: 'https://i.ibb.co/fGSVG8vJ/caseyweb.jpg' },
-        caption: `🤖 *Caseyrhodes AI:*\n\n` + response + ownerMessage,
-        footer: "Powered by Caseyrhodes AI",
-        buttons: buttons,
-        headerType: 4
-    }, { quoted: fakevCard });
-    
     break;
 }
-
 //===============================
 case 'getpp':
 case 'pp':
